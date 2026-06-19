@@ -39,19 +39,19 @@ public class CallingTest {
             platformVersion = ADBHelper.getAndroidVersion(aPartyDeviceId).split("\\.")[0];
         }
         
-        System.out.println("📱 Configuration:");
+        System.out.println(" Configuration:");
         System.out.println("   A-Party Device: " + aPartyDeviceId);
         System.out.println("   Android Version: " + platformVersion);
         
         //  CRITICAL FIX: Initialize DeviceManager BEFORE anything else
-        System.out.println("\n🔧 Initializing DeviceManager...");
+        System.out.println("\n Initializing DeviceManager...");
         com.telecom.utils.DeviceManager.initializeDevices();
         
         // Verify initialization
         com.telecom.utils.DeviceManager.printDeviceStatus();
         
         // Start Appium
-        System.out.println("\n🔧 Starting services...");
+        System.out.println("\n Starting services...");
         DriverManager.startAppiumService();
         
         // Initialize driver
@@ -130,7 +130,7 @@ public class CallingTest {
                 System.out.println(" Driver quit successfully");
             }
         } catch (Exception e) {
-            System.out.println("⚠️ Driver quit had issues: " + e.getMessage());
+            System.out.println(" Driver quit had issues: " + e.getMessage());
         }
         
         System.out.println("=".repeat(100));
@@ -162,12 +162,12 @@ class UpdatedSMSTest {
         
         String androidVersion = ADBHelper.getAndroidVersion(deviceId).split("\\.")[0];
         
-        System.out.println("📱 Configuration:");
+        System.out.println(" Configuration:");
         System.out.println("   Device: " + deviceId);
         System.out.println("   Android: " + androidVersion);
         
         // Start services
-        System.out.println("\n🔧 Starting services...");
+        System.out.println("\n Starting services...");
         DriverManager.startAppiumService();
         
         // Initialize messaging driver
@@ -183,7 +183,7 @@ class UpdatedSMSTest {
     @Test(description = "Execute all SMS tests from Excel")
     public void testAllSMSScenarios() {
         System.out.println("\n" + "=".repeat(100));
-        System.out.println("📱 EXECUTING ALL SMS TESTS");
+        System.out.println(" EXECUTING ALL SMS TESTS");
         System.out.println("=".repeat(100));
         
         try {
@@ -256,7 +256,7 @@ class UpdatedSMSTest {
                 System.out.println(" Driver quit successfully");
             }
         } catch (Exception e) {
-            System.out.println("⚠️ Driver quit had issues: " + e.getMessage());
+            System.out.println(" Driver quit had issues: " + e.getMessage());
         }
         
         System.out.println("=".repeat(100));

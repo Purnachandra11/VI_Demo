@@ -1,0 +1,13 @@
+.........Console Logs.........
+
+[WDIO] Starting: runs SMS scenarios from uploaded Excel
+[SMS] → Automation: Text...
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"sms","timestamp":1779647064721,"progress":{"action":"SENDING SMS","number":"Automation","status":"IN_PROGRESS"}}
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"sms","timestamp":1779647069912,"completed":true,"progress":{"action":"SMS sent","number":"Automation","aPartyNumber":"9672417412","count":1,"status":"COMPLETED"}}
+[SMS] → -: Text...
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"sms","timestamp":1779647069942,"progress":{"action":"SENDING SMS","number":"-","status":"IN_PROGRESS"}}
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"sms","timestamp":1779647075065,"completed":true,"progress":{"action":"SMS sent","number":"-","aPartyNumber":"9672417412","count":1,"status":"COMPLETED"}}
+[SMS] → -: Text...
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"sms","timestamp":1779647075076,"progress":{"action":"SENDING SMS","number":"-","status":"IN_PROGRESS"}}
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"sms","timestamp":1779647080129,"completed":true,"progress":{"action":"SMS sent","number":"-","aPartyNumber":"9672417412","count":1,"status":"COMPLETED"}}
+[WDIO] Test passed: runs SMS scenarios from uploaded Excel

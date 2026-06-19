@@ -5,15 +5,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Automation Dashboard Login</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #f5f4f1;
-      --card-bg: #ffffff;
-      --accent: #e45e4e;
-      --text-dark: #2e2a27;
-      --text-muted: #6f6b67;
-      --border: rgba(0, 0, 0, 0.06);
+      --bg:          #faf8f5;
+      --card-bg:     #ffffff;
+      --accent:      #f38328;
+      --accent-dark: #d96f1a;
+      --brown:       #865940;
+      --text-dark:   #2e2a27;
+      --text-muted:  #6f6b67;
+      --border:      #e6e3dd;
     }
 
     * {
@@ -28,7 +31,7 @@
       align-items: center;
       justify-content: center;
       background: var(--bg);
-      font-family: 'Inter', sans-serif;
+      font-family: 'Poppins', sans-serif;
       color: var(--text-dark);
       padding: 20px;
     }
@@ -131,7 +134,7 @@
   cursor: pointer;
   font-size: 18px;
   color: #666;
-  user-select: none;
+  /* user-select: none; */
   transition: 0.2s;
 }
 
@@ -150,10 +153,104 @@
         transform: translateY(0);
       }
     }
+
+    body {
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 700px 500px at 10% 20%, rgba(243,131,40,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 600px 400px at 90% 80%, rgba(134,89,64,0.06) 0%, transparent 70%),
+        radial-gradient(ellipse 400px 300px at 50% 50%, rgba(243,131,40,0.04) 0%, transparent 60%);
+      pointer-events: none; z-index: 0;
+    }
+    .deco-chips { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+    .deco-chip  { position:absolute; border-radius:50%; opacity:0.06; background:var(--accent); }
+    .deco-chip:nth-child(1){ width:280px; height:280px; top:-80px;  left:-60px;  animation:drift1 12s ease-in-out infinite; }
+    .deco-chip:nth-child(2){ width:180px; height:180px; bottom:-40px; right:-50px; animation:drift2 10s ease-in-out infinite; background:var(--brown); }
+    .deco-chip:nth-child(3){ width:120px; height:120px; top:40%; right:8%; animation:drift1 8s ease-in-out infinite 2s; opacity:0.04; }
+    @keyframes drift1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(20px,15px)} }
+    @keyframes drift2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-15px,20px)} }
+    /* Login card sits above overlay */
+    .login-card { position: relative; z-index: 10; }
+
+    /* ════ SIM LOADER ════ */
+    .login-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.35); z-index: 999;
+      backdrop-filter: blur(2px);
+    }
+    .login-loader {
+      display: none; position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff; padding: 36px 44px;
+      border-radius: 20px;
+      box-shadow: 0 12px 48px rgba(0,0,0,0.18);
+      z-index: 1000; text-align: center; min-width: 220px;
+    }
+    .loader-sim-wrap {
+      position: relative; display: inline-flex;
+      align-items: center; justify-content: center; margin-bottom: 18px;
+    }
+    .loader-sim-wrap::before,.loader-sim-wrap::after {
+      content:''; position:absolute; border-radius:50%;
+      background:rgba(243,131,40,0.12); animation:loaderRipple 2s ease-out infinite;
+    }
+    .loader-sim-wrap::before { width:90px;  height:90px;  animation-delay:0s; }
+    .loader-sim-wrap::after  { width:115px; height:115px; animation-delay:.5s; background:rgba(243,131,40,0.07); }
+    @keyframes loaderRipple { 0%{transform:scale(.75);opacity:1} 100%{transform:scale(1.35);opacity:0} }
+    .loader-sim-circle {
+      width:68px; height:68px; border-radius:50%;
+      background:linear-gradient(135deg,#f38328 0%,#d96f1a 100%);
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 6px 24px rgba(243,131,40,0.4), 0 0 0 5px rgba(243,131,40,0.12);
+      animation:loaderFloat 2.8s ease-in-out infinite; position:relative;
+    }
+    @keyframes loaderFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+    .loader-sim-circle i { font-size:30px; color:#fff; }
+    .loader-orbit-dot {
+      position:absolute; width:10px; height:10px; border-radius:50%;
+      background:#f38328; box-shadow:0 0 8px rgba(243,131,40,.7);
+      animation:loaderOrbit 2.2s linear infinite;
+    }
+    @keyframes loaderOrbit { 0%{transform:rotate(0deg) translateX(40px) rotate(0deg)} 100%{transform:rotate(360deg) translateX(40px) rotate(-360deg)} }
+    .login-loader p { font-weight:600; color:#2e2a27; font-size:.9rem; margin:0; font-family:'Poppins',sans-serif; }
+    .login-loader small { display:block; font-size:11px; color:#6f6b67; margin-top:4px; }
+    /* update existing btn style */
+    .btn { border-radius: 20px !important; font-family: 'Poppins', sans-serif; transition: all .22s ease !important; }
+    .btn:hover { background: var(--accent-dark) !important; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(243,131,40,.35); }
+    .form-group input { border-radius: 10px; border: 1.5px solid var(--border); font-family: 'Poppins', sans-serif; transition: border .2s; outline: none; }
+    .form-group input:focus { border-color: var(--accent); }
+    h1 { color: var(--brown) !important; }
+
   </style>
 </head>
 
 <body>
+
+  <!-- Decorative background blobs -->
+  <div class="deco-chips" aria-hidden="true">
+    <div class="deco-chip"></div>
+    <div class="deco-chip"></div>
+    <div class="deco-chip"></div>
+  </div>
+
+  <!-- ─── SIM LOADER ─── -->
+  <div class="login-overlay" id="loginOverlay"></div>
+  <div class="login-loader" id="loginLoader">
+    <div class="loader-sim-wrap">
+      <div class="loader-sim-circle">
+        <i class="bi bi-sim-fill"></i>
+        <div class="loader-orbit-dot"></div>
+      </div>
+    </div>
+    <p id="loginLoaderText">Signing in...</p>
+    <small>Please wait</small>
+  </div>
+
   <div class="login-card">
     <img src="https://qdegrees.com/img/logo.svg" alt="QDegrees Logo">
     <h1>Automation Dashboard</h1>
@@ -183,6 +280,21 @@
   <script>
     const API_BASE = 'http://localhost:3000/api';
 
+    function showSimLoader(text) {
+      const lo = document.getElementById('loginOverlay');
+      const ll = document.getElementById('loginLoader');
+      const lt = document.getElementById('loginLoaderText');
+      if (lt) lt.textContent = text || 'Signing in...';
+      if (lo) lo.style.display = 'block';
+      if (ll) ll.style.display = 'block';
+    }
+    function hideSimLoader() {
+      const lo = document.getElementById('loginOverlay');
+      const ll = document.getElementById('loginLoader');
+      if (lo) lo.style.display = 'none';
+      if (ll) ll.style.display = 'none';
+    }
+
     async function handleLogin() {
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
@@ -193,25 +305,27 @@
         return;
       }
 
+      showSimLoader('Signing in...');
       try {
         const response = await fetch(`${API_BASE}/auth/login`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
         });
 
         const data = await response.json();
         if (!response.ok || !data.success) {
+          hideSimLoader();
           showError(data.message || 'Invalid credentials. Please try again.');
           return;
         }
 
+        showSimLoader('Welcome! Redirecting...');
         sessionStorage.setItem('sessionToken', data.token);
         sessionStorage.setItem('userEmail', data.email);
-        window.location.href = '/';
+        setTimeout(() => { window.location.href = '/'; }, 600);
       } catch (error) {
+        hideSimLoader();
         showError('Unable to login right now. Please try again later.');
       }
     }
@@ -242,4 +356,3 @@
 </body>
 
 </html>
-

@@ -33,7 +33,7 @@ public class ADBLauncher {
     private static boolean executeADBCommand(String command) {
         try {
             String fullCommand = "adb " + command;
-            System.out.println("  🔧 Executing: " + fullCommand);
+            System.out.println("   Executing: " + fullCommand);
             
             @SuppressWarnings("deprecation")
 			Process process = Runtime.getRuntime().exec(fullCommand);

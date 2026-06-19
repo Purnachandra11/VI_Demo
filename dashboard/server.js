@@ -1,14 +1,16 @@
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
 const express = require('express');
 const { exec } = require('child_process');
-const path = require('path');
-
+const os = require('os');
 const nodemailer = require('nodemailer');
 const multer = require('multer');
 const crypto = require('crypto');
 const app = express();
 const fs = require("fs");
-const PORT = 5174;
-const SERVER_IP = '188.208.141.113';
+const PORT = Number(process.env.PORT) || 5174;
+const SERVER_IP = process.env.SERVER_PUBLIC_IP || '13.233.121.125';
 const { spawn } = require('child_process');
 // require('./config.js')
 const WebSocket = require('ws');
@@ -16,7 +18,10 @@ const http = require('http');
 // Create HTTP server
 const server = http.createServer(app);
 const { TestOrchestrator } = require('./testOrchestrator');
-const { getSimNumberViaUSSD } = require('./ussdHandler');
+const { getSimNumberViaUSSD, loadUssdService } = require('./ussdHandler');
+const { runWdioTest, enrichPartiesFromDeviceMap } = require('./wdioRunner');
+const { shouldShowUserLog, formatUserLogLine, inferLogType } = require('./userLogFilter');
+
 
 
 // Create WebSocket server
@@ -24,7 +29,6 @@ const wss = new WebSocket.Server({ server });
 
 // Store connected clients
 const clients = new Set();
-const phoneDeviceMap = new Map();
 
 const cors = require('cors');
 app.use(cors());
@@ -402,130 +406,31 @@ app.get("/api/list-all-files", (req, res) => {
   }
 });
 
-// Modify the test execution endpoint to pass deviceId to parseAndBroadcastLogs:
-app.post("/api/test-command", upload.single('file'), async (req, res) => {
+/** USSD balance check — mirrors automation/server.js POST /getBalance and Java USSDService */
+app.post('/getBalance', async (req, res) => {
   try {
-    let cmd = '';
     const deviceId = req.body.deviceId;
-    const aPartyNumber = req.body.phone;
-    console.log("nainji");
-    let raw = fs.readFileSync("../automation/controller/device-sim-map.json", "utf8");
-    raw = JSON.parse(raw)
-    console.log(raw);
-    let aplha = ['b', 'c', 'd']
-    let deviceCommand = `-DaPartyDevice=${deviceId} -DaPartyNumber=${aPartyNumber}`
-    let temp = raw.filter((ele) => { return ele.id != deviceId }).map((e, index) => { return ` -D${aplha[index]}PartyDevice=${e.id} -D${aplha[index]}PartyNumber=${e.sim}` })
-
-    deviceCommand += temp;
-
-
-
-    switch (req.body.testType) {
-      case 'sms':
-        cmd = "cd .. && mvn clean test -Dtest=SMSTest " + deviceCommand
-        break;
-
-      case 'calling':
-        cmd = "cd .. && mvn clean test -Dtest=CallingTest " + deviceCommand
-
-        break;
-
-      case 'simToolkit':
-        cmd = `cd .. && mvn clean test -Dtest=SIMToolkitCaptureTest -Dudid=${req.body.deviceId} -DaPartyNumber=${req.body.phone} `;
-        break;
-
-
-      case 'calling-sms':
-        cmd = `cd .. && mvn clean test -Dtest=${"CallingTest,SMSTest"} -DdeviceId=${req.body.deviceId} -DaPartyNumber=${req.body.phone}`
-        break;
-      case 'incomingsms':
-        cmd = `cd .. && mvn clean test -Dtest=${"CallingTest,SMSTest"} -DdeviceId=${req.body.deviceId} -DaPartyNumber=${req.body.phone}`
-        break;
-
-      case 'data':
-        cmd = "cd .. && mvn clean test -Dtest=DataUsageTest -DaPartyDevice=" + req.body.deviceId + " -DaPartyNumber=" + req.body.phone
-        break;
-
-      case 'latch':
-        cmd = "cd .. && mvn clean test -Dtest=SIMAutoLatchTestSuite -DaPartyDevice=" + req.body.deviceId + " -DaPartyNumber=" + req.body.phone
-        break;
-
-      case 'all':
-        cmd = `cd .. && mvn clean test -Dtest=${"CallingTest,SMSTest,DataUsageTest"} -DdeviceId=${req.body.deviceId} -DaPartyNumber=${req.body.phone}`
-        break;
-
-      case 'calling-data':
-        cmd = `cd .. && mvn clean test -Dtest=${"CallingTest,DataUsageTest"} -DdeviceId=${req.body.deviceId} -DaPartyNumber=${req.body.phone}`
-        break;
-
-      case 'sms-data':
-        cmd = `cd .. && mvn clean test -Dtest=${"SMSTest,DataUsageTest"} -DdeviceId=${req.body.deviceId} -DaPartyNumber=${req.body.phone}`
-        break;
-
-
-      default:
-        break;
+    if (!deviceId) {
+      return res.status(400).json({ status: 0, error: 'deviceId is required' });
     }
-    // mvn test -Dtest=SMSTest -DdeviceId=LFMVIBEMW8HUR4XK
-    console.log(cmd)
-    if (cmd == '') {
-      return;
-    }
-    const result = await runCommand(
-      cmd
-    );
-
-    console.log("Exit Code:", result.code);
-    console.log("STDOUT:", result.stdout);
-    console.log("STDERR:", result.stderr);
-    console.log("Error:", result.error);
-
-    // If exit code is 0 => success
-    if (result.code === 0) {
-      res.status(200).json({
-        status: "success",
-        exitCode: result.code,
-        stdout: result.stdout.split('Appium service stopped')[1],
-        stderr: result.stderr,
-      });
-    } else {
-
-
-      res.status(500).json({
-        status: "failed",
-        exitCode: result.code,
-        stdout: result.stdout,
-        stderr: result.stderr,
-        error: result.error,
-      });
-    }
-    // if (callingFilePath) {
-    //       fs.unlink(callingFilePath, (err) => {
-    //         if (err) {
-    //           console.error("File delete error:", err);
-    //         } else {
-    //           console.log("File deleted:");
-    //         }
-    //       });
-    //     }
-    //     if (smsFilePath) {
-    //       fs.unlink(smsFilePath, (err) => {
-    //         if (err) {
-    //           console.error("File delete error:", err);
-    //         } else {
-    //           console.log("File deleted:");
-    //         }
-    //       });
-    //     }
-
+    const { checkBalanceAndValidity, toLegacyResponse } = loadUssdService();
+    const result = await checkBalanceAndValidity(deviceId, '*199#');
+    res.json(toLegacyResponse(result));
   } catch (err) {
-    console.error("Error:", err);
+    res.status(500).json({ status: 0, error: err.message });
+  }
+});
 
-    return res.status(500).json({
-      status: "error",
-      message: "Something went wrong while running the command",
-      error: err.message,
-    });
+app.post('/api/ussd/balance', async (req, res) => {
+  try {
+    const deviceId = req.body.deviceId;
+    if (!deviceId) {
+      return res.status(400).json({ success: false, error: 'deviceId is required' });
+    }
+    const legacy = await getSimNumberViaUSSD(deviceId, null);
+    res.json({ success: !!legacy.phoneNumber, ...legacy });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -570,6 +475,7 @@ app.get('/api/auth/validate', (req, res) => {
 let adbStatus = 'stopped';
 let appiumStatus = 'stopped';
 let connectedDevices = new Map();
+let phoneDeviceMap = new Map();
 
 // ========== Simple Auth ==========
 
@@ -580,7 +486,7 @@ const allowedUsers = [
 ];
 
 const activeSessions = new Map();
-const SESSION_TIMEOUT = 1000 * 60 * 60 * 8; // 8 hours
+const SESSION_TIMEOUT = 1000 * 60 * 60 * 8;
 
 function createSession(email) {
   const token = crypto.randomBytes(32).toString('hex');
@@ -717,6 +623,10 @@ function checkNetworkMatch(current, target) {
 
 // ========== ADB/Appium Control ==========
 
+app.get('/api/endpoint', (req, res) => {
+      res.json({ success: true, message: 'backend server started' });
+  });
+
 app.post('/api/adb/start', (req, res) => {
   exec('adb start-server', (error) => {
     if (error) {
@@ -737,135 +647,381 @@ app.post('/api/adb/stop', (req, res) => {
   });
 });
 
-// ========== FIXED Appium Functions ==========
+// ========== OLD Appium Functions ==========
+
+// app.post('/api/appium/start', (req, res) => {
+//   console.log('🚀 Starting Appium server...');
+
+//   // First, stop any existing Appium server using your batch file logic
+//   exec('netstat -ano | findstr :4723', (error, stdout) => {
+//     if (stdout && stdout.includes('LISTENING')) {
+//       console.log('🛑 Stopping existing Appium server...');
+
+//       // Kill processes using port 4723 (your batch file logic)
+//       const lines = stdout.split('\n');
+//       lines.forEach(line => {
+//         const match = line.match(/:4723.*LISTENING\s+(\d+)/);
+//         if (match && match[1]) {
+//           const pid = match[1];
+//           exec(`taskkill /F /PID ${pid}`, (killError) => {
+//             console.log(killError ? `Failed to kill ${pid}` : `Killed process ${pid}`);
+//           });
+//         }
+//       });
+
+//       // Wait a moment for processes to be killed
+//       setTimeout(() => startFreshAppium(res), 2000);
+//     } else {
+//       startFreshAppium(res);
+//     }
+//   });
+// });
+
+// function startFreshAppium(res) {
+//   // Use your working batch file command: start Appium in new command window that stays open
+//   exec('start cmd /k "appium --address 127.0.0.1 --port 4723 --allow-insecure uiautomator2:adb_shell"', (error) => {
+//     if (error) {
+//       console.error(' Appium start error:', error);
+//       appiumStatus = 'stopped';
+//       return res.json({
+//         success: false,
+//         message: `Failed to start Appium: ${error.message}`
+//       });
+//     }
+
+//     console.log('⏳ Waiting for Appium to start...');
+
+//     // Check if Appium started successfully
+//     const checkAppium = (attempt = 1) => {
+//       setTimeout(() => {
+//         exec('netstat -ano | findstr :4723', (checkError, checkStdout) => {
+//           if (checkStdout && checkStdout.includes('LISTENING')) {
+//             console.log(' Appium server started successfully');
+//             appiumStatus = 'running';
+//             res.json({
+//               success: true,
+//               message: 'Appium server started successfully'
+//             });
+//           } else if (attempt < 5) {
+//             // Try again
+//             console.log(` Appium check attempt ${attempt} failed, retrying...`);
+//             checkAppium(attempt + 1);
+//           } else {
+//             // Final attempt failed
+//             console.error(' Appium failed to start after multiple attempts');
+//             appiumStatus = 'stopped';
+//             res.json({
+//               success: false,
+//               message: 'Appium failed to start - port 4723 not listening after 10 seconds'
+//             });
+//           }
+//         });
+//       }, attempt * 2000); // 2s, 4s, 6s, 8s, 10s
+//     };
+
+//     checkAppium(1);
+//   });
+// }
+
+// app.post('/api/appium/stop', (req, res) => {
+//   console.log('🛑 Stopping Appium server...');
+
+//   let killedProcesses = 0;
+
+//   // Kill processes using port 4723
+//   exec('netstat -ano | findstr :4723', (error, stdout) => {
+//     if (stdout) {
+//       const lines = stdout.split('\n');
+//       lines.forEach(line => {
+//         const match = line.match(/:4723.*LISTENING\s+(\d+)/);
+//         if (match && match[1]) {
+//           const pid = match[1];
+//           exec(`taskkill /F /PID ${pid}`, (killError) => {
+//             if (!killError) killedProcesses++;
+//           });
+//         }
+//       });
+//     }
+
+//     // Also kill any node processes with Appium
+//     exec('taskkill /F /IM node.exe /FI "WINDOWTITLE eq appium*"', (error2) => {
+//       appiumStatus = 'stopped';
+//       console.log(` Appium server stopped. Killed ${killedProcesses} process(es)`);
+//       res.json({
+//         success: true,
+//         message: `Appium server stopped. Killed ${killedProcesses} process(es)`
+//       });
+//     });
+//   });
+// });
+
+// ========== FINAL Appium Functions ==========
 
 app.post('/api/appium/start', (req, res) => {
   console.log('🚀 Starting Appium server...');
 
-  // First, stop any existing Appium server using your batch file logic
-  exec('netstat -ano | findstr :4723', (error, stdout) => {
-    if (stdout && stdout.includes('LISTENING')) {
-      console.log('🛑 Stopping existing Appium server...');
-
-      // Kill processes using port 4723 (your batch file logic)
-      const lines = stdout.split('\n');
-      lines.forEach(line => {
-        const match = line.match(/:4723.*LISTENING\s+(\d+)/);
-        if (match && match[1]) {
-          const pid = match[1];
-          exec(`taskkill /F /PID ${pid}`, (killError) => {
-            console.log(killError ? `Failed to kill ${pid}` : `Killed process ${pid}`);
-          });
-        }
-      });
-
-      // Wait a moment for processes to be killed
-      setTimeout(() => startFreshAppium(res), 2000);
-    } else {
-      startFreshAppium(res);
-    }
+  // First, stop any existing Appium server
+  checkAndKillAppiumProcesses(() => {
+    startFreshAppium(res);
   });
 });
 
-function startFreshAppium(res) {
-  // Use your working batch file command: start Appium in new command window that stays open
-  exec('start cmd /k "appium --address 127.0.0.1 --port 4723 --allow-insecure uiautomator2:adb_shell"', (error) => {
-    if (error) {
-      console.error('❌ Appium start error:', error);
-      appiumStatus = 'stopped';
-      return res.json({
-        success: false,
-        message: `Failed to start Appium: ${error.message}`
-      });
-    }
-
-    console.log('⏳ Waiting for Appium to start...');
-
-    // Check if Appium started successfully
-    const checkAppium = (attempt = 1) => {
-      setTimeout(() => {
-        exec('netstat -ano | findstr :4723', (checkError, checkStdout) => {
-          if (checkStdout && checkStdout.includes('LISTENING')) {
-            console.log(' Appium server started successfully');
-            appiumStatus = 'running';
-            res.json({
-              success: true,
-              message: 'Appium server started successfully'
-            });
-          } else if (attempt < 5) {
-            // Try again
-            console.log(` Appium check attempt ${attempt} failed, retrying...`);
-            checkAppium(attempt + 1);
-          } else {
-            // Final attempt failed
-            console.error('❌ Appium failed to start after multiple attempts');
-            appiumStatus = 'stopped';
-            res.json({
-              success: false,
-              message: 'Appium failed to start - port 4723 not listening after 10 seconds'
-            });
+function checkAndKillAppiumProcesses(callback) {
+  const isWindows = os.platform() === 'win32';
+  
+  if (isWindows) {
+    // Windows: Check port 4723
+    exec('netstat -ano | findstr :4723', (error, stdout) => {
+      if (stdout && stdout.includes('LISTENING')) {
+        console.log('🛑 Stopping existing Appium server...');
+        const lines = stdout.split('\n');
+        let processesToKill = [];
+        
+        lines.forEach(line => {
+          const match = line.match(/:4723.*LISTENING\s+(\d+)/);
+          if (match && match[1]) {
+            processesToKill.push(match[1]);
           }
         });
-      }, attempt * 2000); // 2s, 4s, 6s, 8s, 10s
-    };
+        
+        if (processesToKill.length > 0) {
+          let killedCount = 0;
+          processesToKill.forEach(pid => {
+            exec(`taskkill /F /PID ${pid}`, (killError) => {
+              if (!killError) killedCount++;
+              if (killedCount === processesToKill.length) {
+                setTimeout(callback, 2000);
+              }
+            });
+          });
+        } else {
+          callback();
+        }
+      } else {
+        callback();
+      }
+    });
+  } else {
+    // macOS/Linux: Find and kill Appium processes
+    exec('lsof -ti :4723', (error, stdout) => {
+      if (stdout && stdout.trim()) {
+        console.log('🛑 Stopping existing Appium server...');
+        const pids = stdout.trim().split('\n');
+        pids.forEach(pid => {
+          try {
+            process.kill(parseInt(pid), 'SIGTERM');
+            console.log(`Killed process ${pid}`);
+          } catch (err) {
+            console.log(`Failed to kill ${pid}: ${err.message}`);
+          }
+        });
+        setTimeout(callback, 2000);
+      } else {
+        callback();
+      }
+    });
+  }
+}
 
-    checkAppium(1);
-  });
+function startFreshAppium(res) {
+  const isWindows = os.platform() === 'win32';
+  
+  // Build the Appium command arguments
+  const appiumArgs = [
+    '--address', '127.0.0.1',
+    '--port', '4723',
+    '--allow-insecure', 'uiautomator2:adb_shell'
+  ];
+  
+  console.log('📡 Starting Appium with:', appiumArgs.join(' '));
+  
+  let appiumProcess;
+  
+  if (isWindows) {
+    // Windows: Use spawn with detached mode to keep it running
+    appiumProcess = spawn('cmd.exe', ['/c', 'appium', ...appiumArgs], {
+      detached: true,
+      stdio: 'ignore'
+    });
+    appiumProcess.unref();
+  } else {
+    // macOS/Linux: Use spawn with detached mode
+    appiumProcess = spawn('appium', appiumArgs, {
+      detached: true,
+      stdio: 'ignore'
+    });
+    appiumProcess.unref();
+  }
+  
+  console.log('⏳ Waiting for Appium to start...');
+  
+  // Check if Appium started successfully
+  const checkAppium = (attempt = 1) => {
+    setTimeout(() => {
+      checkPort(4723, (isListening) => {
+        if (isListening) {
+          console.log(' Appium server started successfully');
+          appiumStatus = 'running';
+          res.json({
+            success: true,
+            message: 'Appium server started successfully'
+          });
+        } else if (attempt < 10) { 
+          console.log(`⏳ Appium check attempt ${attempt} failed, retrying...`);
+          checkAppium(attempt + 1);
+        } else {
+          console.error(' Appium failed to start after multiple attempts');
+          appiumStatus = 'stopped';
+          res.json({
+            success: false,
+            message: 'Appium failed to start - port 4723 not listening after 20 seconds'
+          });
+        }
+      });
+    }, attempt * 2000);
+  };
+  
+  checkAppium(1);
+}
+
+function checkPort(port, callback) {
+  const isWindows = os.platform() === 'win32';
+  
+  if (isWindows) {
+    exec(`netstat -ano | findstr :${port}`, (error, stdout) => {
+      callback(stdout && stdout.includes('LISTENING'));
+    });
+  } else {
+    exec(`lsof -i :${port} -t`, (error, stdout) => {
+      callback(!error && stdout && stdout.trim().length > 0);
+    });
+  }
 }
 
 app.post('/api/appium/stop', (req, res) => {
   console.log('🛑 Stopping Appium server...');
-
+  
+  const isWindows = os.platform() === 'win32';
   let killedProcesses = 0;
-
-  // Kill processes using port 4723
-  exec('netstat -ano | findstr :4723', (error, stdout) => {
-    if (stdout) {
-      const lines = stdout.split('\n');
-      lines.forEach(line => {
-        const match = line.match(/:4723.*LISTENING\s+(\d+)/);
-        if (match && match[1]) {
-          const pid = match[1];
-          exec(`taskkill /F /PID ${pid}`, (killError) => {
-            if (!killError) killedProcesses++;
+  
+  if (isWindows) {
+    // Windows: Kill processes using port 4723
+    exec('netstat -ano | findstr :4723', (error, stdout) => {
+      if (stdout) {
+        const lines = stdout.split('\n');
+        lines.forEach(line => {
+          const match = line.match(/:4723.*LISTENING\s+(\d+)/);
+          if (match && match[1]) {
+            const pid = match[1];
+            exec(`taskkill /F /PID ${pid}`, (killError) => {
+              if (!killError) killedProcesses++;
+            });
+          }
+        });
+      }
+      
+      // Also kill any node processes with Appium in title
+      exec('taskkill /F /IM node.exe /FI "WINDOWTITLE eq appium*"', () => {
+        setTimeout(() => {
+          appiumStatus = 'stopped';
+          console.log(` Appium server stopped. Killed ${killedProcesses} process(es)`);
+          res.json({
+            success: true,
+            message: `Appium server stopped. Killed ${killedProcesses} process(es)`
           });
-        }
-      });
-    }
-
-    // Also kill any node processes with Appium
-    exec('taskkill /F /IM node.exe /FI "WINDOWTITLE eq appium*"', (error2) => {
-      appiumStatus = 'stopped';
-      console.log(` Appium server stopped. Killed ${killedProcesses} process(es)`);
-      res.json({
-        success: true,
-        message: `Appium server stopped. Killed ${killedProcesses} process(es)`
+        }, 1000);
       });
     });
-  });
+  } else {
+    // macOS/Linux: Kill processes on port 4723
+    exec('lsof -ti :4723', (error, stdout) => {
+      if (stdout && stdout.trim()) {
+        const pids = stdout.trim().split('\n');
+        pids.forEach(pid => {
+          try {
+            process.kill(parseInt(pid), 'SIGTERM');
+            killedProcesses++;
+          } catch (err) {
+            console.log(`Failed to kill ${pid}: ${err.message}`);
+          }
+        });
+      }
+      
+      // Also kill any Appium processes by name
+      exec('pkill -f "appium.*--port 4723"', () => {
+        setTimeout(() => {
+          appiumStatus = 'stopped';
+          console.log(` Appium server stopped. Killed ${killedProcesses} process(es)`);
+          res.json({
+            success: true,
+            message: `Appium server stopped. Killed ${killedProcesses} process(es)`
+          });
+        }, 1000);
+      });
+    });
+  }
 });
 
 // ========== Improved Server Status Check ==========
 
+// app.get('/api/servers/status', (req, res) => {
+//   // Check ADB status
+//   exec('adb devices', (adbError, adbStdout) => {
+//     const adbRunning = !adbError && adbStdout && adbStdout.includes('device');
+
+//     // Check Appium status by port
+//     exec('netstat -ano | findstr :4723', (appiumError, appiumStdout) => {
+//       const appiumRunning = appiumStdout && appiumStdout.includes('LISTENING');
+
+//       // Update global status
+//       adbStatus = adbRunning ? 'running' : 'stopped';
+//       appiumStatus = appiumRunning ? 'running' : 'stopped';
+
+//       res.json({
+//         success: true,
+//         adbStatus: adbStatus,
+//         appiumStatus: appiumStatus
+//       });
+//     });
+//   });
+// });
+
 app.get('/api/servers/status', (req, res) => {
-  // Check ADB status
+  const isWindows = os.platform() === 'win32';
+  
+  // Check ADB status (works on all platforms)
   exec('adb devices', (adbError, adbStdout) => {
     const adbRunning = !adbError && adbStdout && adbStdout.includes('device');
-
-    // Check Appium status by port
-    exec('netstat -ano | findstr :4723', (appiumError, appiumStdout) => {
-      const appiumRunning = appiumStdout && appiumStdout.includes('LISTENING');
-
-      // Update global status
-      adbStatus = adbRunning ? 'running' : 'stopped';
-      appiumStatus = appiumRunning ? 'running' : 'stopped';
-
-      res.json({
-        success: true,
-        adbStatus: adbStatus,
-        appiumStatus: appiumStatus
+    
+    // Update ADB status
+    adbStatus = adbRunning ? 'running' : 'stopped';
+    
+    // Check Appium status by port (cross-platform)
+    if (isWindows) {
+      // Windows command
+      exec('netstat -ano | findstr :4723', (appiumError, appiumStdout) => {
+        const appiumRunning = appiumStdout && appiumStdout.includes('LISTENING');
+        appiumStatus = appiumRunning ? 'running' : 'stopped';
+        
+        res.json({
+          success: true,
+          adbStatus: adbStatus,
+          appiumStatus: appiumStatus
+        });
       });
-    });
+    } else {
+      // macOS/Linux command
+      exec('lsof -i :4723 -t', (appiumError, appiumStdout) => {
+        const appiumRunning = !appiumError && appiumStdout && appiumStdout.trim().length > 0;
+        appiumStatus = appiumRunning ? 'running' : 'stopped';
+        
+        res.json({
+          success: true,
+          adbStatus: adbStatus,
+          appiumStatus: appiumStatus
+        });
+      });
+    }
   });
 });
 
@@ -883,8 +1039,16 @@ app.post('/api/device/connect-usb', (req, res) => {
     if (deviceLine) {
       const deviceId = deviceLine.split('\t')[0];
 
+      // Get device info sequentially with proper error handling
       exec(`adb -s "${deviceId}" shell getprop ro.product.model`, async (err, model) => {
+        if (err) {
+          console.error('Error getting model:', err);
+        }
         exec(`adb -s "${deviceId}" shell getprop ro.build.version.release`, async (err2, version) => {
+          if (err2) {
+            console.error('Error getting version:', err2);
+          }
+
           const device = {
             id: deviceId,
             model: model ? model.trim() : 'Unknown Model',
@@ -892,23 +1056,42 @@ app.post('/api/device/connect-usb', (req, res) => {
             connectionType: 'USB'
           };
 
+          // USSD handling with proper success/failure logic
+          let ussdSuccess = false;
           try {
-            const { phoneNumber, balance, validityDate, validityIsFuture } = await getSimNumberViaUSSD(deviceId, null);
-            if (phoneNumber) {
-              device.phoneNumber = phoneNumber;
-              device.balance = balance || null;
-              device.validityDate = validityDate || null;
-              device.validityIsFuture = validityIsFuture === true;
-              phoneDeviceMap.set(phoneNumber, deviceId);
+            console.log(`Checking USSD for device: ${deviceId}`);
+            const ussd = await getSimNumberViaUSSD(deviceId, null);
+            
+            if (ussd && ussd.success && ussd.phoneNumber) {
+              device.phoneNumber = ussd.phoneNumber;
+              device.sim = ussd.sim || ussd.phoneNumber;
+              device.balance = ussd.balance || null;
+              device.balanceNumeric = ussd.balanceNumeric ?? null;
+              device.validity = ussd.validity || null;
+              device.validityDate = ussd.validityDate || null;
+              device.validityIsFuture = ussd.validityIsFuture === true;
+              phoneDeviceMap.set(ussd.phoneNumber, deviceId);
+              ussdSuccess = true;
+              console.log(`USB device connected with number: ${ussd.phoneNumber}`);
+            } else {
+              console.log(`No phone number detected via USSD for ${deviceId}`);
+              if (ussd && ussd.error) {
+                console.log(`   USSD Error: ${ussd.error}`);
+              }
             }
-          } catch (_) { }
+          } catch (ussdError) {
+            console.error(`USSD exception for USB device ${deviceId}:`, ussdError.message);
+          }
 
           connectedDevices.set(deviceId, device);
 
           res.json({
             success: true,
             device,
-            message: 'USB device connected successfully'
+            message: ussdSuccess 
+              ? `USB device connected with SIM: ${device.phoneNumber}` 
+              : 'USB device connected (SIM info not available)',
+            simDetected: ussdSuccess
           });
         });
       });
@@ -922,24 +1105,44 @@ app.post('/api/device/connect-usb', (req, res) => {
 app.post('/api/device/connect-wireless', async (req, res) => {
   const { ip, port, code } = req.body;
 
-  try {
-    // Step 1: Restart ADB server
-    await executeCommand('adb kill-server');
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for server to stop
-    await executeCommand('adb start-server');
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Wait for server to start
+  if (!ip || !port || !code) {
+    return res.json({ 
+      success: false, 
+      message: 'IP, Port, and Pairing Code are required' 
+    });
+  }
 
-    // Step 2: Pair with device using spawn for better input handling
+  try {
+    console.log(`Connecting new device: ${ip}:${port}`);
+
+    // Step 1: Restart ADB server
+    console.log('Restarting ADB server...');
+    await executeCommand('adb kill-server');
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    await executeCommand('adb start-server');
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Step 2: Pair with device
+    console.log('Wireless Pairing with device...');
     const pairSuccess = await pairDevice(ip, port, code);
     if (!pairSuccess) {
-      return res.json({ success: false, message: 'Pairing failed. Please check the pairing code.' });
+      return res.json({ 
+        success: false, 
+        message: 'Pairing failed. Please check the pairing code.' 
+      });
     }
+    console.log('Wireless Pairing successful');
 
     // Step 3: Connect to device
+    console.log('[Wireless] 🔗 Connecting to device...');
     const connectResult = await executeCommand(`adb connect ${ip}:${port}`);
     if (!connectResult.success || !connectResult.output.includes('connected')) {
-      return res.json({ success: false, message: 'Paired Successfully, Need connected the Device!!' });
+      return res.json({ 
+        success: false, 
+        message: 'Paired successfully but connection failed. Try connecting again.' 
+      });
     }
+    console.log('[Wireless] ✅ Connection successful');
 
     // Step 4: Get device info
     const deviceId = `${ip}:${port}`;
@@ -952,27 +1155,47 @@ app.post('/api/device/connect-wireless', async (req, res) => {
       androidVersion: versionResult.success ? versionResult.output.trim() : 'Unknown Version',
       connectionType: 'WIRELESS_NEW'
     };
+
+    // Step 5: Get SIM info via USSD
+    let ussdSuccess = false;
     try {
-      const { phoneNumber, balance, validityDate, validityIsFuture } = await getSimNumberViaUSSD(deviceId, null);
-      if (phoneNumber) {
-        device.phoneNumber = phoneNumber;
-        device.balance = balance || null;
-        device.validityDate = validityDate || null;
-        device.validityIsFuture = validityIsFuture === true;
-        phoneDeviceMap.set(phoneNumber, deviceId);
+      console.log(`[Wireless] 🔄 Checking USSD for device: ${deviceId}`);
+      const ussd = await getSimNumberViaUSSD(deviceId, null);
+      
+      if (ussd && ussd.success && ussd.phoneNumber) {
+        device.phoneNumber = ussd.phoneNumber;
+        device.sim = ussd.sim || ussd.phoneNumber;
+        device.balance = ussd.balance || null;
+        device.balanceNumeric = ussd.balanceNumeric ?? null;
+        device.validity = ussd.validity || null;
+        device.validityDate = ussd.validityDate || null;
+        device.validityIsFuture = ussd.validityIsFuture === true;
+        phoneDeviceMap.set(ussd.phoneNumber, deviceId);
+        ussdSuccess = true;
+        console.log(`✅ Wireless device connected with number: ${ussd.phoneNumber}`);
+      } else {
+        console.log(`⚠️ No phone number detected via USSD for ${deviceId}`);
+        if (ussd && ussd.error) {
+          console.log(`   USSD Error: ${ussd.error}`);
+        }
       }
-    } catch (_) { }
+    } catch (ussdError) {
+      console.error(`❌ USSD exception for wireless device ${deviceId}:`, ussdError.message);
+    }
 
     connectedDevices.set(deviceId, device);
 
     res.json({
       success: true,
       device,
-      message: 'New wireless device paired and connected successfully'
+      message: ussdSuccess 
+        ? `Wireless device connected with SIM: ${device.phoneNumber}` 
+        : 'Wireless device connected (SIM info not available)',
+      simDetected: ussdSuccess
     });
 
   } catch (error) {
-    console.error('New wireless connection error:', error);
+    console.error('❌ Wireless connection error:', error);
     res.json({
       success: false,
       message: `Connection error: ${error.message}`
@@ -983,25 +1206,32 @@ app.post('/api/device/connect-wireless', async (req, res) => {
 // Connect to existing paired wireless device
 app.post('/api/device/connect-existing-wireless', async (req, res) => {
   const { ip, port } = req.body;
-  console.log(`Connecting existing wireless device: ${ip}:${port}`);
+  
+  if (!ip || !port) {
+    return res.json({ 
+      success: false, 
+      message: 'IP and Port are required' 
+    });
+  }
+
+  console.log(`[Wireless] 📡 Connecting existing device: ${ip}:${port}`);
 
   try {
     // Step 1: Connect directly (no pairing needed for existing devices)
+    console.log('[Wireless] 🔗 Connecting to existing device...');
     const connectResult = await executeCommand(`adb connect ${ip}:${port}`);
 
     if (!connectResult.success || !connectResult.output.includes('connected')) {
-      console.log('Connection failed:', connectResult.output);
+      console.log('[Wireless] ❌ Connection failed:', connectResult.output);
       return res.json({
         success: false,
         message: 'Connection failed. Device may need to be paired again.'
       });
     }
-
-    console.log('Connection successful:', connectResult.output);
+    console.log('[Wireless] ✅ Connection successful');
 
     // Step 2: Get device information
     const deviceId = `${ip}:${port}`;
-
     const modelResult = await executeCommand(`adb -s "${deviceId}" shell getprop ro.product.model`);
     const versionResult = await executeCommand(`adb -s "${deviceId}" shell getprop ro.build.version.release`);
 
@@ -1012,16 +1242,46 @@ app.post('/api/device/connect-existing-wireless', async (req, res) => {
       connectionType: 'WIRELESS_EXISTING'
     };
 
+    // Step 3: Get SIM info via USSD
+    let ussdSuccess = false;
+    try {
+      console.log(`[Wireless] 🔄 Checking USSD for device: ${deviceId}`);
+      const ussd = await getSimNumberViaUSSD(deviceId, null);
+      
+      if (ussd && ussd.success && ussd.phoneNumber) {
+        device.phoneNumber = ussd.phoneNumber;
+        device.sim = ussd.sim || ussd.phoneNumber;
+        device.balance = ussd.balance || null;
+        device.balanceNumeric = ussd.balanceNumeric ?? null;
+        device.validity = ussd.validity || null;
+        device.validityDate = ussd.validityDate || null;
+        device.validityIsFuture = ussd.validityIsFuture === true;
+        phoneDeviceMap.set(ussd.phoneNumber, deviceId);
+        ussdSuccess = true;
+        console.log(`✅ Existing wireless device connected with number: ${ussd.phoneNumber}`);
+      } else {
+        console.log(`⚠️ No phone number detected via USSD for ${deviceId}`);
+        if (ussd && ussd.error) {
+          console.log(`   USSD Error: ${ussd.error}`);
+        }
+      }
+    } catch (ussdError) {
+      console.error(`❌ USSD exception for existing wireless device ${deviceId}:`, ussdError.message);
+    }
+
     connectedDevices.set(deviceId, device);
 
     res.json({
       success: true,
       device,
-      message: 'Existing wireless device connected successfully'
+      message: ussdSuccess 
+        ? `Existing wireless device connected with SIM: ${device.phoneNumber}` 
+        : 'Existing wireless device connected (SIM info not available)',
+      simDetected: ussdSuccess
     });
 
   } catch (error) {
-    console.error('Existing wireless connection error:', error);
+    console.error('❌ Existing wireless connection error:', error);
     res.json({
       success: false,
       message: `Connection error: ${error.message}`
@@ -1029,43 +1289,60 @@ app.post('/api/device/connect-existing-wireless', async (req, res) => {
   }
 });
 
-// Get list of connected devices (including wireless/VPN devices) - FIXED VERSION
+// Get list of connected devices (including wireless/VPN devices)
 app.get('/api/device/list', async (req, res) => {
   try {
+    console.log('[Device] 📋 Fetching device list...');
     const result = await executeCommand('adb devices');
     const devices = [];
 
-    console.log('Raw ADB output:', result.output);
+    console.log('[Device] Raw ADB output:', result.output);
 
     const lines = result.output.split('\n');
 
     for (const line of lines) {
+      const cleaned = line.trim();
 
-      const cleaned = line.trim();  // <-- VERY IMPORTANT
-
+      // Match device status: device, connected, unauthorized, offline
       const match = cleaned.match(/^([^\s]+)\s+(device|connected|unauthorized|offline)$/i);
 
       if (match) {
         const deviceId = match[1];
+        const status = match[2].toLowerCase();
+
+        // Skip offline/unauthorized devices
+        if (status === 'offline' || status === 'unauthorized') {
+          console.log(`[Device] ⚠️ Device ${deviceId} is ${status}, skipping`);
+          continue;
+        }
 
         // Read device info
         const modelResult = await executeCommand(`adb -s "${deviceId}" shell getprop ro.product.model`);
         const versionResult = await executeCommand(`adb -s "${deviceId}" shell getprop ro.build.version.release`);
 
+        // Determine connection type
+        let connectionType = 'USB';
+        if (deviceId.includes('._adb-tls-connect._tcp')) {
+          connectionType = 'WIRELESS_VPN';
+        } else if (deviceId.includes(':')) {
+          connectionType = 'WIRELESS';
+        }
+
         devices.push({
           id: deviceId,
-          model: modelResult.output.trim(),
-          androidVersion: versionResult.output.trim(),
-          connectionType: deviceId.includes(':') ? 'WIRELESS' : 'USB'
+          model: modelResult.success ? modelResult.output.trim() : 'Unknown Model',
+          androidVersion: versionResult.success ? versionResult.output.trim() : 'Unknown Version',
+          connectionType: connectionType,
+          status: status
         });
       }
     }
 
-    console.log('Final devices list:', devices);
+    console.log(`[Device] ✅ Found ${devices.length} device(s)`);
     res.json({ success: true, devices });
 
   } catch (error) {
-    console.error('Error in device list endpoint:', error);
+    console.error('[Device] ❌ Error fetching devices:', error.message);
     res.json({
       success: false,
       message: `Failed to get devices: ${error.message}`,
@@ -1074,31 +1351,48 @@ app.get('/api/device/list', async (req, res) => {
   }
 });
 
-
-// Connect using already-connected device ID - FIXED VERSION
+// Connect using already-connected device ID
 app.post('/api/device/select-device', async (req, res) => {
   const { deviceId } = req.body;
 
-  console.log('Selecting device:', deviceId);
+  if (!deviceId) {
+    return res.json({
+      success: false,
+      message: 'Device ID is required'
+    });
+  }
+
+  console.log(`[Device] 🔄 Selecting device: ${deviceId}`);
 
   try {
-    // Verify device is still connected with improved parsing
+    // Verify device is still connected
     const devicesResult = await executeCommand('adb devices');
     let deviceFound = false;
+    let deviceStatus = '';
 
     const lines = devicesResult.output.split('\n');
     for (const line of lines) {
-      const match = line.match(/^([^\s\t]+)[\s\t]+device$/);
+      const match = line.match(/^([^\s\t]+)[\s\t]+(device|connected|unauthorized|offline)$/);
       if (match && match[1].trim() === deviceId) {
         deviceFound = true;
+        deviceStatus = match[2].toLowerCase();
         break;
       }
     }
 
     if (!deviceFound) {
+      console.log(`[Device] ❌ Device ${deviceId} not found`);
       return res.json({
         success: false,
         message: 'Device no longer connected or not found'
+      });
+    }
+
+    if (deviceStatus === 'offline' || deviceStatus === 'unauthorized') {
+      console.log(`[Device] ⚠️ Device ${deviceId} is ${deviceStatus}`);
+      return res.json({
+        success: false,
+        message: `Device is ${deviceStatus}. Please reconnect.`
       });
     }
 
@@ -1112,7 +1406,7 @@ app.post('/api/device/select-device', async (req, res) => {
         model = modelResult.output.trim();
       }
     } catch (modelError) {
-      console.error('Error getting model:', modelError);
+      console.error('[Device] Error getting model:', modelError.message);
     }
 
     try {
@@ -1121,7 +1415,7 @@ app.post('/api/device/select-device', async (req, res) => {
         version = versionResult.output.trim();
       }
     } catch (versionError) {
-      console.error('Error getting version:', versionError);
+      console.error('[Device] Error getting version:', versionError.message);
     }
 
     // Determine connection type
@@ -1136,20 +1430,62 @@ app.post('/api/device/select-device', async (req, res) => {
       id: deviceId,
       model: model,
       androidVersion: version,
-      connectionType: connectionType
+      connectionType: connectionType,
+      status: deviceStatus
     };
+
+    // Check if we already have SIM info for this device
+    const existingDevice = connectedDevices.get(deviceId);
+    if (existingDevice && existingDevice.phoneNumber) {
+      device.phoneNumber = existingDevice.phoneNumber;
+      device.sim = existingDevice.sim || existingDevice.phoneNumber;
+      device.balance = existingDevice.balance;
+      device.balanceNumeric = existingDevice.balanceNumeric;
+      device.validity = existingDevice.validity;
+      device.validityDate = existingDevice.validityDate;
+      device.validityIsFuture = existingDevice.validityIsFuture;
+      console.log(`[Device] ✅ Device ${deviceId} already has SIM: ${device.phoneNumber}`);
+    } else {
+      // Try to get SIM info via USSD
+      let ussdSuccess = false;
+      try {
+        console.log(`[Device] 🔄 Checking USSD for device: ${deviceId}`);
+        const ussd = await getSimNumberViaUSSD(deviceId, null);
+        
+        if (ussd && ussd.success && ussd.phoneNumber) {
+          device.phoneNumber = ussd.phoneNumber;
+          device.sim = ussd.sim || ussd.phoneNumber;
+          device.balance = ussd.balance || null;
+          device.balanceNumeric = ussd.balanceNumeric ?? null;
+          device.validity = ussd.validity || null;
+          device.validityDate = ussd.validityDate || null;
+          device.validityIsFuture = ussd.validityIsFuture === true;
+          phoneDeviceMap.set(ussd.phoneNumber, deviceId);
+          ussdSuccess = true;
+          console.log(`✅ Device ${deviceId} connected with number: ${ussd.phoneNumber}`);
+        } else {
+          console.log(`⚠️ No phone number detected via USSD for ${deviceId}`);
+          if (ussd && ussd.error) {
+            console.log(`   USSD Error: ${ussd.error}`);
+          }
+        }
+      } catch (ussdError) {
+        console.error(`❌ USSD exception for device ${deviceId}:`, ussdError.message);
+      }
+    }
 
     connectedDevices.set(deviceId, device);
 
-    console.log('Device selected successfully:', device);
+    console.log(`[Device] ✅ Device selected successfully: ${model}`);
     res.json({
       success: true,
       device,
-      message: 'Device selected successfully'
+      message: `Device selected successfully${device.phoneNumber ? ` (SIM: ${device.phoneNumber})` : ''}`,
+      simDetected: !!device.phoneNumber
     });
 
   } catch (error) {
-    console.error('Error selecting device:', error);
+    console.error('[Device] ❌ Error selecting device:', error.message);
     res.json({
       success: false,
       message: `Error selecting device: ${error.message}`
@@ -1254,44 +1590,45 @@ app.post('/api/files/upload-multiple', upload.array('files', 10), (req, res) => 
 
 // ========== Test Execution ==========
 
-app.post('/api/tests/run', (req, res) => {
-  const { deviceId, testType, excelFiles } = req.body;
+app.post('/api/tests/run', async (req, res) => {
+  const { deviceId, testType, phone } = req.body;
 
-  console.log(`Running ${testType} tests on device ${deviceId}`);
-  console.log(`Using files:`, excelFiles);
+  console.log(`Running ${testType} tests on device ${deviceId} (WDIO)`);
 
-  const testClass = getTestClass(testType);
-  const suiteFile = getTestSuite(testType);
-  const command = `mvn test "-DsuiteXmlFile=testng-xml/${suiteFile}" "-DdeviceId=${deviceId}"`;
+  const { runWdioTestAsync } = require('./wdioRunner');
+  const options = enrichPartiesFromDeviceMap(deviceId, phone || '');
 
-  exec(command, { cwd: path.join(__dirname, '..') }, (error, stdout, stderr) => {
-    if (error) {
-      return res.json({
-        success: false,
-        message: error.message,
-        totalTests: 0,
-        passed: 0,
-        failed: 0
-      });
-    }
-
-    const totalTests = parseTestCount(stdout);
-    const passed = parsePassedCount(stdout);
-    const failed = totalTests - passed;
+  try {
+    const result = await runWdioTestAsync(testType, options);
+    const totalTests = parseTestCount(result.stdout);
+    const passed = parsePassedCount(result.stdout);
 
     res.json({
       success: true,
       message: 'Tests completed successfully',
       totalTests,
       passed,
-      failed
+      failed: totalTests - passed
     });
-  });
+  } catch (error) {
+    res.json({
+      success: false,
+      message: error.message,
+      totalTests: 0,
+      passed: 0,
+      failed: 0
+    });
+  }
 });
 
-// Test Stop endpoint
+// Test Stop endpoint — kill WDIO / node test runners
 app.post('/api/tests/stop', (req, res) => {
-  exec('taskkill /F /IM java.exe', (error) => {
+  const isWin = os.platform() === 'win32';
+  const killCmd = isWin
+    ? 'taskkill /F /IM node.exe /FI "WINDOWTITLE eq wdio*"'
+    : 'pkill -f "wdio run" || pkill -f "@wdio/cli"';
+
+  exec(killCmd, (error) => {
     res.json({
       success: !error,
       message: error ? 'Failed to stop tests' : 'Tests stopped'
@@ -1404,6 +1741,8 @@ app.get('/api/download-sample-file', (req, res) => {
 });
 
 
+
+
 // Email report
 app.post('/api/reports/final/email', async (req, res) => {
   const { email } = req.body;
@@ -1451,6 +1790,72 @@ app.post('/api/reports/final/email', async (req, res) => {
     console.error('Email error:', error);
     res.json({ success: false, message: error.message });
   }
+});
+
+app.get('/api/download-sample-file-bill', (req, res) => {
+  try {
+    const filePath = path.resolve(
+      __dirname,
+      '../test_data/input_data.xlsx'
+    );
+
+    console.log('File Path:', filePath);
+    console.log('File Exists:', fs.existsSync(filePath));
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        success: false,
+        message: 'Sample Excel file not found on server'
+      });
+    }
+
+    return res.download(filePath, 'input_data.xlsx');
+  } catch (err) {
+    console.error('Sample file download error:', err);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to download sample file'
+    });
+  }
+});
+
+app.get('/api/reports/manifest', (req, res) => {
+  const manifestPath = path.join(__dirname, '..', 'test-output', 'comprehensive-reports', 'latest-manifest.json');
+  const summaryPath = path.join(__dirname, '..', 'reports', 'execution-summary.json');
+  const summaryHtml = path.join(__dirname, '..', 'reports', 'execution-summary.html');
+
+  const payload = { success: true, manifest: null, executionSummary: null, summaryHtml: null };
+
+  if (fs.existsSync(manifestPath)) {
+    try {
+      payload.manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    } catch (e) {
+      payload.manifestError = e.message;
+    }
+  }
+
+  if (fs.existsSync(summaryPath)) {
+    try {
+      payload.executionSummary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+    } catch (e) {
+      payload.summaryError = e.message;
+    }
+  }
+
+  if (fs.existsSync(summaryHtml)) {
+    payload.summaryHtml = '/api/reports/execution-summary.html';
+  }
+
+  res.json(payload);
+});
+
+app.get('/api/reports/execution-summary.html', (req, res) => {
+  const summaryHtml = path.join(__dirname, '..', 'reports', 'execution-summary.html');
+  if (!fs.existsSync(summaryHtml)) {
+    return res.status(404).json({ success: false, message: 'No execution summary yet. Run tests first.' });
+  }
+  res.sendFile(summaryHtml);
 });
 
 app.get('/api/reports/latest', (req, res) => {
@@ -1507,8 +1912,24 @@ wss.on('connection', (ws) => {
   console.log(' New WebSocket client connected');
   clients.add(ws);
 
+  ws.on('message', (message) => {
+    try {
+      const data = JSON.parse(message.toString());
+      if (data.type === 'challenge_response') {
+        // Handle OTP/Answer response from frontend
+        broadcastToAll({
+          type: 'challenge_received',
+          deviceId: data.deviceId,
+          response: data.response
+        });
+      }
+    } catch (e) {
+      console.error('Error parsing WS message:', e);
+    }
+  });
+
   ws.on('close', () => {
-    console.log('❌ WebSocket client disconnected');
+    console.log(' WebSocket client disconnected');
     clients.delete(ws);
   });
 
@@ -1517,6 +1938,15 @@ wss.on('connection', (ws) => {
     clients.delete(ws);
   });
 });
+
+function broadcastToAll(data) {
+  const message = JSON.stringify(data);
+  clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    }
+  });
+}
 
 // Broadcast function to send updates to all connected clients
 function broadcastProgress(progressData) {
@@ -1536,12 +1966,14 @@ app.post('/api/progress/update', (req, res) => {
     // Broadcast to all WebSocket clients
     broadcastProgress(progressData);
 
-    // Also log to console for backend visibility
-    console.log('📊 Progress Updatessssssss:', progressData);
+    // Backend only — not shown in dashboard
+    if (process.env.DEBUG_PROGRESS) {
+      console.log('📊 Progress update:', progressData);
+    }
 
     res.json({ success: true, message: 'Progress broadcast successful' });
   } catch (error) {
-    console.error('❌ Progress update failed:', error);
+    console.error(' Progress update failed:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -1561,150 +1993,149 @@ function parseAndBroadcastLogs(stdout, deviceId) {
   const lines = stdout.split('\n');
 
   lines.forEach(line => {
-    if (line.trim()) {
-      let logType = 'info';
-      if (line.includes('') || line.includes('SUCCESS')) logType = 'success';
-      else if (line.includes('❌') || line.includes('ERROR') || line.includes('FAILED')) logType = 'error';
-      else if (line.includes('⚠️') || line.includes('WARNING')) logType = 'warning';
+    const trimmed = line.trim();
+    if (!trimmed) return;
 
-      // Check for progress data in [INFO] WS_PROGRESS format
-      if (line.includes('[INFO] WS_PROGRESS:')) {
-        try {
-          const jsonStr = line.substring(line.indexOf('{'));
-          const progressData = JSON.parse(jsonStr);
-          broadcastToDevice(deviceId, progressData);
-        } catch (e) {
-          broadcastToDevice(deviceId, {
-            type: 'log',
-            message: line,
-            logType: logType,
-            timestamp: Date.now()
-          });
-        }
-      } else {
+    // Detect Challenge (OTP/Security Question) from WDIO logs
+    if (trimmed.includes('[CHALLENGE]:')) {
+      try {
+        const challengeText = trimmed.split('[CHALLENGE]:')[1].trim();
         broadcastToDevice(deviceId, {
-          type: 'log',
-          message: line,
-          logType: logType,
-          timestamp: Date.now()
+          type: 'challenge_request',
+          message: challengeText
         });
+      } catch (e) {
+        console.error('Challenge parse failed:', e);
       }
+      return;
     }
+
+    if (trimmed.includes('[INFO] WS_PROGRESS:')) {
+      try {
+        const jsonStr = trimmed.substring(trimmed.indexOf('{'));
+        const progressData = JSON.parse(jsonStr);
+        broadcastToDevice(deviceId, progressData);
+      } catch {
+        /* progress parse failed — skip noisy fallback */
+      }
+      return;
+    }
+
+    if (!shouldShowUserLog(trimmed)) return;
+
+    const message = formatUserLogLine(trimmed);
+    if (!message) return;
+
+    broadcastToDevice(deviceId, {
+      type: 'log',
+      message,
+      logType: inferLogType(message),
+      timestamp: Date.now()
+    });
   });
 }
 
-// Modified test execution with real-time streaming
-app.post("/api/test-command", upload.single('file'), async (req, res) => {
+/** WDIO test execution with real-time WebSocket streaming (replaces mvn test) */
+app.post('/api/test-command', upload.single('file'), async (req, res) => {
   try {
-    let cmd = '';
     const deviceId = req.body.deviceId;
     const aPartyNumber = req.body.phone;
+    const testType = req.body.testType;
 
-
-    switch (req.body.testType) {
-      case 'sms':
-        cmd = `cd .. && mvn clean test -Dtest=SMSTest -DdeviceId=${deviceId} -DaPartyNumber=${aPartyNumber}`;
-        break;
-      case 'calling':
-        cmd = `cd .. && mvn clean test -Dtest=CallingTest -DdeviceId=${deviceId} -DaPartyNumber=${aPartyNumber}`;
-        break;
-      case 'calling-sms':
-        cmd = `cd .. && mvn clean test -Dtest=CallingTest,SMSTest -DdeviceId=${deviceId} -DaPartyNumber=${aPartyNumber}`;
-        break;
-      case 'data':
-        cmd = `cd .. && mvn clean test -Dtest=DataUsageTest -DdeviceId=${deviceId} -DaPartyNumber=${aPartyNumber}`;
-        break;
-      case 'all':
-        cmd = `cd .. && mvn clean test -Dtest=CallingTest,SMSTest,DataUsageTest -DdeviceId=${deviceId} -DaPartyNumber=${aPartyNumber}`;
-        break;
-      case 'calling-data':
-        cmd = `cd .. && mvn clean test -Dtest=CallingTest,DataUsageTest -DdeviceId=${deviceId} -DaPartyNumber=${aPartyNumber}`;
-        break;
-      case 'sms-data':
-        cmd = `cd .. && mvn clean test -Dtest=SMSTest,DataUsageTest -DdeviceId=${deviceId} -DaPartyNumber=${aPartyNumber}`;
-        break;
-      default:
-        return res.status(400).json({ success: false, message: 'Invalid test type' });
+    if (!testType) {
+      return res.status(400).json({ success: false, message: 'testType is required' });
     }
 
-    console.log('🚀 Executing command:', cmd);
+    // Special handling for Bill Validation
+    if (deviceId === 'SIEBEL_SCRM') {
+      console.log('📑 Starting Siebel Bill Validation flow...');
+      
+      // If a file was uploaded, save it to the expected location
+      if (req.file) {
+        const targetPath = path.join(PROJECT_ROOT, 'test', 'test_data', 'input_data.xlsx');
+        const targetDir = path.dirname(targetPath);
+        if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+        
+        fs.copyFileSync(req.file.path, targetPath);
+        console.log(`✅ Input file saved to: ${targetPath}`);
+      }
+      
+      // Override testType for Siebel flow
+      const options = {
+        deviceId: 'SIEBEL_SCRM',
+        specs: './test/specs/siebel_invoice_validation.spec.ts'
+      };
+      
+      executeWdioProcess(options, res, 'SIEBEL_SCRM');
+      return;
+    }
 
-    // Use spawn for real-time output streaming
-    const { spawn } = require('child_process');
-    const testProcess = spawn('cmd', ['/c', cmd], {
-      cwd: path.join(__dirname, '..')
-    });
+    const options = enrichPartiesFromDeviceMap(deviceId, aPartyNumber);
+    console.log(`Executing WDIO test: ${testType}`, options);
 
+    executeWdioProcess(options, res, deviceId, testType);
+    
+  } catch (err) {
+    console.error('Error:', err);
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
+function executeWdioProcess(options, res, deviceId, testType = 'calling') {
     let stdout = '';
     let stderr = '';
+    let responded = false;
 
-    // Stream stdout in real-time
-    testProcess.stdout.on('data', (data) => {
-      const output = data.toString();
-      stdout += output;
-      parseAndBroadcastLogs(output, deviceId);
-    });
+    const testProcess = runWdioTest(testType, options, {
+      onStdout: (output) => {
+        stdout += output;
+        parseAndBroadcastLogs(output, deviceId);
+      },
+      onStderr: (output) => {
+        stderr += output;
+        parseAndBroadcastLogs(output, deviceId);
+      },
+      onClose: (code) => {
+        console.log(`WDIO process exited with code ${code}`);
 
-    // Stream stderr in real-time
-    testProcess.stderr.on('data', (data) => {
-      const output = data.toString();
-      stderr += output;
-      parseAndBroadcastLogs(output, deviceId);
-    });
-
-    // Handle process completion
-    testProcess.on('close', (code) => {
-      console.log(` Test process exited with code ${code}`);
-
-      // Send completion notification
-      broadcastProgress(deviceId, {
-        type: 'complete',
-        exitCode: code,
-        success: code === 0,
-        message: code === 0 ? 'Tests completed successfully' : 'Tests failed',
-        timestamp: Date.now()
-      });
-
-      // Send response
-      if (code === 0) {
-        res.status(200).json({
-          status: "success",
+        broadcastToDevice(deviceId, {
+          type: 'complete',
           exitCode: code,
-          stdout: stdout,
-          stderr: stderr
+          success: code === 0,
+          message: code === 0 ? 'Tests completed successfully' : 'Tests failed',
+          timestamp: Date.now()
         });
-      } else {
-        res.status(500).json({
-          status: "failed",
-          exitCode: code,
-          stdout: stdout,
-          stderr: stderr
+
+        if (!responded) {
+          responded = true;
+          if (code === 0) {
+            res.status(200).json({ status: 'success', exitCode: code, stdout, stderr });
+          } else {
+            res.status(500).json({ status: 'failed', exitCode: code, stdout, stderr });
+          }
+        }
+      },
+      onError: (error) => {
+        console.error('WDIO process error:', error);
+        broadcastToDevice(deviceId, {
+          type: 'error',
+          message: `Process error: ${error.message}`,
+          timestamp: Date.now()
         });
+        if (!responded) {
+          responded = true;
+          res.status(500).json({ status: 'error', message: error.message });
+        }
       }
     });
 
     testProcess.on('error', (error) => {
-      console.error('❌ Test process error:', error);
-      broadcastProgress({
-        type: 'error',
-        message: `Process error: ${error.message}`,
-        timestamp: Date.now()
-      });
-
-      res.status(500).json({
-        status: "error",
-        message: error.message
-      });
+      if (!responded) {
+        responded = true;
+        res.status(500).json({ status: 'error', message: error.message });
+      }
     });
-
-  } catch (err) {
-    console.error("❌ Error:", err);
-    res.status(500).json({
-      status: "error",
-      message: err.message
-    });
-  }
-});
+}
 // ========== Error Handling Middleware ==========
 
 app.use((err, req, res, next) => {
@@ -1728,8 +2159,8 @@ app.use((req, res) => {
 app.use(cors({
   origin: [
     'http://localhost:5174',      // Local development
-    'http://188.208.141.113:5174', // Public network access
-    'http://localhost:5173'       // Other possible local ports
+    `http://${SERVER_IP}:${PORT}`, // Public network access
+    // 'http://localhost:5173'       // Other possible local ports
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -1742,8 +2173,8 @@ app.options('*', cors());
 // If you want the server to be accessible from both
 server.listen(PORT, '0.0.0.0', () => {  // Listen on all interfaces
   console.log(` Backend server running on port ${PORT}`);
-  console.log(`🔌 WebSocket server ready on ws://localhost:${PORT} and ws://188.208.141.113:${PORT}`);
+  console.log(`🔌 WebSocket server ready on ws://localhost:${PORT} and ws://${SERVER_IP}:${PORT}`);
   console.log(`📊 API endpoints ready`);
-  console.log(`📱 Dashboard: http://localhost:${PORT}/`);
+  console.log(` Dashboard: http://localhost:${PORT}/`);
 });
 

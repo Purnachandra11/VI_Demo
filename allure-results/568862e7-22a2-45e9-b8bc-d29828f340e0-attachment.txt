@@ -1,0 +1,842 @@
+.........Console Logs.........
+
+[WDIO] Starting: runs calling scenarios from uploaded Excel
+[Calling] 4G VoLTE Voice Outgoing: 9672417412 → 8696904544 (15s) [no B device — manual answer]
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"calling","timestamp":1779645390431,"completed":false,"progress":{"phoneNumber":"9672417412","action":"Dialing","status":"IN_PROGRESS","duration":0,"percentage":10,"progressBar":"██░░░░░░░░░░░░░░░░░░"}}
+2026-05-24T17:56:30.748Z INFO webdriver: COMMAND findElement("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:30.749Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/element
+2026-05-24T17:56:30.750Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:31.391Z INFO webdriver: RESULT {
+  'element-6066-11e4-a52e-4f735466cecf': '00000000-0000-046e-ffff-ffff0000007e',
+  ELEMENT: '00000000-0000-046e-ffff-ffff0000007e'
+}
+2026-05-24T17:56:31.426Z INFO webdriver: COMMAND getElementText("00000000-0000-046e-ffff-ffff0000007e")
+2026-05-24T17:56:31.427Z INFO webdriver: [GET] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/element/00000000-0000-046e-ffff-ffff0000007e/text
+2026-05-24T17:56:32.753Z INFO webdriver: COMMAND findElement("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:32.757Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/element
+2026-05-24T17:56:32.758Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:32.984Z INFO webdriver: RESULT {
+  error: 'no such element',
+  message: 'An element could not be located on the page using the given search parameters.',
+  stacktrace: 'NoSuchElementError: An element could not be located on the page using the given search parameters.\n' +
+    '    at AndroidUiautomator2Driver.findElOrEls (D:\\New VI UAT PROJECT\\mobile-automation-ai\\node_modules\\appium-uiautomator2-driver\\node_modules\\appium-android-driver\\build\\lib\\commands\\find.js:62:15)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async AndroidUiautomator2Driver.findElOrElsWithProcessing (D:\\New VI UAT PROJECT\\mobile-automation-ai\\node_modules\\@appium\\base-driver\\build\\lib\\basedriver\\commands\\find.js:12:16)\n' +
+    '    at async AndroidUiautomator2Driver.findElement (D:\\New VI UAT PROJECT\\mobile-automation-ai\\node_modules\\@appium\\base-driver\\build\\lib\\basedriver\\commands\\find.js:27:16)'
+}
+2026-05-24T17:56:33.009Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:33.010Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:33.010Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:33.565Z INFO webdriver: RESULT []
+2026-05-24T17:56:33.577Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:33.578Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:33.579Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:33.726Z INFO webdriver: RESULT []
+2026-05-24T17:56:33.742Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:33.743Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:33.743Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:33.919Z INFO webdriver: RESULT []
+2026-05-24T17:56:33.951Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:33.952Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:33.953Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:34.202Z INFO webdriver: RESULT []
+2026-05-24T17:56:34.225Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:34.226Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:34.226Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:34.407Z INFO webdriver: RESULT []
+2026-05-24T17:56:34.419Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:34.423Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:34.424Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:34.614Z INFO webdriver: RESULT []
+2026-05-24T17:56:34.644Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:34.644Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:34.645Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:34.829Z INFO webdriver: RESULT []
+2026-05-24T17:56:34.844Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:34.845Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:34.846Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:35.019Z INFO webdriver: RESULT []
+2026-05-24T17:56:35.044Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:35.045Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:35.045Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:35.213Z INFO webdriver: RESULT []
+2026-05-24T17:56:35.225Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:35.227Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:35.235Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:35.797Z INFO webdriver: RESULT []
+2026-05-24T17:56:35.804Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:35.805Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:35.805Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:35.948Z INFO webdriver: RESULT []
+2026-05-24T17:56:35.961Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:35.962Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:35.963Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:36.100Z INFO webdriver: RESULT []
+2026-05-24T17:56:36.114Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:36.115Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:36.115Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:36.245Z INFO webdriver: RESULT []
+2026-05-24T17:56:36.250Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:36.251Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:36.253Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:36.790Z INFO webdriver: RESULT []
+2026-05-24T17:56:36.795Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:36.795Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:36.795Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:36.917Z INFO webdriver: RESULT []
+2026-05-24T17:56:36.948Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:36.950Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:36.960Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:37.200Z INFO webdriver: RESULT []
+2026-05-24T17:56:37.228Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:37.229Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:37.230Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:37.395Z INFO webdriver: RESULT []
+2026-05-24T17:56:37.411Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:37.412Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:37.412Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:37.613Z INFO webdriver: RESULT []
+2026-05-24T17:56:37.616Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:37.626Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:37.628Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:37.780Z INFO webdriver: RESULT []
+2026-05-24T17:56:37.794Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:37.799Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:37.804Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:37.948Z INFO webdriver: RESULT []
+2026-05-24T17:56:37.955Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:37.956Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:37.957Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:38.069Z INFO webdriver: RESULT []
+2026-05-24T17:56:38.078Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:38.079Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:38.079Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:38.194Z INFO webdriver: RESULT []
+2026-05-24T17:56:38.203Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:38.205Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:38.206Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:38.363Z INFO webdriver: RESULT []
+2026-05-24T17:56:38.369Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:38.369Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:38.369Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:38.480Z INFO webdriver: RESULT []
+2026-05-24T17:56:38.496Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:38.497Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:38.497Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:38.640Z INFO webdriver: RESULT []
+2026-05-24T17:56:38.644Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:38.645Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:38.645Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:38.777Z INFO webdriver: RESULT []
+2026-05-24T17:56:38.786Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:38.786Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:38.787Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:38.895Z INFO webdriver: RESULT []
+2026-05-24T17:56:38.922Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:38.923Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:38.923Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:39.063Z INFO webdriver: RESULT []
+2026-05-24T17:56:39.068Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:39.069Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:39.069Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:39.194Z INFO webdriver: RESULT []
+2026-05-24T17:56:39.197Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:39.198Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:39.198Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:39.359Z INFO webdriver: RESULT []
+2026-05-24T17:56:39.372Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:39.395Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:39.396Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:39.563Z INFO webdriver: RESULT []
+2026-05-24T17:56:39.571Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:39.572Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:39.573Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:39.687Z INFO webdriver: RESULT []
+2026-05-24T17:56:39.690Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:39.690Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:39.691Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:39.867Z INFO webdriver: RESULT []
+2026-05-24T17:56:39.877Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:39.877Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:39.877Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:40.019Z INFO webdriver: RESULT []
+2026-05-24T17:56:40.025Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:40.025Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:40.026Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:40.162Z INFO webdriver: RESULT []
+2026-05-24T17:56:40.176Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:40.185Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:40.185Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:40.311Z INFO webdriver: RESULT []
+2026-05-24T17:56:40.319Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:40.320Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:40.320Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:40.445Z INFO webdriver: RESULT []
+2026-05-24T17:56:40.452Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:40.454Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:40.454Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:40.589Z INFO webdriver: RESULT []
+2026-05-24T17:56:40.593Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:40.593Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:40.593Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:40.736Z INFO webdriver: RESULT []
+2026-05-24T17:56:40.749Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:40.750Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:40.753Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:40.875Z INFO webdriver: RESULT []
+2026-05-24T17:56:40.884Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:40.885Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:40.885Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:41.028Z INFO webdriver: RESULT []
+2026-05-24T17:56:41.039Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:41.040Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:41.040Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:41.180Z INFO webdriver: RESULT []
+2026-05-24T17:56:41.187Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:41.188Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:41.189Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:41.307Z INFO webdriver: RESULT []
+2026-05-24T17:56:41.326Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:41.327Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:41.327Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:41.488Z INFO webdriver: RESULT []
+2026-05-24T17:56:41.491Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:41.492Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:41.492Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:41.626Z INFO webdriver: RESULT []
+2026-05-24T17:56:41.632Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:41.633Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:41.634Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:41.755Z INFO webdriver: RESULT []
+2026-05-24T17:56:41.758Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:41.758Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:41.759Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:41.888Z INFO webdriver: RESULT []
+2026-05-24T17:56:41.900Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:41.900Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:41.901Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:42.029Z INFO webdriver: RESULT []
+2026-05-24T17:56:42.056Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:42.057Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:42.057Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:42.217Z INFO webdriver: RESULT []
+2026-05-24T17:56:42.233Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:42.235Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:56:42.235Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:42.415Z INFO webdriver: RESULT [
+  {
+    'element-6066-11e4-a52e-4f735466cecf': '00000000-0000-047c-0000-00b700000298',
+    ELEMENT: '00000000-0000-047c-0000-00b700000298'
+  }
+]
+2026-05-24T17:56:42.427Z INFO webdriver: COMMAND findElement("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:42.427Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/element
+2026-05-24T17:56:42.427Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:44.109Z INFO webdriver: RESULT {
+  'element-6066-11e4-a52e-4f735466cecf': '00000000-0000-047c-0000-00b700000298',
+  ELEMENT: '00000000-0000-047c-0000-00b700000298'
+}
+2026-05-24T17:56:44.155Z INFO webdriver: COMMAND findElement("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:44.156Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/element
+2026-05-24T17:56:44.156Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:44.423Z INFO webdriver: RESULT {
+  'element-6066-11e4-a52e-4f735466cecf': '00000000-0000-047c-0000-00b700000298',
+  ELEMENT: '00000000-0000-047c-0000-00b700000298'
+}
+2026-05-24T17:56:44.436Z INFO webdriver: COMMAND getElementText("00000000-0000-046e-ffff-ffff0000007e")
+2026-05-24T17:56:44.437Z INFO webdriver: [GET] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/element/00000000-0000-046e-ffff-ffff0000007e/text
+2026-05-24T17:56:44.988Z INFO webdriver: COMMAND findElement("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:56:44.988Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/element
+2026-05-24T17:56:44.990Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:56:45.158Z INFO webdriver: RESULT {
+  'element-6066-11e4-a52e-4f735466cecf': '00000000-0000-047c-0000-00b700000298',
+  ELEMENT: '00000000-0000-047c-0000-00b700000298'
+}
+2026-05-24T17:56:45.165Z INFO webdriver: COMMAND getElementText("00000000-0000-047c-0000-00b700000298")
+2026-05-24T17:56:45.166Z INFO webdriver: [GET] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/element/00000000-0000-047c-0000-00b700000298/text
+2026-05-24T17:56:45.206Z INFO webdriver: RESULT 00:02
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"calling","timestamp":1779645405207,"completed":false,"progress":{"phoneNumber":"9672417412","action":"Connected","status":"IN_PROGRESS","duration":15,"percentage":50,"progressBar":"██████████░░░░░░░░░░"}}
+2026-05-24T17:57:00.251Z INFO webdriver: COMMAND executeScript("mobile: pressKey", <object>)
+2026-05-24T17:57:00.258Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/execute/sync
+2026-05-24T17:57:00.261Z INFO webdriver: DATA {"script":"mobile: pressKey","args":[{"keycode":6}]}
+2026-05-24T17:57:01.042Z INFO webdriver: RESULT null
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"calling","timestamp":1779645421042,"completed":true,"progress":{"phoneNumber":"9672417412","action":"Call ended","status":"COMPLETED","duration":16,"percentage":100,"progressBar":"████████████████████"}}
+[Calling] 4G VoLTE Voice Outgoing: 9672417412 → 8696904544 (15s) [no B device — manual answer]
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"calling","timestamp":1779645421068,"completed":false,"progress":{"phoneNumber":"9672417412","action":"Dialing","status":"IN_PROGRESS","duration":0,"percentage":10,"progressBar":"██░░░░░░░░░░░░░░░░░░"}}
+2026-05-24T17:57:01.441Z INFO webdriver: COMMAND findElement("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:01.441Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/element
+2026-05-24T17:57:01.442Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:03.049Z INFO webdriver: RESULT {
+  error: 'no such element',
+  message: 'An element could not be located on the page using the given search parameters.',
+  stacktrace: 'NoSuchElementError: An element could not be located on the page using the given search parameters.\n' +
+    '    at AndroidUiautomator2Driver.findElOrEls (D:\\New VI UAT PROJECT\\mobile-automation-ai\\node_modules\\appium-uiautomator2-driver\\node_modules\\appium-android-driver\\build\\lib\\commands\\find.js:62:15)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async AndroidUiautomator2Driver.findElOrElsWithProcessing (D:\\New VI UAT PROJECT\\mobile-automation-ai\\node_modules\\@appium\\base-driver\\build\\lib\\basedriver\\commands\\find.js:12:16)\n' +
+    '    at async AndroidUiautomator2Driver.findElement (D:\\New VI UAT PROJECT\\mobile-automation-ai\\node_modules\\@appium\\base-driver\\build\\lib\\basedriver\\commands\\find.js:27:16)'
+}
+2026-05-24T17:57:03.055Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:03.055Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:03.056Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:03.622Z INFO webdriver: RESULT []
+2026-05-24T17:57:03.628Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:03.629Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:03.629Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:03.752Z INFO webdriver: RESULT []
+2026-05-24T17:57:03.764Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:03.765Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:03.765Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:03.920Z INFO webdriver: RESULT []
+2026-05-24T17:57:03.923Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:03.923Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:03.923Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:04.107Z INFO webdriver: RESULT []
+2026-05-24T17:57:04.134Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:04.135Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:04.135Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:04.317Z INFO webdriver: RESULT []
+2026-05-24T17:57:04.327Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:04.328Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:04.328Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:04.479Z INFO webdriver: RESULT []
+2026-05-24T17:57:04.487Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:04.487Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:04.487Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:04.637Z INFO webdriver: RESULT []
+2026-05-24T17:57:04.645Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:04.646Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:04.646Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:04.766Z INFO webdriver: RESULT []
+2026-05-24T17:57:04.777Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:04.778Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:04.779Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:04.872Z INFO webdriver: RESULT []
+2026-05-24T17:57:04.879Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:04.880Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:04.880Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:04.999Z INFO webdriver: RESULT []
+2026-05-24T17:57:05.014Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:05.015Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:05.015Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:05.139Z INFO webdriver: RESULT []
+2026-05-24T17:57:05.156Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:05.161Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:05.161Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:05.282Z INFO webdriver: RESULT []
+2026-05-24T17:57:05.285Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:05.286Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:05.286Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:06.211Z INFO webdriver: RESULT []
+2026-05-24T17:57:06.228Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:06.228Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:06.229Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:06.350Z INFO webdriver: RESULT []
+2026-05-24T17:57:06.366Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:06.367Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:06.370Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:06.508Z INFO webdriver: RESULT []
+2026-05-24T17:57:06.516Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:06.517Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:06.517Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:06.674Z INFO webdriver: RESULT []
+2026-05-24T17:57:06.680Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:06.680Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:06.680Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:06.837Z INFO webdriver: RESULT []
+2026-05-24T17:57:06.846Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:06.847Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:06.847Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:06.962Z INFO webdriver: RESULT []
+2026-05-24T17:57:06.966Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:06.967Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:06.967Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:07.095Z INFO webdriver: RESULT []
+2026-05-24T17:57:07.129Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:07.129Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:07.129Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:07.284Z INFO webdriver: RESULT []
+2026-05-24T17:57:07.300Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:07.300Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:07.300Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:07.407Z INFO webdriver: RESULT []
+2026-05-24T17:57:07.410Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:07.416Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:07.416Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:07.529Z INFO webdriver: RESULT []
+2026-05-24T17:57:07.548Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:07.548Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:07.548Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:07.666Z INFO webdriver: RESULT []
+2026-05-24T17:57:07.685Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:07.686Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:07.686Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:07.814Z INFO webdriver: RESULT []
+2026-05-24T17:57:07.817Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:07.830Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:07.832Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:07.995Z INFO webdriver: RESULT []
+2026-05-24T17:57:07.998Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:07.999Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:08.000Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:08.148Z INFO webdriver: RESULT []
+2026-05-24T17:57:08.152Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:08.159Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:08.160Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:08.347Z INFO webdriver: RESULT []
+2026-05-24T17:57:08.366Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:08.366Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:08.367Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:08.516Z INFO webdriver: RESULT []
+2026-05-24T17:57:08.519Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:08.523Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:08.524Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:08.662Z INFO webdriver: RESULT []
+2026-05-24T17:57:08.676Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:08.676Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:08.677Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:08.796Z INFO webdriver: RESULT []
+2026-05-24T17:57:08.799Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:08.799Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:08.799Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:08.951Z INFO webdriver: RESULT []
+2026-05-24T17:57:08.959Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:08.965Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:08.965Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:09.144Z INFO webdriver: RESULT []
+2026-05-24T17:57:09.159Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:09.168Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:09.168Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:09.313Z INFO webdriver: RESULT []
+2026-05-24T17:57:09.333Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:09.341Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:09.342Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:09.480Z INFO webdriver: RESULT []
+2026-05-24T17:57:09.491Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:09.499Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:09.499Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:09.646Z INFO webdriver: RESULT []
+2026-05-24T17:57:09.658Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:09.658Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:09.659Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:09.798Z INFO webdriver: RESULT []
+2026-05-24T17:57:09.800Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:09.801Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:09.801Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:10.012Z INFO webdriver: RESULT []
+2026-05-24T17:57:10.018Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:10.022Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:10.022Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:10.160Z INFO webdriver: RESULT []
+2026-05-24T17:57:10.165Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:10.166Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:10.166Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:10.287Z INFO webdriver: RESULT []
+2026-05-24T17:57:10.294Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:10.295Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:10.295Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:10.428Z INFO webdriver: RESULT []
+2026-05-24T17:57:10.431Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:10.431Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:10.431Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:10.558Z INFO webdriver: RESULT []
+2026-05-24T17:57:10.561Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:10.562Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:10.563Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:10.706Z INFO webdriver: RESULT []
+2026-05-24T17:57:10.710Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:10.711Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:10.711Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:10.835Z INFO webdriver: RESULT []
+2026-05-24T17:57:10.840Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:10.843Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:10.843Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:10.975Z INFO webdriver: RESULT []
+2026-05-24T17:57:10.991Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:10.993Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:10.996Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:11.131Z INFO webdriver: RESULT []
+2026-05-24T17:57:11.136Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:11.138Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:11.138Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:11.282Z INFO webdriver: RESULT []
+2026-05-24T17:57:11.297Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:11.298Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:11.298Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:11.441Z INFO webdriver: RESULT []
+2026-05-24T17:57:11.446Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:11.447Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:11.448Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:11.579Z INFO webdriver: RESULT []
+2026-05-24T17:57:11.591Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:11.591Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:11.592Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:11.716Z INFO webdriver: RESULT []
+2026-05-24T17:57:11.724Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:11.727Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:11.729Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:11.866Z INFO webdriver: RESULT []
+2026-05-24T17:57:11.875Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:11.876Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:11.876Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:12.017Z INFO webdriver: RESULT []
+2026-05-24T17:57:12.028Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:12.029Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:12.029Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:12.161Z INFO webdriver: RESULT []
+2026-05-24T17:57:12.164Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:12.169Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:12.170Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:12.303Z INFO webdriver: RESULT []
+2026-05-24T17:57:12.315Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:12.316Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:12.318Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:12.481Z INFO webdriver: RESULT []
+2026-05-24T17:57:12.490Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:12.490Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:12.491Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:12.612Z INFO webdriver: RESULT []
+2026-05-24T17:57:12.643Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:12.644Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:12.645Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:12.810Z INFO webdriver: RESULT []
+2026-05-24T17:57:12.813Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:12.814Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:12.814Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:12.929Z INFO webdriver: RESULT []
+2026-05-24T17:57:12.937Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:12.939Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:12.940Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:13.023Z INFO webdriver: RESULT []
+2026-05-24T17:57:13.026Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:13.027Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:13.027Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:13.140Z INFO webdriver: RESULT []
+2026-05-24T17:57:13.145Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:13.145Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:13.145Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:13.261Z INFO webdriver: RESULT []
+2026-05-24T17:57:13.292Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:13.293Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:13.294Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:13.430Z INFO webdriver: RESULT []
+2026-05-24T17:57:13.443Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:13.444Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:13.445Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:13.583Z INFO webdriver: RESULT []
+2026-05-24T17:57:13.605Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:13.607Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:13.607Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:13.760Z INFO webdriver: RESULT []
+2026-05-24T17:57:13.766Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:13.766Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:13.767Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:13.925Z INFO webdriver: RESULT []
+2026-05-24T17:57:13.944Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:13.945Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:13.945Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:14.125Z INFO webdriver: RESULT []
+2026-05-24T17:57:14.131Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:14.138Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:14.139Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:14.263Z INFO webdriver: RESULT []
+2026-05-24T17:57:14.290Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:14.291Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:14.291Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:14.462Z INFO webdriver: RESULT []
+2026-05-24T17:57:14.478Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:14.480Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:14.481Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:14.610Z INFO webdriver: RESULT []
+2026-05-24T17:57:14.618Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:14.619Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:14.620Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:14.738Z INFO webdriver: RESULT []
+2026-05-24T17:57:14.755Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:14.755Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:14.755Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:14.873Z INFO webdriver: RESULT []
+2026-05-24T17:57:14.878Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:14.878Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:14.879Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:15.002Z INFO webdriver: RESULT []
+2026-05-24T17:57:15.018Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:15.019Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:15.019Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:15.156Z INFO webdriver: RESULT []
+2026-05-24T17:57:15.160Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:15.161Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:15.178Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:15.325Z INFO webdriver: RESULT []
+2026-05-24T17:57:15.329Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:15.335Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:15.335Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:15.475Z INFO webdriver: RESULT []
+2026-05-24T17:57:15.484Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:15.485Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:15.485Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:15.608Z INFO webdriver: RESULT []
+2026-05-24T17:57:15.619Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:15.620Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:15.620Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:15.747Z INFO webdriver: RESULT []
+2026-05-24T17:57:15.759Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:15.760Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:15.760Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:15.919Z INFO webdriver: RESULT []
+2026-05-24T17:57:15.927Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:15.928Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:15.928Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:16.058Z INFO webdriver: RESULT []
+2026-05-24T17:57:16.068Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:16.069Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:16.069Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:16.206Z INFO webdriver: RESULT []
+2026-05-24T17:57:16.226Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:16.227Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:16.227Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:16.375Z INFO webdriver: RESULT []
+2026-05-24T17:57:16.378Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:16.383Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:16.384Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:16.522Z INFO webdriver: RESULT []
+2026-05-24T17:57:16.538Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:16.539Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:16.540Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:16.666Z INFO webdriver: RESULT []
+2026-05-24T17:57:16.681Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:16.682Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:16.683Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:16.827Z INFO webdriver: RESULT []
+2026-05-24T17:57:16.832Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:16.836Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:16.836Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:16.968Z INFO webdriver: RESULT []
+2026-05-24T17:57:16.972Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:16.973Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:16.973Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:17.103Z INFO webdriver: RESULT []
+2026-05-24T17:57:17.109Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:17.110Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:17.110Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:17.238Z INFO webdriver: RESULT []
+2026-05-24T17:57:17.241Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:17.241Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:17.242Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:17.394Z INFO webdriver: RESULT []
+2026-05-24T17:57:17.416Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:17.424Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:17.425Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:17.573Z INFO webdriver: RESULT []
+2026-05-24T17:57:17.590Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:17.591Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:17.604Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:17.748Z INFO webdriver: RESULT []
+2026-05-24T17:57:17.758Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:17.759Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:17.759Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:17.904Z INFO webdriver: RESULT []
+2026-05-24T17:57:17.915Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:17.916Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:17.916Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:18.037Z INFO webdriver: RESULT []
+2026-05-24T17:57:18.040Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:18.040Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:18.040Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:18.168Z INFO webdriver: RESULT []
+2026-05-24T17:57:18.585Z INFO webdriver: COMMAND findElement("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:18.587Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/element
+2026-05-24T17:57:18.588Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:18.756Z INFO webdriver: RESULT {
+  error: 'no such element',
+  message: 'An element could not be located on the page using the given search parameters.',
+  stacktrace: 'NoSuchElementError: An element could not be located on the page using the given search parameters.\n' +
+    '    at AndroidUiautomator2Driver.findElOrEls (D:\\New VI UAT PROJECT\\mobile-automation-ai\\node_modules\\appium-uiautomator2-driver\\node_modules\\appium-android-driver\\build\\lib\\commands\\find.js:62:15)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async AndroidUiautomator2Driver.findElOrElsWithProcessing (D:\\New VI UAT PROJECT\\mobile-automation-ai\\node_modules\\@appium\\base-driver\\build\\lib\\basedriver\\commands\\find.js:12:16)\n' +
+    '    at async AndroidUiautomator2Driver.findElement (D:\\New VI UAT PROJECT\\mobile-automation-ai\\node_modules\\@appium\\base-driver\\build\\lib\\basedriver\\commands\\find.js:27:16)'
+}
+2026-05-24T17:57:18.771Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:18.773Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:18.773Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:18.962Z INFO webdriver: RESULT []
+2026-05-24T17:57:18.973Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:18.974Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:18.974Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:19.247Z INFO webdriver: RESULT []
+2026-05-24T17:57:19.300Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:19.304Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:19.383Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:20.701Z INFO webdriver: RESULT []
+2026-05-24T17:57:20.716Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:20.716Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:20.716Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:20.836Z INFO webdriver: RESULT []
+2026-05-24T17:57:20.854Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:20.855Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:20.855Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:20.969Z INFO webdriver: RESULT []
+2026-05-24T17:57:20.978Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:20.979Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:20.979Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:21.096Z INFO webdriver: RESULT []
+2026-05-24T17:57:21.101Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:21.102Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:21.102Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:21.286Z INFO webdriver: RESULT []
+2026-05-24T17:57:21.300Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:21.308Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:21.308Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:21.424Z INFO webdriver: RESULT []
+2026-05-24T17:57:21.432Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:21.433Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:21.434Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:21.585Z INFO webdriver: RESULT []
+2026-05-24T17:57:21.593Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:21.594Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:21.594Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:21.726Z INFO webdriver: RESULT []
+2026-05-24T17:57:21.735Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:21.736Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:21.736Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:21.868Z INFO webdriver: RESULT []
+2026-05-24T17:57:21.876Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:21.877Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:21.877Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:21.999Z INFO webdriver: RESULT []
+2026-05-24T17:57:22.002Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:22.003Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:22.003Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:22.146Z INFO webdriver: RESULT []
+2026-05-24T17:57:22.154Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:22.155Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:22.167Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:22.381Z INFO webdriver: RESULT []
+2026-05-24T17:57:22.400Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:22.408Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:22.409Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:22.563Z INFO webdriver: RESULT []
+2026-05-24T17:57:22.566Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:22.567Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:22.567Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:22.715Z INFO webdriver: RESULT []
+2026-05-24T17:57:22.720Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:22.722Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:22.722Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:22.901Z INFO webdriver: RESULT []
+2026-05-24T17:57:22.922Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:22.925Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:22.925Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:22.994Z INFO webdriver: RESULT []
+2026-05-24T17:57:23.033Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:23.034Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:23.035Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:23.775Z INFO webdriver: RESULT []
+2026-05-24T17:57:23.784Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:23.785Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:23.786Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:23.905Z INFO webdriver: RESULT []
+2026-05-24T17:57:23.921Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:23.927Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:23.928Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:24.060Z INFO webdriver: RESULT []
+2026-05-24T17:57:24.078Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:24.082Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:24.083Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:24.224Z INFO webdriver: RESULT []
+2026-05-24T17:57:24.229Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:24.233Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:24.234Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:24.350Z INFO webdriver: RESULT []
+2026-05-24T17:57:24.361Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:24.363Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:24.363Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:24.507Z INFO webdriver: RESULT []
+2026-05-24T17:57:24.525Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:24.525Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:24.525Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:24.665Z INFO webdriver: RESULT []
+2026-05-24T17:57:24.682Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:24.683Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:24.684Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:24.817Z INFO webdriver: RESULT []
+2026-05-24T17:57:24.835Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:24.836Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:24.837Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:24.970Z INFO webdriver: RESULT []
+2026-05-24T17:57:24.990Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:24.993Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:24.993Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:25.119Z INFO webdriver: RESULT []
+2026-05-24T17:57:25.132Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:25.133Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:25.133Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:25.263Z INFO webdriver: RESULT []
+2026-05-24T17:57:25.267Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:25.268Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:25.268Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:25.463Z INFO webdriver: RESULT []
+2026-05-24T17:57:25.479Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:25.483Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:25.483Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:25.602Z INFO webdriver: RESULT []
+2026-05-24T17:57:25.608Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:25.608Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:25.608Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:25.742Z INFO webdriver: RESULT []
+2026-05-24T17:57:25.749Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:25.752Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:25.761Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:25.881Z INFO webdriver: RESULT []
+2026-05-24T17:57:25.884Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:25.885Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:25.885Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:26.043Z INFO webdriver: RESULT []
+2026-05-24T17:57:26.047Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:26.048Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:26.049Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:26.166Z INFO webdriver: RESULT []
+2026-05-24T17:57:26.183Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:26.183Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:26.183Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:26.295Z INFO webdriver: RESULT []
+2026-05-24T17:57:26.298Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:26.299Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:26.300Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:26.463Z INFO webdriver: RESULT []
+2026-05-24T17:57:26.466Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:26.475Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:26.475Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:26.601Z INFO webdriver: RESULT []
+2026-05-24T17:57:26.616Z INFO webdriver: COMMAND findElements("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:26.616Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/elements
+2026-05-24T17:57:26.617Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:28.343Z INFO webdriver: RESULT [
+  {
+    'element-6066-11e4-a52e-4f735466cecf': '00000000-0000-046e-ffff-ffff0000007e',
+    ELEMENT: '00000000-0000-046e-ffff-ffff0000007e'
+  }
+]
+2026-05-24T17:57:28.348Z INFO webdriver: COMMAND findElement("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:28.348Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/element
+2026-05-24T17:57:28.348Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:28.466Z INFO webdriver: RESULT {
+  'element-6066-11e4-a52e-4f735466cecf': '00000000-0000-046e-ffff-ffff0000007e',
+  ELEMENT: '00000000-0000-046e-ffff-ffff0000007e'
+}
+2026-05-24T17:57:28.477Z INFO webdriver: COMMAND findElement("xpath", "//android.widget.TextView[contains(@text, ":")]")
+2026-05-24T17:57:28.478Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/element
+2026-05-24T17:57:28.478Z INFO webdriver: DATA {"using":"xpath","value":"//android.widget.TextView[contains(@text, \":\")]"}
+2026-05-24T17:57:28.613Z INFO webdriver: RESULT {
+  'element-6066-11e4-a52e-4f735466cecf': '00000000-0000-046e-ffff-ffff0000007e',
+  ELEMENT: '00000000-0000-046e-ffff-ffff0000007e'
+}
+2026-05-24T17:57:28.627Z INFO webdriver: COMMAND getElementText("00000000-0000-046e-ffff-ffff0000007e")
+2026-05-24T17:57:28.627Z INFO webdriver: [GET] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/element/00000000-0000-046e-ffff-ffff0000007e/text
+2026-05-24T17:57:28.665Z INFO webdriver: RESULT 11:27
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"calling","timestamp":1779645448665,"completed":false,"progress":{"phoneNumber":"9672417412","action":"Connected","status":"IN_PROGRESS","duration":28,"percentage":50,"progressBar":"██████████░░░░░░░░░░"}}
+2026-05-24T17:57:43.723Z INFO webdriver: COMMAND executeScript("mobile: pressKey", <object>)
+2026-05-24T17:57:43.723Z INFO webdriver: [POST] http://127.0.0.1:4723/session/776c8de3-eb13-42da-ab27-1892b71335b5/execute/sync
+2026-05-24T17:57:43.724Z INFO webdriver: DATA {"script":"mobile: pressKey","args":[{"keycode":6}]}
+2026-05-24T17:57:43.796Z INFO webdriver: RESULT null
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"calling","timestamp":1779645463796,"completed":true,"progress":{"phoneNumber":"9672417412","action":"Call ended","status":"COMPLETED","duration":15,"percentage":100,"progressBar":"████████████████████"}}
+[WDIO] Test passed: runs calling scenarios from uploaded Excel

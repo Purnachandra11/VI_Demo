@@ -350,7 +350,7 @@ public class ImprovedDialerPage {
                     result.setConferenceSuccess(true);
                     result.setConferenceDuration(10);
                     result.setTotalDuration(bPartyDuration + 10);
-                    System.out.println("  ⚠️ Merge failed but both calls active");
+                    System.out.println("   Merge failed but both calls active");
                 }
             } else {
                 // Only one call active

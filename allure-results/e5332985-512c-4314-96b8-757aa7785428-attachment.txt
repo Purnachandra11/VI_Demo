@@ -1,0 +1,43 @@
+.........Console Logs.........
+
+
+⚙️ Initializing test environment...
+Loaded 8 existing screenshots from disk
+
+ Test environment ready
+   Device: GooglePixel
+   UDID: ZA2237FKXH
+   Platform: Android 13
+
+[WDIO] Starting: validates all required screenshots were captured
+
+══════════════════════════════════════════════════════════════════════
+  VALIDATION: Screenshot Requirements Check
+══════════════════════════════════════════════════════════════════════
+
+📊 Screenshot Summary:
+   Total screenshots: 8
+   1. sim toolkit launch
+   2. vi menu home
+   3. flash option
+   4. roaming option
+   5. sim toolkit launch
+   6. vi menu home
+   7. flash option
+   8. roaming option
+
+📊 Validation Summary:
+   Required screenshots: 7
+   Captured screenshots: 3
+   Missing screenshots: 4
+
+ SOME SCREENSHOTS ARE MISSING!
+
+📋 Missing screenshots:
+   ❌ SIM Selection Screen
+   ❌ Roaming Menu
+   ❌ Vodafone IN
+   ❌ International
+[AI] expect(received).tobegreaterthanorequal(expected)
+[AI] Suggestions: Review screenshots/; Check logs/ and Appium server output
+[WDIO] Test failed: validates all required screenshots were captured

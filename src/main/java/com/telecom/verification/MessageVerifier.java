@@ -1,72 +1,142 @@
 package com.telecom.verification;
 
 import io.appium.java_client.android.AndroidDriver;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.WebDriverWait;
-
-import java.time.Duration;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
-
-/**
- *  UNIFIED MESSAGE VERIFICATION
- * Handles verification for both Text SMS and Voice Messages
- * Enhanced to support both individual and group messages
- */
-public class MessageVerifier {
-    private AndroidDriver driver;
+import java.util.concurrent.TimeUnit;
     @SuppressWarnings("unused")
-    private WebDriverWait wait;
+public class MessageVerifier {
+    private String deviceSerial;
+    private String recipientNumber;
+    private AndroidDriver driver;
     
-    public MessageVerifier(AndroidDriver driver) {
-        this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+    // SMS type constants
+    private static final int TYPE_INBOX = 1;
+
+    private static final int TYPE_SENT = 2;
+    
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    
+    /**
+     * Constructor for direct ADB usage
+     */
+    public MessageVerifier(String deviceSerial, String recipientNumber) {
+        this.deviceSerial = deviceSerial;
+        this.recipientNumber = recipientNumber;
+        this.driver = null;
     }
     
     /**
-     *  VERIFY MESSAGE SENT (Text or Voice) - Enhanced version
-     * Returns: true if sent successfully, false if failed
-     * Supports both individual and group messages
+     * Constructor for AndroidDriver compatibility
      */
-    public boolean verifyMessageSent() {
-        System.out.println("🔍 Verifying message status...");
+    public MessageVerifier(AndroidDriver driver) {
+        this.driver = driver;
+        try {
+            this.deviceSerial = extractDeviceSerial(driver);
+        } catch (Exception e) {
+            System.err.println("Failed to extract device serial: " + e.getMessage());
+            this.deviceSerial = null;
+        }
+        this.recipientNumber = null;
+    }
+    
+    /**
+     * Extract device serial from AndroidDriver
+     */
+    private String extractDeviceSerial(AndroidDriver driver) {
+        try {
+            Object udid = driver.getCapabilities().getCapability("udid");
+            if (udid != null && !udid.toString().isEmpty()) {
+                System.out.println("   📱 Device serial (UDID): " + udid);
+                return udid.toString();
+            }
+        } catch (Exception e) {
+            // Continue to fallback
+        }
+        
+        // Fallback: Get first connected device
+        try {
+            String adbDevices = executeSimpleCommand("adb devices");
+            if (adbDevices != null && !adbDevices.isEmpty()) {
+                String[] lines = adbDevices.split("\n");
+                for (String line : lines) {
+                    if (line.contains("device") && !line.contains("List of devices")) {
+                        String serial = line.split("\\s+")[0];
+                        if (serial != null && !serial.isEmpty()) {
+                            System.out.println("   📱 Using first available device: " + serial);
+                            return serial;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to get device via ADB: " + e.getMessage());
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Set recipient number for verification
+     */
+    public void setRecipientNumber(String recipientNumber) {
+        this.recipientNumber = recipientNumber;
+    }
+    
+    /**
+     * Get current device serial
+     */
+    public String getDeviceSerial() {
+        return deviceSerial;
+    }
+    
+    /**
+     * VERIFY MESSAGE SENT - Basic version
+     */
+    public boolean verifyMessageSent(String expectedMessageBody) {
+        if (recipientNumber == null) {
+            System.out.println("❌ Recipient number not set for verification");
+            return false;
+        }
+        
+        if (deviceSerial == null) {
+            System.out.println("❌ Device serial not available for verification");
+            return false;
+        }
+        
+        System.out.println("🔍 Verifying SENT message via ADB...");
         
         try {
-            // Wait for initial processing
-            Thread.sleep(2000);
+            String command = String.format(
+                "adb -s %s shell content query --uri content://sms/sent --where \"address='%s'\" --sort \"date DESC\" --limit 1",
+                deviceSerial, recipientNumber
+            );
             
-            int maxAttempts = 10; // Max 20 seconds total wait time (2 sec * 10)
-            int attempts = 0;
+            String result = executeAdbCommand(command);
             
-            while (attempts < maxAttempts) {
-                System.out.println("   🔍 Verification attempt " + (attempts + 1) + "/" + maxAttempts);
+            if (result != null && !result.isEmpty() && !result.contains("No result") && result.contains("Row:")) {
+                SentSmsInfo smsInfo = parseSentSmsResult(result);
                 
-                // Try multiple strategies to find status
-                VerificationResult result = checkMessageStatus();
-                
-                switch (result.status) {
-                    case SUCCESS:
-                        System.out.println(" Message verified as sent successfully");
-                        return true;
-                    case FAILED:
-                        System.out.println("❌ Message sending failed: " + result.details);
-                        return false;
-                    case IN_PROGRESS:
-                        System.out.println("⏳ Message still sending, waiting...");
-                        Thread.sleep(2000);
-                        attempts++;
-                        continue;
-                    case UNKNOWN:
-                        System.out.println("⚠️ Status unclear, continuing to check...");
-                        break;
+                if (smsInfo != null) {
+                    System.out.println("   ✓ Found SENT message at: " + smsInfo.getFormattedDate());
+                    
+                    if (expectedMessageBody != null && !expectedMessageBody.isEmpty()) {
+                        if (smsInfo.body != null && smsInfo.body.equals(expectedMessageBody)) {
+                            return true;
+                        } else {
+                            System.out.println("   ✗ Message body mismatch!");
+                            return false;
+                        }
+                    }
+                    return true;
                 }
-                
-                Thread.sleep(2000);
-                attempts++;
             }
             
-            // Timeout without clear status
-            System.out.println("❌ Verification timeout - no clear status after 20 seconds");
+            System.out.println("   ✗ No sent messages found to: " + recipientNumber);
             return false;
             
         } catch (Exception e) {
@@ -76,385 +146,443 @@ public class MessageVerifier {
     }
     
     /**
-     *  CHECK MESSAGE STATUS WITH MULTIPLE STRATEGIES
+     * VERIFY MESSAGE SENT WITH TIMESTAMP - Returns SentSmsInfo object
+     * This is the method your code is trying to call
      */
-    private VerificationResult checkMessageStatus() {
-        VerificationResult result = new VerificationResult();
-        
-        try {
-            // Strategy 1: Check for visual indicators
-            result = checkVisualIndicators();
-            if (result.status != Status.UNKNOWN) {
-                return result;
-            }
-            
-            // Strategy 2: Check page source
-            result = checkPageSource();
-            if (result.status != Status.UNKNOWN) {
-                return result;
-            }
-            
-            // Strategy 3: Check specific elements
-            result = checkSpecificElements();
-            
-        } catch (Exception e) {
-            result.status = Status.UNKNOWN;
-            result.details = "Error checking status: " + e.getMessage();
+    public SentSmsInfo verifyMessageSentWithTimestamp(String expectedMessageBody) {
+        if (recipientNumber == null) {
+            System.out.println("❌ Recipient number not set for verification");
+            return null;
         }
         
-        return result;
-    }
-    
-    /**
-     *  CHECK VISUAL INDICATORS
-     * Handles both individual and group messages
-     */
-    private VerificationResult checkVisualIndicators() {
-        VerificationResult result = new VerificationResult();
-        
-        try {
-            // Look for the most recent message bubble or status
-            // Handle both individual and group messages
-            List<WebElement> messageElements = driver.findElements(By.xpath(
-                "//android.view.View[@resource-id='message_list']/android.view.View[last()]"
-            ));
-            
-            if (messageElements.isEmpty()) {
-                // Alternative XPath for group messages or different layouts
-                messageElements = driver.findElements(By.xpath(
-                    "//android.widget.ListView/android.view.View[last()]"
-                ));
-            }
-            
-            if (messageElements.isEmpty()) {
-                // Another alternative for different UI structures
-                messageElements = driver.findElements(By.xpath(
-                    "//*[contains(@resource-id, 'message') or contains(@resource-id, 'msg')]" +
-                    "/android.view.View[last()]"
-                ));
-            }
-            
-            if (messageElements.isEmpty()) {
-                result.status = Status.UNKNOWN;
-                result.details = "No message elements found";
-                return result;
-            }
-            
-            WebElement lastMessage = messageElements.get(0);
-            
-            // Check for timer/sending icon
-            List<WebElement> timerIcons = lastMessage.findElements(By.xpath(
-                ".//*[contains(@resource-id, 'timer') or " +
-                "contains(@class, 'timer') or " +
-                "@text='⏱️' or " +
-                "contains(@content-desc, 'sending') or " +
-                "contains(@content-desc, 'Sending') or " +
-                "contains(@content-desc, 'pending') or " +
-                "contains(@content-desc, 'Pending')]"
-            ));
-            
-            if (!timerIcons.isEmpty()) {
-                result.status = Status.IN_PROGRESS;
-                result.details = "Timer/sending icon detected";
-                return result;
-            }
-            
-            // Check status text
-            String elementText = lastMessage.getText();
-            String elementContent = lastMessage.getAttribute("content-desc");
-            String displayText = (elementText != null && !elementText.isEmpty()) ? elementText : elementContent;
-            
-            if (displayText != null && !displayText.isEmpty()) {
-                System.out.println("   📝 Found status text: " + displayText);
-                
-                // Positive indicators (case-insensitive check)
-                String[] positiveIndicators = {"Sent", "Delivered", "SMS", "Message sent", "Delivered", 
-                                                "sent", "delivered", "sms"};
-                String[] negativeIndicators = {"Not sent", "Failed", "Error", "Unable to send", "Failed to send",
-                                                "not sent", "failed", "error", "unable"};
-                
-                for (String positive : positiveIndicators) {
-                    if (displayText.contains(positive)) {
-                        result.status = Status.SUCCESS;
-                        result.details = "Positive status: " + displayText;
-                        return result;
-                    }
-                }
-                
-                for (String negative : negativeIndicators) {
-                    if (displayText.contains(negative)) {
-                        result.status = Status.FAILED;
-                        result.details = "Negative status: " + displayText;
-                        return result;
-                    }
-                }
-            }
-            
-            // Check for voice message indicator
-            List<WebElement> voiceIndicators = lastMessage.findElements(By.xpath(
-                ".//*[contains(@content-desc, 'voice') or " +
-                "contains(@content-desc, 'Voice') or " +
-                "contains(@resource-id, 'voice') or " +
-                "contains(@resource-id, 'audio') or " +
-                "contains(@class, 'voice') or " +
-                "contains(@class, 'audio')]"
-            ));
-            
-            if (!voiceIndicators.isEmpty()) {
-                result.status = Status.SUCCESS;
-                result.details = "Voice message indicator found";
-                return result;
-            }
-            
-            result.status = Status.UNKNOWN;
-            result.details = "No clear visual indicators";
-            
-        } catch (Exception e) {
-            result.status = Status.UNKNOWN;
-            result.details = "Visual check error: " + e.getMessage();
+        if (deviceSerial == null) {
+            System.out.println("❌ Device serial not available for verification");
+            return null;
         }
         
-        return result;
-    }
-    
-    /**
-     *  CHECK PAGE SOURCE
-     */
-    private VerificationResult checkPageSource() {
-        VerificationResult result = new VerificationResult();
+        System.out.println("🔍 Verifying sent message with timestamp via ADB...");
         
         try {
-            String pageSource = driver.getPageSource().toLowerCase();
+            String command = String.format(
+                "adb -s %s shell content query --uri content://sms/sent --where \"address='%s'\" --sort \"date DESC\" --limit 1",
+                deviceSerial, recipientNumber
+            );
             
-            // Positive indicators in page source
-            if (pageSource.contains("sent") || 
-                pageSource.contains("delivered") ||
-                pageSource.contains("message sent") ||
-                pageSource.contains("sms") ||
-                pageSource.contains("voice message") ||
-                pageSource.contains("audio message")) {
-                result.status = Status.SUCCESS;
-                result.details = "Positive indicators in page source";
-                return result;
-            }
+            String result = executeAdbCommand(command);
             
-            // Negative indicators in page source
-            if (pageSource.contains("not sent") ||
-                pageSource.contains("failed") ||
-                pageSource.contains("error") ||
-                pageSource.contains("unable to send") ||
-                pageSource.contains("failed to send")) {
-                result.status = Status.FAILED;
-                result.details = "Negative indicators in page source";
-                return result;
-            }
-            
-            // Sending in progress
-            if (pageSource.contains("sending") ||
-                pageSource.contains("timer") ||
-                pageSource.contains("00:") ||
-                pageSource.contains("pending")) {
-                result.status = Status.IN_PROGRESS;
-                result.details = "Sending in progress (page source)";
-                return result;
-            }
-            
-            result.status = Status.UNKNOWN;
-            result.details = "No clear indicators in page source";
-            
-        } catch (Exception e) {
-            result.status = Status.UNKNOWN;
-            result.details = "Page source check error: " + e.getMessage();
-        }
-        
-        return result;
-    }
-    
-    /**
-     *  CHECK SPECIFIC ELEMENTS
-     */
-    private VerificationResult checkSpecificElements() {
-        VerificationResult result = new VerificationResult();
-        
-        try {
-            // Check for specific status elements (case-insensitive)
-            List<WebElement> statusElements = driver.findElements(By.xpath(
-                "//*[contains(@text, 'Sent') or " +
-                "contains(@text, 'Delivered') or " +
-                "contains(@text, 'Not sent') or " +
-                "contains(@text, 'Failed') or " +
-                "contains(@text, 'sent') or " +
-                "contains(@text, 'delivered') or " +
-                "contains(@text, 'not sent') or " +
-                "contains(@text, 'failed') or " +
-                "contains(@content-desc, 'Sent') or " +
-                "contains(@content-desc, 'Delivered') or " +
-                "contains(@content-desc, 'Not sent') or " +
-                "contains(@content-desc, 'Failed') or " +
-                "contains(@content-desc, 'sent') or " +
-                "contains(@content-desc, 'delivered') or " +
-                "contains(@content-desc, 'not sent') or " +
-                "contains(@content-desc, 'failed')]"
-            ));
-            
-            for (WebElement element : statusElements) {
-                if (element.isDisplayed()) {
-                    String text = element.getText() != null ? element.getText() : element.getAttribute("content-desc");
+            if (result != null && !result.isEmpty() && !result.contains("No result") && result.contains("Row:")) {
+                SentSmsInfo smsInfo = parseSentSmsResult(result);
+                
+                if (smsInfo != null) {
+                    System.out.println("   ✓ Found sent message at: " + smsInfo.getFormattedDate());
                     
-                    if (text != null) {
-                        String textLower = text.toLowerCase();
-                        if (textLower.contains("sent") || textLower.contains("delivered")) {
-                            result.status = Status.SUCCESS;
-                            result.details = "Status element found: " + text;
-                            return result;
-                        } else if (textLower.contains("not sent") || textLower.contains("failed")) {
-                            result.status = Status.FAILED;
-                            result.details = "Status element found: " + text;
-                            return result;
+                    if (expectedMessageBody != null && !expectedMessageBody.isEmpty()) {
+                        if (smsInfo.body != null && smsInfo.body.equals(expectedMessageBody)) {
+                            return smsInfo;
+                        } else {
+                            System.out.println("   ✗ Message body mismatch!");
+                            return null;
+                        }
+                    }
+                    return smsInfo;
+                }
+            }
+            
+            System.out.println("   ✗ No sent messages found to: " + recipientNumber);
+            return null;
+            
+        } catch (Exception e) {
+            System.out.println("❌ Verification error: " + e.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * GET LATEST SENT MESSAGE
+     */
+    public SentSmsInfo getLatestSentMessage() {
+        if (recipientNumber == null || deviceSerial == null) {
+            return null;
+        }
+        
+        try {
+            String command = String.format(
+                "adb -s %s shell content query --uri content://sms/sent --where \"address='%s'\" --sort \"date DESC\" --limit 1",
+                deviceSerial, recipientNumber
+            );
+            
+            String result = executeAdbCommand(command);
+            
+            if (result != null && result.contains("Row:")) {
+                return parseSentSmsResult(result);
+            }
+            
+        } catch (Exception e) {
+            System.out.println("Error getting latest sent message: " + e.getMessage());
+        }
+        
+        return null;
+    }
+    
+    /**
+     * VERIFY MESSAGE SENT (overloaded for backward compatibility)
+     */
+    public boolean verifyMessageSent() {
+        return verifyMessageSent(null);
+    }
+    
+    /**
+     * VERIFY MESSAGE RECEIVED
+     */
+    public boolean verifyMessageReceived(String expectedMessageBody, int threadId) {
+        if (deviceSerial == null) {
+            System.out.println("❌ Device serial not available for verification");
+            return false;
+        }
+        
+        System.out.println("🔍 Verifying RECEIVED message via ADB...");
+        
+        try {
+            String command = String.format(
+                "adb -s %s shell content query --uri content://sms --where \"thread_id=%d\" --projection _id:address:body:type:date --sort \"date DESC\" --limit 1",
+                deviceSerial, threadId
+            );
+            
+            String result = executeAdbCommand(command);
+            
+            if (result != null && !result.isEmpty() && result.contains("Row:")) {
+                ReceivedSmsInfo smsInfo = parseReceivedSmsResult(result);
+                
+                if (smsInfo != null && smsInfo.type == TYPE_INBOX) {
+                    System.out.println("   ✓ Found RECEIVED message at: " + smsInfo.getFormattedDate());
+                    
+                    if (expectedMessageBody != null && !expectedMessageBody.isEmpty()) {
+                        if (smsInfo.body != null && smsInfo.body.equals(expectedMessageBody)) {
+                            return true;
+                        }
+                    }
+                    return true;
+                }
+            }
+            
+            return false;
+            
+        } catch (Exception e) {
+            System.out.println("❌ Verification error: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * VERIFY MESSAGE RECEIVED BY ADDRESS
+     */
+    public boolean verifyMessageReceivedByAddress(String expectedMessageBody, String senderAddress) {
+        if (deviceSerial == null) {
+            System.out.println("❌ Device serial not available for verification");
+            return false;
+        }
+        
+        System.out.println("🔍 Verifying RECEIVED message by address via ADB...");
+        
+        try {
+            String command = String.format(
+                "adb -s %s shell content query --uri content://sms/inbox --where \"address='%s'\" --projection _id:address:body:type:date --sort \"date DESC\" --limit 1",
+                deviceSerial, senderAddress
+            );
+            
+            String result = executeAdbCommand(command);
+            
+            if (result != null && !result.isEmpty() && result.contains("Row:")) {
+                ReceivedSmsInfo smsInfo = parseReceivedSmsResult(result);
+                
+                if (smsInfo != null && smsInfo.type == TYPE_INBOX) {
+                    System.out.println("   ✓ Found RECEIVED message at: " + smsInfo.getFormattedDate());
+                    
+                    if (expectedMessageBody != null && !expectedMessageBody.isEmpty()) {
+                        if (smsInfo.body != null && smsInfo.body.equals(expectedMessageBody)) {
+                            return true;
+                        }
+                    }
+                    return true;
+                }
+            }
+            
+            return false;
+            
+        } catch (Exception e) {
+            System.out.println("❌ Verification error: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * GET THREAD ID for a specific address
+     */
+    public int getThreadId(String address) {
+        if (deviceSerial == null) {
+            System.out.println("❌ Device serial not available");
+            return -1;
+        }
+        
+        try {
+            String command = String.format(
+                "adb -s %s shell content query --uri content://sms/sent --where \"address='%s'\" --projection thread_id --limit 1",
+                deviceSerial, address
+            );
+            
+            String result = executeAdbCommand(command);
+            
+            if (result != null && result.contains("thread_id=")) {
+                int threadId = parseThreadId(result);
+                if (threadId > 0) {
+                    return threadId;
+                }
+            }
+            
+            command = String.format(
+                "adb -s %s shell content query --uri content://sms/inbox --where \"address='%s'\" --projection thread_id --limit 1",
+                deviceSerial, address
+            );
+            
+            result = executeAdbCommand(command);
+            
+            if (result != null && result.contains("thread_id=")) {
+                int threadId = parseThreadId(result);
+                if (threadId > 0) {
+                    return threadId;
+                }
+            }
+            
+            return -1;
+            
+        } catch (Exception e) {
+            System.out.println("❌ Error getting thread ID: " + e.getMessage());
+            return -1;
+        }
+    }
+    
+    /**
+     * GET ALL SENT MESSAGES
+     */
+    public List<SentSmsInfo> getAllSentMessages(String address) {
+        List<SentSmsInfo> messages = new ArrayList<>();
+        
+        if (deviceSerial == null) {
+            return messages;
+        }
+        
+        try {
+            String command = String.format(
+                "adb -s %s shell content query --uri content://sms/sent --projection address:body:date --where \"address='%s'\" --sort \"date DESC\"",
+                deviceSerial, address
+            );
+            
+            String result = executeAdbCommand(command);
+            
+            if (result != null && !result.isEmpty() && result.contains("Row:")) {
+                String[] lines = result.split("\n");
+                for (String line : lines) {
+                    if (line.trim().startsWith("Row:")) {
+                        SentSmsInfo smsInfo = parseSentSmsResult(line);
+                        if (smsInfo != null) {
+                            messages.add(smsInfo);
                         }
                     }
                 }
             }
             
-            result.status = Status.UNKNOWN;
-            result.details = "No specific status elements found";
-            
         } catch (Exception e) {
-            result.status = Status.UNKNOWN;
-            result.details = "Element check error: " + e.getMessage();
+            System.out.println("Error getting sent messages: " + e.getMessage());
         }
         
-        return result;
+        return messages;
     }
     
-    /**
-     *  SIMPLE CHECK - For quick verification
-     */
-    public boolean quickVerifyMessageSent() {
+    // ==================== HELPER METHODS ====================
+    
+    private String executeSimpleCommand(String command) {
         try {
-            Thread.sleep(3000); // Wait a bit
-            
-            // Just check page source for positive indicators
-            String pageSource = driver.getPageSource().toLowerCase();
-            
-            boolean isSent = pageSource.contains("sent") || 
-                           pageSource.contains("delivered") ||
-                           pageSource.contains("message sent") ||
-                           pageSource.contains("sms sent");
-            
-            boolean isFailed = pageSource.contains("not sent") ||
-                             pageSource.contains("failed to send") ||
-                             pageSource.contains("failed");
-            
-            if (isSent) {
-                System.out.println(" Quick verification: Message sent");
-                return true;
-            } else if (isFailed) {
-                System.out.println("❌ Quick verification: Message failed");
-                return false;
+            ProcessBuilder processBuilder = new ProcessBuilder(command.split(" "));
+            processBuilder.redirectErrorStream(true);
+            Process process = processBuilder.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            StringBuilder output = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append("\n");
             }
-            
-            // If unclear, assume sent (to not break flow)
-            System.out.println("⚠️ Quick verification: Status unclear, assuming sent");
-            return true;
-            
+            process.waitFor(10, TimeUnit.SECONDS);
+            return output.toString().trim();
         } catch (Exception e) {
-            System.out.println("⚠️ Quick verification error: " + e.getMessage());
-            return false; // On error, assume failed
+            return null;
         }
     }
     
-    /**
-     *  LEGACY COMPATIBILITY - For backward compatibility
-     * Keeps the original simple verification logic
-     */
-    public boolean legacyVerifyMessageSent() {
+    private String executeAdbCommand(String command) {
         try {
-            // Wait for initial processing
-            Thread.sleep(2000);
-            
-            int maxAttempts = 10; // Max 20 seconds total wait time (2 sec * 10)
-            int attempts = 0;
-            
-            while (attempts < maxAttempts) {
-                // Find the status element
-                List<WebElement> statusElements = driver.findElements(By.xpath(
-                    "//android.view.View[@resource-id='message_list']/android.view.View[2]"
-                ));
-                
-                if (statusElements.isEmpty()) {
-                    Thread.sleep(2000);
-                    attempts++;
-                    continue;
-                }
-                
-                WebElement statusElement = statusElements.get(0);
-                String elementText = statusElement.getText();
-                String elementContent = statusElement.getAttribute("content-desc");
-                String displayText = elementText.isEmpty() ? elementContent : elementText;
-                
-                // Check for timer icon (sending in progress)
-                List<WebElement> timerIcons = statusElement.findElements(By.xpath(
-                    ".//*[contains(@resource-id, 'timer') or contains(@class, 'timer') or @text='⏱️']"
-                ));
-                
-                boolean hasTimerIcon = !timerIcons.isEmpty();
-                
-                // If timer icon is present, wait and check again
-                if (hasTimerIcon) {
-                    Thread.sleep(2000);
-                    attempts++;
-                    continue;
-                }
-                
-                // Check status text
-                if (displayText != null) {
-                    if (displayText.contains("Sent") || 
-                        displayText.contains("Delivered") ||
-                        displayText.contains("SMS")) {
-                        return true; // Success
-                    } else if (displayText.contains("Not sent") ||
-                              displayText.contains("Failed") ||
-                              displayText.contains("Error")) {
-                        return false; // Failure
-                    }
-                }
-                
-                // Also check page source as fallback
-                String pageSource = driver.getPageSource();
-                if (pageSource.contains("Sent") || 
-                    pageSource.contains("Delivered") ||
-                    pageSource.contains("SMS")) {
-                    return true;
-                } else if (pageSource.contains("Not sent") ||
-                          pageSource.contains("Failed")) {
-                    return false;
-                }
-                
-                Thread.sleep(2000);
-                attempts++;
+            ProcessBuilder processBuilder = new ProcessBuilder();
+            String[] cmdArray = command.split("(?<=[^\\\\])\\s+");
+            for (int i = 0; i < cmdArray.length; i++) {
+                cmdArray[i] = cmdArray[i].replace("\\\"", "\"");
             }
             
-            // If we reach here, we timed out without clear status
-            return false;
+            processBuilder.command(cmdArray);
+            processBuilder.redirectErrorStream(true);
+            
+            Process process = processBuilder.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            StringBuilder output = new StringBuilder();
+            String line;
+            
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append("\n");
+            }
+            
+            boolean finished = process.waitFor(30, TimeUnit.SECONDS);
+            
+            if (!finished) {
+                return null;
+            }
+            
+            return output.toString().trim();
             
         } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+            System.out.println("   Error executing ADB command: " + e.getMessage());
+            return null;
         }
     }
     
-    // ==================== ENUMS AND HELPER CLASSES ====================
-    
-    private enum Status {
-        SUCCESS,
-        FAILED,
-        IN_PROGRESS,
-        UNKNOWN
+    private SentSmsInfo parseSentSmsResult(String result) {
+        try {
+            SentSmsInfo info = new SentSmsInfo();
+            
+            // Parse format: "Row: 0 address=9876543210, body=fhurfhry, date=1781509896682"
+            if (result.contains("address=")) {
+                int addressStart = result.indexOf("address=") + 8;
+                int addressEnd = result.indexOf(",", addressStart);
+                if (addressEnd == -1) addressEnd = result.length();
+                info.address = result.substring(addressStart, addressEnd).trim();
+                
+                int bodyStart = result.indexOf("body=") + 5;
+                if (bodyStart > 5) {
+                    int bodyEnd = result.indexOf(", date=", bodyStart);
+                    if (bodyEnd == -1) bodyEnd = result.length();
+                    info.body = result.substring(bodyStart, bodyEnd).trim();
+                }
+                
+                int dateStart = result.indexOf("date=") + 5;
+                if (dateStart > 5) {
+                    int dateEnd = result.length();
+                    info.date = Long.parseLong(result.substring(dateStart, dateEnd).trim());
+                }
+                
+                return info;
+            }
+            
+        } catch (Exception e) {
+            System.out.println("   Error parsing sent SMS: " + e.getMessage());
+        }
+        
+        return null;
     }
     
-    private static class VerificationResult {
-        Status status = Status.UNKNOWN;
-        String details = "";
+    private ReceivedSmsInfo parseReceivedSmsResult(String result) {
+        try {
+            ReceivedSmsInfo info = new ReceivedSmsInfo();
+            
+            // Parse format: "Row: 0 _id=192, address=+919640571324, body=Hi, type=1, date=1781515804887"
+            if (result.contains("_id=")) {
+                int idStart = result.indexOf("_id=") + 4;
+                int idEnd = result.indexOf(",", idStart);
+                if (idEnd == -1) idEnd = result.length();
+                info.id = Integer.parseInt(result.substring(idStart, idEnd).trim());
+                
+                int addressStart = result.indexOf("address=") + 8;
+                int addressEnd = result.indexOf(",", addressStart);
+                if (addressEnd == -1) addressEnd = result.length();
+                info.address = result.substring(addressStart, addressEnd).trim();
+                
+                int bodyStart = result.indexOf("body=") + 5;
+                if (bodyStart > 5) {
+                    int bodyEnd = result.indexOf(", type=", bodyStart);
+                    if (bodyEnd == -1) bodyEnd = result.indexOf(", date=", bodyStart);
+                    if (bodyEnd == -1) bodyEnd = result.length();
+                    info.body = result.substring(bodyStart, bodyEnd).trim();
+                }
+                
+                int typeStart = result.indexOf("type=") + 5;
+                if (typeStart > 5) {
+                    int typeEnd = result.indexOf(",", typeStart);
+                    if (typeEnd == -1) typeEnd = result.length();
+                    info.type = Integer.parseInt(result.substring(typeStart, typeEnd).trim());
+                }
+                
+                int dateStart = result.indexOf("date=") + 5;
+                if (dateStart > 5) {
+                    int dateEnd = result.length();
+                    info.date = Long.parseLong(result.substring(dateStart, dateEnd).trim());
+                }
+                
+                return info;
+            }
+            
+        } catch (Exception e) {
+            System.out.println("   Error parsing received SMS: " + e.getMessage());
+        }
+        
+        return null;
+    }
+    
+    private int parseThreadId(String result) {
+        try {
+            if (result.contains("thread_id=")) {
+                int start = result.indexOf("thread_id=") + 10;
+                int end = result.indexOf(",", start);
+                if (end == -1) end = result.indexOf(" ", start);
+                if (end == -1) end = result.length();
+                return Integer.parseInt(result.substring(start, end).trim());
+            }
+        } catch (Exception e) {
+            System.out.println("   Error parsing thread ID: " + e.getMessage());
+        }
+        return -1;
+    }
+    
+    // ==================== INNER CLASSES ====================
+    
+    public static class SentSmsInfo {
+        public String address;
+        public String body;
+        public long date;
+        
+        public String getFormattedDate() {
+            return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date(date));
+        }
+        
+        @Override
+        public String toString() {
+            return "SentSmsInfo{address='" + address + "', body='" + body + "', date=" + date + ", formattedDate='" + getFormattedDate() + "'}";
+        }
+    }
+    
+    public static class ReceivedSmsInfo {
+        public int id;
+        public String address;
+        public String body;
+        public int type;
+        public long date;
+        
+        public String getFormattedDate() {
+            return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date(date));
+        }
+        
+        public boolean isReceived() {
+            return type == 1;
+        }
+        
+        @Override
+        public String toString() {
+            return "ReceivedSmsInfo{id=" + id + ", address='" + address + "', body='" + body + "', type=" + type + ", date=" + date + ", formattedDate='" + getFormattedDate() + "'}";
+        }
     }
 }

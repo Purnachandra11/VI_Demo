@@ -201,7 +201,7 @@ public class ScreenshotUtils {
         List<ScreenshotInfo> testScreenshots = new ArrayList<>();
         
         if (testStartTime == null || testEndTime == null) {
-            System.out.println("⚠️ Test start/end time not set. Showing all screenshots.");
+            System.out.println(" Test start/end time not set. Showing all screenshots.");
             // Return all if times not set
             synchronized (capturedScreenshots) {
                 for (int i = 0; i < capturedScreenshots.size(); i++) {
@@ -303,6 +303,9 @@ public class ScreenshotUtils {
 
             // Get the device number like other reports do
             String dialingNumber = System.getProperty("aPartyNumber");
+            if (dialingNumber == null || dialingNumber.isEmpty()) {
+                dialingNumber = "unknown";
+            }
 
             String timestamp = TIMESTAMP_FORMATTER.get().format(new Date());
             // FIX: Use proper file path construction
@@ -346,7 +349,7 @@ public class ScreenshotUtils {
                 .append("border-radius: 4px; margin-top: 10px; }")
                 .append("</style></head><body>");
 
-            html.append("<h1>📱 Vi SIM Toolkit Screenshot Report - ").append(dialingNumber).append("</h1>");
+            html.append("<h1> Vi SIM Toolkit Screenshot Report - ").append(dialingNumber).append("</h1>");
             
             // Test Information Section
             html.append("<div class='info-box'>")
@@ -393,7 +396,7 @@ public class ScreenshotUtils {
             
             if (testScreenshots.isEmpty()) {
                 html.append("<div class='no-screenshots'>")
-                    .append("<p>⚠️ No screenshots found for the specified test period</p>")
+                    .append("<p> No screenshots found for the specified test period</p>")
                     .append("<p>Test Period: ");
                 
                 if (testStartTime != null) {
@@ -506,7 +509,7 @@ public class ScreenshotUtils {
         
         System.out.println("   Total screenshots: " + size);
         if (size == 0) {
-            System.out.println("   ⚠️ No screenshots found!");
+            System.out.println("    No screenshots found!");
         } else {
             synchronized (capturedScreenshots) {
                 for (int i = 0; i < Math.min(size, 10); i++) {

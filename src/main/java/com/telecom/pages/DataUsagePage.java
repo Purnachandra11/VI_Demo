@@ -67,7 +67,7 @@ public class DataUsagePage {
             String output = ADBHelper.executeCommand(command);
             
             if (output == null || output.isEmpty()) {
-                System.out.println("   ⚠️  Could not read /proc/net/dev");
+                System.out.println("     Could not read /proc/net/dev");
                 return;
             }
             
@@ -95,7 +95,7 @@ public class DataUsagePage {
             System.out.println("─".repeat(80));
             
         } catch (Exception e) {
-            System.out.println("   ⚠️  Debug failed: " + e.getMessage());
+            System.out.println("     Debug failed: " + e.getMessage());
         }
     }
     
@@ -128,7 +128,7 @@ public class DataUsagePage {
             Thread.sleep(1000);
             
             // STEP 3: Start download
-            System.out.println("\n📥 STEP 3: Starting download");
+            System.out.println("\n STEP 3: Starting download");
             System.out.println("   URL: " + downloadUrl);
             System.out.println("   Duration: " + durationMin + " minutes");
             
@@ -264,7 +264,7 @@ public class DataUsagePage {
          );
          
      } catch (Exception e) {
-         System.out.println("   ⚠️ Monitoring error: " + e.getMessage());
+         System.out.println("    Monitoring error: " + e.getMessage());
          ProgressReporter.reportTestComplete(
              deviceId, 
              "data", 
@@ -283,7 +283,7 @@ public class DataUsagePage {
             String output = ADBHelper.executeCommand(command);
             
             if (output == null || output.trim().isEmpty()) {
-                System.out.println("   ⚠️  Could not read /proc/net/dev");
+                System.out.println("     Could not read /proc/net/dev");
                 return "rmnet_data0"; // Common fallback
             }
             
@@ -345,7 +345,7 @@ public class DataUsagePage {
             
             // If no interface found, try to find ANY interface with traffic
             if (activeInterface == null) {
-                System.out.println("   ⚠️  No standard mobile interface found, checking all interfaces...");
+                System.out.println("     No standard mobile interface found, checking all interfaces...");
                 
                 for (String line : output.split("\n")) {
                     if (!line.contains(":")) continue;
@@ -387,11 +387,11 @@ public class DataUsagePage {
             }
             
             // Last resort fallback
-            System.out.println("   ⚠️  No active interface found, using rmnet_data0");
+            System.out.println("     No active interface found, using rmnet_data0");
             return "rmnet_data0";
             
         } catch (Exception e) {
-            System.out.println("   ⚠️  Interface detection failed: " + e.getMessage());
+            System.out.println("     Interface detection failed: " + e.getMessage());
             return "rmnet_data0";
         }
     }
@@ -419,7 +419,7 @@ public class DataUsagePage {
             return 0;
             
         } catch (Exception e) {
-            System.out.println("   ⚠️  Error reading RX bytes: " + e.getMessage());
+            System.out.println("     Error reading RX bytes: " + e.getMessage());
             return 0;
         }
     }
@@ -447,7 +447,7 @@ public class DataUsagePage {
             return 0;
             
         } catch (Exception e) {
-            System.out.println("   ⚠️  Error reading TX bytes: " + e.getMessage());
+            System.out.println("     Error reading TX bytes: " + e.getMessage());
             return 0;
         }
     }

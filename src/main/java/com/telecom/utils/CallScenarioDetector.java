@@ -138,13 +138,13 @@ public class CallScenarioDetector {
             case 1: return ""; // Ringing
             case 2: return "📞"; // Busy
             case 3: return ""; // Connected
-            case 4: return "⚠️"; // Dropped
+            case 4: return ""; // Dropped
             case 5: return "❌"; // Invalid
             case 6: return "📡"; // Network Error
             case 7: return "📵"; // Not Reachable
             case 8: return "🚫"; // A-Party Barred
             case 9: return "🚫"; // B-Party Barred
-            case 10: return "📱"; // Wrong SIM
+            case 10: return ""; // Wrong SIM
             case 11: return "📊"; // Call Quality
             case 12: return "🎵"; // CRBT
             default: return "❓";

@@ -1,0 +1,135 @@
+.........Console Logs.........
+
+[WDIO] Starting: executes all calling scenarios from Excel
+
+====================================================================================================
+📞 EXECUTING ALL CALLING TESTS
+====================================================================================================
+📄 Excel File: D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo\src\test\resources\contacts.xlsx
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"suite","timestamp":1780259513012,"completed":false,"progress":{"action":"SUITE_START","totalTestCount":3,"percentage":0}}
+
+📞 TEST 1/3: 4G VoLTE Voice Outgoing
+    A-Party mapped: 9672417412 -> ZA2237FKXH
+
+📤 OUTGOING call mode
+   Caller   : 9672417412 -> ZA2237FKXH
+   Receiver : 8696904544 -> NOT MAPPED
+
+🔌 VALIDATING DEVICE CONNECTIVITY...
+   Direction: OUTGOING
+   📤 OUTGOING TEST VALIDATION
+    Caller device connected: ZA2237FKXH
+
+================================================================================
+📞 VOICE OUTGOING call | Caller: 9672417412 | Receiver: 8696904544
+================================================================================
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"calling","timestamp":1780259516986,"completed":false,"progress":{"phoneNumber":"9672417412","action":"Pre-call Balance Check","status":"USSD_CHECK","duration":0,"percentage":10,"progressBar":"██░░░░░░░░░░░░░░░░░░"}}
+
+💰 BEFORE BALANCE CHECK...
+   🔄 Attempt 1/2
+[USSD] 🔄 Performing fresh balance check for ZA2237FKXH...
+[USSD] 🔄 Attempt 1/2 for device: ZA2237FKXH
+[USSD] 📲 Dialing USSD on device: ZA2237FKXH
+[USSD] ⏳ Waiting for USSD popup...
+[USSD] 📋 Raw popup text:
+MSISDN: 9672417412
+Main Balance: Rs 61.0
+UL Vldty: 05-07-2026
+1.Best Fit offers
+2.Balance & Usage
+3.Manage Account
+4.Go Digital
+5.Recharge
+0 More
+SIM: 9672417412
+BALANCE: Rs 61.0
+VALIDITY: 05-07-2026
+[USSD] Closing secondary USSD popup...
+    Resetting app state after USSD...
+    Dialer force-stopped
+    USSD SUCCESS
+      Phone   : 9672417412
+      Balance : 61.0
+      Validity: 05-07-2026
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"calling","timestamp":1780259555952,"completed":false,"progress":{"phoneNumber":"9672417412","action":"Pre-balance: Rs 61.0","status":"USSD_CHECK","duration":0,"percentage":20,"progressBar":"████░░░░░░░░░░░░░░░░"}}
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"calling","timestamp":1780259555966,"completed":false,"progress":{"phoneNumber":"9672417412","action":"Setting Network: 4G","status":"NETWORK_SWITCH","duration":0,"percentage":25,"progressBar":"█████░░░░░░░░░░░░░░░"}}
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"calling","timestamp":1780259561793,"completed":false,"progress":{"phoneNumber":"9672417412","action":"Dialing 8696904544 (attempt 1)","status":"IN_PROGRESS","duration":0,"percentage":40,"progressBar":"████████░░░░░░░░░░░░"}}
+Call did not connect
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"calling","timestamp":1780259583338,"completed":true,"progress":{"phoneNumber":"9672417412","action":"Call Failed","status":"COMPLETED","duration":0,"percentage":100,"progressBar":"████████████████████"}}
+
+📞 TEST 2/3: 4G VoLTE Voice Outgoing
+    A-Party mapped: 9672417412 -> ZA2237FKXH
+
+📤 OUTGOING call mode
+   Caller   : 9672417412 -> ZA2237FKXH
+   Receiver : 8696904544 -> NOT MAPPED
+
+🔌 VALIDATING DEVICE CONNECTIVITY...
+   Direction: OUTGOING
+   📤 OUTGOING TEST VALIDATION
+    Caller device connected: ZA2237FKXH
+
+================================================================================
+📞 VOICE OUTGOING call | Caller: 9672417412 | Receiver: 8696904544
+================================================================================
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"calling","timestamp":1780259589983,"completed":false,"progress":{"phoneNumber":"9672417412","action":"Pre-call Balance Check","status":"USSD_CHECK","duration":0,"percentage":10,"progressBar":"██░░░░░░░░░░░░░░░░░░"}}
+
+💰 BEFORE BALANCE CHECK...
+   🔄 Attempt 1/2
+[USSD] 🔄 Performing fresh balance check for ZA2237FKXH...
+[USSD] 🔄 Attempt 1/2 for device: ZA2237FKXH
+[USSD] 📲 Dialing USSD on device: ZA2237FKXH
+[USSD] ⏳ Waiting for USSD popup...
+[USSD] 📋 Raw popup text:
+MSISDN: 9672417412
+Main Balance: Rs 61.0
+UL Vldty: 05-07-2026
+1.Best Fit offers
+2.Balance & Usage
+3.Manage Account
+4.Go Digital
+5.Recharge
+0 More
+SIM: 9672417412
+BALANCE: Rs 61.0
+VALIDITY: 05-07-2026
+[USSD] Closing secondary USSD popup...
+    Resetting app state after USSD...
+    Dialer force-stopped
+    USSD SUCCESS
+      Phone   : 9672417412
+      Balance : 61.0
+      Validity: 05-07-2026
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"calling","timestamp":1780259625495,"completed":false,"progress":{"phoneNumber":"9672417412","action":"Pre-balance: Rs 61.0","status":"USSD_CHECK","duration":0,"percentage":20,"progressBar":"████░░░░░░░░░░░░░░░░"}}
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"calling","timestamp":1780259625513,"completed":false,"progress":{"phoneNumber":"9672417412","action":"Setting Network: 4G","status":"NETWORK_SWITCH","duration":0,"percentage":25,"progressBar":"█████░░░░░░░░░░░░░░░"}}
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"calling","timestamp":1780259631185,"completed":false,"progress":{"phoneNumber":"9672417412","action":"Dialing 8696904544 (attempt 1)","status":"IN_PROGRESS","duration":0,"percentage":40,"progressBar":"████████░░░░░░░░░░░░"}}
+Call did not connect
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"calling","timestamp":1780259652469,"completed":true,"progress":{"phoneNumber":"9672417412","action":"Call Failed","status":"COMPLETED","duration":0,"percentage":100,"progressBar":"████████████████████"}}
+
+📞 TEST 3/3: 4G VoLTE Voice Incoming
+    A-Party mapped: 8696904544 -> ZA2237FKXH
+
+ INCOMING call mode
+   Caller   : 9672417412 -> NOT MAPPED
+   Receiver : 8696904544 -> ZA2237FKXH
+
+🔌 VALIDATING DEVICE CONNECTIVITY...
+   Direction: INCOMING
+    INCOMING TEST VALIDATION
+   ❌ Caller (B-Party) device not mapped for number: 9672417412
+
+  SKIPPING TEST: Caller (B-Party) device not mapped for number: 9672417412
+ Excel report: D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo\test-output\comprehensive-reports\Calling_Report_9672417412_20260601_020421.xlsx
+ HTML report: D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo\test-output\comprehensive-reports\Calling_Report_9672417412_20260601_020422.html
+[Reports] calling Excel → D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo\test-output\comprehensive-reports\Calling_Report_9672417412_20260601_020421.xlsx
+[Reports] calling HTML → D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo\test-output\comprehensive-reports\Calling_Report_9672417412_20260601_020422.html
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"calling","timestamp":1780259662213,"completed":true,"progress":{"action":"TEST_COMPLETE","status":"FAILED","message":"Completed 3 calling tests","percentage":100}}
+
+====================================================================================================
+📈 CALLING TESTS COMPLETED
+Total Tests: 3
+ Passed: 0
+❌ Failed: 3
+📊 Success Rate: 0.0%
+====================================================================================================
+[WDIO] Test passed: executes all calling scenarios from Excel

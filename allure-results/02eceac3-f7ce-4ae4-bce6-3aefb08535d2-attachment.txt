@@ -1,0 +1,10 @@
+.........Console Logs.........
+
+[WDIO] Starting: runs calling scenarios from uploaded Excel
+[Calling] 4G VoLTE Voice Outgoing: 9672417412 → 8696904544 (15s) [no B device — manual answer]
+[AI] (0 , import_callexecutor.executeoutgoingcall) is not a function typeerror: (0 , import_callexecutor.executeoutgoingcall) is not a function
+[AI] Suggestions: Review screenshots/; Check logs/ and Appium server output
+2026-05-25T10:47:34.188Z INFO webdriver: COMMAND takeScreenshot()
+2026-05-25T10:47:34.191Z INFO webdriver: [GET] http://127.0.0.1:4723/session/9a473d1c-0dc5-4600-b973-b6589d2e61f3/screenshot
+2026-05-25T10:47:36.061Z INFO webdriver: RESULT iVBORw0KGgoAAAANSUhEUgAABDgAAAlgCAYAAABtGofVAAAAAXNSR0IArs4c6...
+[WDIO] Test failed: runs calling scenarios from uploaded Excel

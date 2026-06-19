@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="1" errors="0" skipped="0">
+  <testsuite name="Siebel Invoice Validation Complete 6 Point Validation" timestamp="2026-06-06T05:18:58" time="67.682" tests="1" failures="1" errors="0" skipped="0">
+    <properties>
+      <property name="specId" value="0"/>
+      <property name="suiteName" value="Siebel Invoice Validation - Complete 6-Point Validation"/>
+      <property name="capabilities" value="chrome.149_0_7827_54.windows"/>
+      <property name="file" value="file:///D:/New%20VI%20UAT%20PROJECT/WIP/Automation%20Folder/VI%20Demo%2031.05.2026/VI%20Demo/test/specs/siebel_invoice_validation.spec.ts"/>
+    </properties>
+    <testcase classname="chrome.149_0_7827_54.windows.Siebel_Invoice_Validation_-_Complete_6-Point_Validation" name="7434853216 Complete Invoice Validation Vi Max Family 871" time="67.675">
+      <failure message="element (&quot;//*[@id=&quot;s_7_1_1_0_Ctrl&quot;]&quot;) still not clickable after 10000ms"/>
+      <system-out><![CDATA[
+COMMAND: GET /session/131aafe93027a811a5b5fb38ceab48dc/element/f.D279A58D9330F287F6590C43F9815711.d.9F711A8B5027536406EC09B7995EE2AF.e.13/text - {}
+RESULT: {}
+COMMAND: POST /session/131aafe93027a811a5b5fb38ceab48dc/element/f.D279A58D9330F287F6590C43F9815711.d.9F711A8B5027536406EC09B7995EE2AF.e.5/clear - {}
+RESULT: {}
+COMMAND: POST /session/131aafe93027a811a5b5fb38ceab48dc/element/f.D279A58D9330F287F6590C43F9815711.d.9F711A8B5027536406EC09B7995EE2AF.e.5/clear - {}
+RESULT: {}
+COMMAND: POST /session/131aafe93027a811a5b5fb38ceab48dc/element/f.D279A58D9330F287F6590C43F9815711.d.9F711A8B5027536406EC09B7995EE2AF.e.5/value - {"text":"COR4055772"}
+RESULT: {"text":"COR4055772"}
+COMMAND: POST /session/131aafe93027a811a5b5fb38ceab48dc/element/f.D279A58D9330F287F6590C43F9815711.d.9F711A8B5027536406EC09B7995EE2AF.e.6/clear - {}
+RESULT: {}
+COMMAND: POST /session/131aafe93027a811a5b5fb38ceab48dc/element/f.D279A58D9330F287F6590C43F9815711.d.9F711A8B5027536406EC09B7995EE2AF.e.6/clear - {}
+RESULT: {}
+COMMAND: POST /session/131aafe93027a811a5b5fb38ceab48dc/element/f.D279A58D9330F287F6590C43F9815711.d.9F711A8B5027536406EC09B7995EE2AF.e.6/value - {"text":"Test@123456789!"}
+RESULT: {"text":"Test@123456789!"}
+COMMAND: POST /session/131aafe93027a811a5b5fb38ceab48dc/element/f.D279A58D9330F287F6590C43F9815711.d.9F711A8B5027536406EC09B7995EE2AF.e.7/click - {}
+RESULT: {}
+COMMAND: GET /session/131aafe93027a811a5b5fb38ceab48dc/element/f.D279A58D9330F287F6590C43F9815711.d.4FEC0CD5FE98591062CB93BC9B36B615.e.22/text - {}
+RESULT: {}
+COMMAND: GET /session/131aafe93027a811a5b5fb38ceab48dc/element/f.D279A58D9330F287F6590C43F9815711.d.4FEC0CD5FE98591062CB93BC9B36B615.e.22/text - {}
+RESULT: {}
+COMMAND: POST /session/131aafe93027a811a5b5fb38ceab48dc/element - {"using":"css selector","value":"body"}
+RESULT: {"using":"css selector","value":"body"}
+COMMAND: GET /session/131aafe93027a811a5b5fb38ceab48dc/element/f.D279A58D9330F287F6590C43F9815711.d.0197D6BE5400692B206C389CDDB98923.e.32/text - {}
+RESULT: {}
+COMMAND: GET /session/131aafe93027a811a5b5fb38ceab48dc/element/f.D279A58D9330F287F6590C43F9815711.d.0197D6BE5400692B206C389CDDB98923.e.32/text - {}
+RESULT: {}
+COMMAND: POST /session/131aafe93027a811a5b5fb38ceab48dc/element/f.D279A58D9330F287F6590C43F9815711.d.0197D6BE5400692B206C389CDDB98923.e.31/click - {}
+RESULT: {}
+COMMAND: POST /session/131aafe93027a811a5b5fb38ceab48dc/element - {"using":"xpath","value":"//*[@id=\"ui-id-126\"]"}
+RESULT: {"using":"xpath","value":"//*[@id=\"ui-id-126\"]"}
+COMMAND: POST /session/131aafe93027a811a5b5fb38ceab48dc/element - {"using":"xpath","value":"//*[@id=\"ui-id-126\"]"}
+RESULT: {"using":"xpath","value":"//*[@id=\"ui-id-126\"]"}
+COMMAND: POST /session/131aafe93027a811a5b5fb38ceab48dc/element/f.D279A58D9330F287F6590C43F9815711.d.F2ECEEF6C300D7C04A247414B978895C.e.124/click - {}
+RESULT: {}
+COMMAND: POST /session/131aafe93027a811a5b5fb38ceab48dc/element/f.D279A58D9330F287F6590C43F9815711.d.F2ECEEF6C300D7C04A247414B978895C.e.223/click - {}
+RESULT: {}
+COMMAND: POST /session/131aafe93027a811a5b5fb38ceab48dc/element/f.D279A58D9330F287F6590C43F9815711.d.F2ECEEF6C300D7C04A247414B978895C.e.666/clear - {}
+RESULT: {}
+COMMAND: POST /session/131aafe93027a811a5b5fb38ceab48dc/element/f.D279A58D9330F287F6590C43F9815711.d.F2ECEEF6C300D7C04A247414B978895C.e.666/clear - {}
+RESULT: {}
+COMMAND: POST /session/131aafe93027a811a5b5fb38ceab48dc/element/f.D279A58D9330F287F6590C43F9815711.d.F2ECEEF6C300D7C04A247414B978895C.e.666/value - {"text":"7434853216"}
+RESULT: {"text":"7434853216"}
+COMMAND: DELETE /session/131aafe93027a811a5b5fb38ceab48dc - {}
+RESULT: {}
+]]></system-out>
+      <system-err><![CDATA[
+Error: element ("//*[@id="s_7_1_1_0_Ctrl"]") still not clickable after 10000ms
+    at <anonymous> (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\node_modules\webdriverio\build\node.js:6013:15)
+    at async Element.wrapCommandFn (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\node_modules\@wdio\utils\build\index.js:982:23)
+    at async Element.elementErrorHandlerCallbackFn (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\node_modules\webdriverio\build\node.js:9601:24)
+    at async Element.wrapCommandFn (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\node_modules\@wdio\utils\build\index.js:982:23)
+    at async Element.wrapCommandFn (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\node_modules\@wdio\utils\build\index.js:982:23)
+    at async Element.elementErrorHandlerCallbackFn (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\node_modules\webdriverio\build\node.js:9601:24)
+    at async Element.wrapCommandFn (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\node_modules\@wdio\utils\build\index.js:982:23)
+    at async SiebelSubscriptionsPage.clickGoButton (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\test\pages\SiebelSubscriptionsPage.ts:78:5)
+    at async Context.<anonymous> (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\test\specs\siebel_invoice_validation.spec.ts:136:13)
+    at async Context.executeAsync (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\node_modules\@wdio\utils\build\index.js:1108:20)
+]]></system-err>
+    </testcase>
+  </testsuite>
+</testsuites>

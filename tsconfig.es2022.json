@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "ignoreDeprecations": "5.0",
+    "lib": ["ES2022"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node", "mocha", "@wdio/globals/types", "expect-webdriverio"]
+  },
+  "include": ["config/**/*.ts", "test/**/*.ts"],
+  "exclude": ["node_modules", "dist", "dashboard", "automation"]
+}

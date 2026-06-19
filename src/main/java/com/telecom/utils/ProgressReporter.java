@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ProgressReporter {
     private static final String PROGRESS_ENDPOINT = "http://localhost:5174/api/progress/update";
+    // private static final String PROGRESS_ENDPOINT = "http://13.233.121.125:5174/api/progress/update";
     private static final Gson gson = new Gson();
     
     // Track completion status per device and test type

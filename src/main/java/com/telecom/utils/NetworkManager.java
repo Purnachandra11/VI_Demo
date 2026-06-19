@@ -14,7 +14,7 @@ public class NetworkManager {
             
             // Step 1: Check if downgrading from 5G to 4G - deactivate 5G radio
             if (currentNetwork.equals("5G") && targetNetworkType.equals("4G")) {
-                System.out.println("   ⚠️ Downgrading from 5G to 4G - Deactivating 5G radio...");
+                System.out.println("    Downgrading from 5G to 4G - Deactivating 5G radio...");
                 deactivate5GRadio(deviceId);
                 Thread.sleep(3000);
             }
@@ -49,7 +49,7 @@ public class NetworkManager {
             if (success) {
                 System.out.println("    Network type changed successfully to: " + newNetwork);
             } else {
-                System.out.println("   ⚠️ Network change initiated, verification pending");
+                System.out.println("    Network change initiated, verification pending");
             }
             
             return success;
@@ -76,7 +76,7 @@ public class NetworkManager {
             System.out.println("    5G radio deactivated");
             
         } catch (Exception e) {
-            System.out.println("   ⚠️ 5G deactivation warning: " + e.getMessage());
+            System.out.println("    5G deactivation warning: " + e.getMessage());
         }
     }
     
@@ -108,7 +108,7 @@ public class NetworkManager {
             return is3GRegistered;
             
         } catch (Exception e) {
-            System.out.println("   ⚠️ 3G availability check failed: " + e.getMessage());
+            System.out.println("    3G availability check failed: " + e.getMessage());
             return false;
         }
     }
@@ -201,7 +201,7 @@ public class NetworkManager {
             }
             
             // Fallback to 3G
-            System.out.println("   ⚠️ Using 3G for data usage (5G/4G not available)");
+            System.out.println("    Using 3G for data usage (5G/4G not available)");
             return "3G";
             
         } catch (Exception e) {

@@ -26,6 +26,9 @@ public class ReportGenerator {
      */
     public static String generateCallingExcelReport(List<Map<String, Object>> results) {
     	String dialingNumber = System.getProperty("aPartyNumber");
+        if (dialingNumber == null || dialingNumber.isEmpty()) {
+            dialingNumber = "unknown";
+        }
         String fileName = "Calling_Report_" + dialingNumber + "_" + FILE_DATE_FORMAT.format(new Date()) + ".xlsx";
         String filePath = REPORT_DIR + fileName;
         
@@ -255,6 +258,9 @@ public class ReportGenerator {
      */
     public static String generateCallingHTMLReport(List<Map<String, Object>> results) {
     	String dialingNumber = System.getProperty("aPartyNumber");
+        if (dialingNumber == null || dialingNumber.isEmpty()) {
+            dialingNumber = "unknown";
+        }
         String fileName = "Calling_Report_" + dialingNumber + "_" + FILE_DATE_FORMAT.format(new Date()) + ".html";
         String filePath = REPORT_DIR + fileName;
         
@@ -279,6 +285,9 @@ public class ReportGenerator {
     
     public static String generateSMSExcelReport(List<Map<String, Object>> results) {
         String dialingNumber = System.getProperty("aPartyNumber");
+        if (dialingNumber == null || dialingNumber.isEmpty()) {
+            dialingNumber = "unknown";
+        }
         
         String fileName = "SMS_Report_" + dialingNumber + "_" + FILE_DATE_FORMAT.format(new Date()) + ".xlsx";
         String filePath = REPORT_DIR + fileName;
@@ -558,6 +567,9 @@ public class ReportGenerator {
     // ========== ENHANCED SMS REPORT METHOD ==========
     public static String generateSMSTestReport(List<Map<String, Object>> results, String deviceId, String deviceNumber) {
     	String dialingNumber = System.getProperty("aPartyNumber");
+        if (dialingNumber == null || dialingNumber.isEmpty()) {
+            dialingNumber = "unknown";
+        }
         String fileName = "SMS_Detailed_Report_" + dialingNumber + "_" + FILE_DATE_FORMAT.format(new Date()) + ".html";
         String filePath = REPORT_DIR + fileName;
         
@@ -715,6 +727,9 @@ public class ReportGenerator {
     
     public static String generateSIMAutoLatchExcelReport(List<Map<String, Object>> results) {
         String dialingNumber = System.getProperty("aPartyNumber");
+        if (dialingNumber == null || dialingNumber.isEmpty()) {
+            dialingNumber = "unknown";
+        }
         String fileName = "SIM_AutoLatch_Report_" + dialingNumber + "_" + FILE_DATE_FORMAT.format(new Date()) + ".xlsx";
         String filePath = REPORT_DIR + fileName;
         
@@ -819,6 +834,9 @@ public class ReportGenerator {
     
     public static String generateSIMAutoLatchHTMLReport(List<Map<String, Object>> results) {
     	String dialingNumber = System.getProperty("aPartyNumber");
+        if (dialingNumber == null || dialingNumber.isEmpty()) {
+            dialingNumber = "unknown";
+        }
         String fileName = "SIM_AutoLatch_Report_"+ dialingNumber + "_" + FILE_DATE_FORMAT.format(new Date()) + ".html";
         String filePath = REPORT_DIR + fileName;
         
@@ -898,7 +916,7 @@ public class ReportGenerator {
         summary.append("<h4>Overall Results</h4>\n");
         summary.append("<p><strong>Total Tests:</strong> ").append(total).append("</p>\n");
         summary.append("<p><strong> Success:</strong> ").append(success).append("</p>\n");
-        summary.append("<p><strong>⚠️ Partial:</strong> ").append(partial).append("</p>\n");
+        summary.append("<p><strong> Partial:</strong> ").append(partial).append("</p>\n");
         summary.append("<p><strong>❌ Failed:</strong> ").append(failed).append("</p>\n");
         summary.append("<p><strong>Success Rate:</strong> ")
             .append(String.format("%.1f%%", (success * 100.0 / total)))
@@ -909,7 +927,7 @@ public class ReportGenerator {
         summary.append("<div>\n");
         summary.append("<h4>Call Statistics</h4>\n");
         summary.append("<p><strong>📤 Outgoing:</strong> ").append(outgoing).append("</p>\n");
-        summary.append("<p><strong>📥 Incoming:</strong> ").append(incoming).append("</p>\n");
+        summary.append("<p><strong> Incoming:</strong> ").append(incoming).append("</p>\n");
         summary.append("<p><strong>🤖 Auto-Answer:</strong> ").append(autoAnswerTests).append("</p>\n");
         summary.append("<p><strong>👤 Manual:</strong> ").append(manualTests).append("</p>\n");
         summary.append("<p><strong>⏱️ Avg Ring Time:</strong> ")
@@ -955,7 +973,7 @@ public class ReportGenerator {
             
             // Direction with icon
             String direction = getStringValue(result.get("direction"));
-            String dirIcon = "INCOMING".equals(direction) ? "📥" : "📤";
+            String dirIcon = "INCOMING".equals(direction) ? "" : "📤";
             html.append("<td>").append(dirIcon).append(" ").append(direction).append("</td>\n");
             
             // From → To
@@ -1055,7 +1073,7 @@ public class ReportGenerator {
                .append("<div style='flex: 1;'>\n")
                .append("<h4>Test Results</h4>\n")
                .append("<p><strong> Success:</strong> ").append(success).append("</p>\n")
-               .append("<p><strong>⚠️ Partial Success:</strong> ").append(partial).append("</p>\n")
+               .append("<p><strong> Partial Success:</strong> ").append(partial).append("</p>\n")
                .append("<p><strong>❌ Failed:</strong> ").append(failed).append("</p>\n")
                .append("<p><strong>🚨 Error:</strong> ").append(error).append("</p>\n")
                .append("<p><strong>Overall Success Rate:</strong> ")
@@ -1141,7 +1159,7 @@ public class ReportGenerator {
             // Direction
             String direction = getStringValue(result.get("direction"));
             String directionIcon = "↔️";
-            if ("INCOMING".equals(direction)) directionIcon = "📥";
+            if ("INCOMING".equals(direction)) directionIcon = "";
             else if ("OUTGOING".equals(direction)) directionIcon = "📤";
             html.append("<td>").append(directionIcon).append(" ").append(direction).append("</td>\n");
             
@@ -1174,7 +1192,7 @@ public class ReportGenerator {
             String receiverDisplay;
             if (receiverTime != null && !receiverTime.isEmpty() && !receiverTime.equals("N/A")) {
                 if (receiverTime.equals("DEVICE_UNAVAILABLE")) {
-                    receiverDisplay = "<span style='color: orange;'>⚠️ DEVICE_UNAVAILABLE</span>";
+                    receiverDisplay = "<span style='color: orange;'> DEVICE_UNAVAILABLE</span>";
                 } else {
                     receiverDisplay = receiverTime;
                 }
@@ -1204,7 +1222,7 @@ public class ReportGenerator {
             String finalStatus = getStringValue(result.get("finalStatus"));
             String statusIcon = "❓";
             if (finalStatus.contains("SUCCESS") && !finalStatus.contains("PARTIAL")) statusIcon = "";
-            else if (finalStatus.contains("PARTIAL")) statusIcon = "⚠️";
+            else if (finalStatus.contains("PARTIAL")) statusIcon = "";
             else if (finalStatus.contains("FAILED")) statusIcon = "❌";
             else if (finalStatus.contains("ERROR")) statusIcon = "🚨";
             html.append("<td><strong>").append(statusIcon).append(" ").append(finalStatus).append("</strong></td>\n");
@@ -1360,7 +1378,7 @@ public class ReportGenerator {
     
     private static String getStatusIcon(String status) {
         if (status.contains("SUCCESS") && !status.contains("PARTIAL")) return "";
-        if (status.contains("PARTIAL")) return "⚠️";
+        if (status.contains("PARTIAL")) return "";
         if (status.contains("FAILED")) return "❌";
         return "❓";
     }
@@ -1510,7 +1528,7 @@ public class ReportGenerator {
     private static String getVerificationStatusDisplay(String status) {
         switch (status) {
             case "DEVICE_UNAVAILABLE":
-                return "<span style='color: orange;'>⚠️ Device Unavailable</span>";
+                return "<span style='color: orange;'> Device Unavailable</span>";
             case "NOT_RECEIVED":
                 return "<span style='color: red;'>❌ Not Received</span>";
             case "RECEIVED_VIA_NOTIFICATION":
@@ -1532,9 +1550,9 @@ public class ReportGenerator {
             case "SUCCESS":
                 return "<span style='color: green;'> Success</span>";
             case "FAILED_SLA":
-                return "<span style='color: orange;'>⚠️ Failed SLA</span>";
+                return "<span style='color: orange;'> Failed SLA</span>";
             case "DEVICE_UNAVAILABLE":
-                return "<span style='color: orange;'>⚠️ Device Unavailable</span>";
+                return "<span style='color: orange;'> Device Unavailable</span>";
             case "UNVERIFIED":
                 return "<span style='color: gray;'>❓ Unverified</span>";
             default:

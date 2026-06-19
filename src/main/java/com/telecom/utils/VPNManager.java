@@ -24,7 +24,7 @@ public class VPNManager {
             );
             
             if (checkInstalled.isEmpty()) {
-                System.out.println("⚠️ No VPN app found on device");
+                System.out.println(" No VPN app found on device");
                 System.out.println("💡 Continuing without VPN...");
                 return false;
             }
@@ -75,7 +75,7 @@ public class VPNManager {
             return connected;
             
         } catch (Exception e) {
-            System.out.println("⚠️ Could not check VPN status: " + e.getMessage());
+            System.out.println(" Could not check VPN status: " + e.getMessage());
             return false;
         }
     }
@@ -158,7 +158,7 @@ public class VPNManager {
             
             // Note: Actual VPN setup requires VPN app or root access
             // This is a placeholder for custom VPN logic
-            System.out.println("⚠️ Custom VPN setup requires manual configuration");
+            System.out.println(" Custom VPN setup requires manual configuration");
             
             return false;
             

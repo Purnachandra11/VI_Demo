@@ -31,7 +31,7 @@ public class WorkingVideoCallDialer {
         System.out.println("\n" + "=".repeat(80));
         System.out.println("📹 INITIATING VIDEO CALL (00:01 Detection Method)");
         System.out.println("=".repeat(80));
-        System.out.println("📱 Number: " + phoneNumber);
+        System.out.println(" Number: " + phoneNumber);
         System.out.println("🎯 Target: " + targetDurationSeconds + "s | ⏰ Ring timeout: 30s");
         System.out.println(" Max Attempts: " + maxAttempts);
         
@@ -142,7 +142,7 @@ public class WorkingVideoCallDialer {
                 System.out.println(" Video call UI detected - call initiated");
                 return true;
             } else {
-                System.out.println("⚠️ No video call UI detected - checking alternative indicators");
+                System.out.println(" No video call UI detected - checking alternative indicators");
                 
                 // Sometimes the call starts without obvious UI changes
                 // Check for any call-related UI
@@ -320,7 +320,7 @@ public class WorkingVideoCallDialer {
                 actualDuration = sec;
                 
             } catch (Exception e) {
-                System.out.println("⚠️ Duration tracking interrupted: " + e.getMessage());
+                System.out.println(" Duration tracking interrupted: " + e.getMessage());
                 break;
             }
         }
@@ -470,14 +470,14 @@ public class WorkingVideoCallDialer {
             }
             
             // Fallback: Use ENDCALL keyevent
-            System.out.println("⚠️ Button not found, using ENDCALL keyevent");
+            System.out.println(" Button not found, using ENDCALL keyevent");
             Map<String, Object> params = new HashMap<>();
             params.put("command", "input keyevent KEYCODE_ENDCALL");
             driver.executeScript("mobile: shell", params);
             System.out.println(" Video call ended via keyevent");
             
         } catch (Exception e) {
-            System.out.println("⚠️ End call had issues: " + e.getMessage());
+            System.out.println(" End call had issues: " + e.getMessage());
         }
         
         Thread.sleep(2000);

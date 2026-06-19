@@ -1,0 +1,6 @@
+.........Console Logs.........
+
+[WDIO] Starting: runs conference call scenario
+
+ℹ️ Conference test data would come from Excel
+[WDIO] Test passed: runs conference call scenario

@@ -102,17 +102,17 @@ public class EnhancedExcelReader {
             
             // Validate required fields
             if (aPartyNumber.isEmpty()) {
-                System.out.println("⚠️ Skipping test - No A Party number");
+                System.out.println(" Skipping test - No A Party number");
                 return null;
             }
             
             if (isIndividual && bPartyNumber.isEmpty()) {
-                System.out.println("⚠️ Skipping individual SMS - No B Party number (recipient)");
+                System.out.println(" Skipping individual SMS - No B Party number (recipient)");
                 return null;
             }
             
             if (isGroup && (groupName.isEmpty() || groupName.equals("-"))) {
-                System.out.println("⚠️ Skipping group SMS - No group name");
+                System.out.println(" Skipping group SMS - No group name");
                 return null;
             }
             
@@ -196,7 +196,7 @@ public class EnhancedExcelReader {
      *  LOG SMS TEST CASE
      */
     private static void logSMSTestCase(Map<String, Object> testCase) {
-        String emoji = (Boolean) testCase.get("isIndividual") ? "📱" : "👥";
+        String emoji = (Boolean) testCase.get("isIndividual") ? "" : "👥";
         String direction = (Boolean) testCase.get("isIncoming") ? "← INCOMING" : "→ OUTGOING";
         String messageType = ((String) testCase.get("messageType")).toUpperCase();
         String typeEmoji = messageType.equals("VOICE") ? "🎤" : messageType.equals("MMS") ? "🖼️" : "💬";
@@ -249,27 +249,27 @@ public class EnhancedExcelReader {
         long mmsCount = testCases.stream().filter(t -> "mms".equals(t.get("messageType"))).count();
         
         System.out.println("📊 SMS TEST SUMMARY:");
-        System.out.println("┌─────────────────────────────────────────────────────────────────┐");
+        System.out.println("┌┐");
         System.out.println("│ TEST TYPE BREAKDOWN                                             │");
-        System.out.println("├─────────────────────────────────────────────────────────────────┤");
-        System.out.println("│ 📱 Individual SMS:    " + String.format("%-41d", individualCount) + "│");
+        System.out.println("├┤");
+        System.out.println("│  Individual SMS:    " + String.format("%-41d", individualCount) + "│");
         System.out.println("│ 👥 Group SMS:         " + String.format("%-41d", groupCount) + "│");
-        System.out.println("└─────────────────────────────────────────────────────────────────┘");
+        System.out.println("└┘");
         
-        System.out.println("\n┌─────────────────────────────────────────────────────────────────┐");
+        System.out.println("\n┌┐");
         System.out.println("│ DIRECTION BREAKDOWN                                             │");
-        System.out.println("├─────────────────────────────────────────────────────────────────┤");
+        System.out.println("├┤");
         System.out.println("│ 📤 Outgoing:          " + String.format("%-41d", outgoingCount) + "│");
-        System.out.println("│ 📥 Incoming:          " + String.format("%-41d", incomingCount) + "│");
-        System.out.println("└─────────────────────────────────────────────────────────────────┘");
+        System.out.println("│  Incoming:          " + String.format("%-41d", incomingCount) + "│");
+        System.out.println("└┘");
         
-        System.out.println("\n┌─────────────────────────────────────────────────────────────────┐");
+        System.out.println("\n┌┐");
         System.out.println("│ MESSAGE TYPE BREAKDOWN                                          │");
-        System.out.println("├─────────────────────────────────────────────────────────────────┤");
+        System.out.println("├┤");
         System.out.println("│ 💬 Text Messages:     " + String.format("%-41d", textCount) + "│");
         System.out.println("│ 🎤 Voice Messages:    " + String.format("%-41d", voiceCount) + "│");
         System.out.println("│ 🖼️ MMS Messages:      " + String.format("%-41d", mmsCount) + "│");
-        System.out.println("└─────────────────────────────────────────────────────────────────┘");
+        System.out.println("└┘");
         
         // Group by A Party Number
         Map<String, Long> byAParty = testCases.stream()
@@ -279,13 +279,13 @@ public class EnhancedExcelReader {
             ));
         
         if (!byAParty.isEmpty()) {
-            System.out.println("\n┌─────────────────────────────────────────────────────────────────┐");
+            System.out.println("\n┌┐");
             System.out.println("│ TESTS BY A-PARTY NUMBER                                         │");
-            System.out.println("├─────────────────────────────────────────────────────────────────┤");
+            System.out.println("├┤");
             byAParty.forEach((aParty, count) -> {
                 System.out.println("│ " + String.format("%-55s", aParty + ": " + count + " tests") + " │");
             });
-            System.out.println("└─────────────────────────────────────────────────────────────────┘");
+            System.out.println("└┘");
         }
         
         System.out.println();
@@ -301,7 +301,7 @@ public class EnhancedExcelReader {
             
             Sheet sheet = workbook.getSheet("SIM_Auto_Latch");
             if (sheet == null) {
-                System.out.println("⚠️ Sheet 'SIM_Auto_Latch' not found in Excel file");
+                System.out.println(" Sheet 'SIM_Auto_Latch' not found in Excel file");
                 return testCases;
             }
             
@@ -712,7 +712,7 @@ public class EnhancedExcelReader {
             
             return Double.parseDouble(cleaned);
         } catch (NumberFormatException e) {
-            System.out.println("⚠️ Warning: Cannot parse double value '" + value + "', using default: " + defaultValue);
+            System.out.println(" Warning: Cannot parse double value '" + value + "', using default: " + defaultValue);
             return defaultValue;
         }
     }
@@ -729,7 +729,7 @@ public class EnhancedExcelReader {
             case "VIDEO": return "📹";
             case "VOLTE": return "📞";
             case "CONFERENCE": return "👥";
-            default: return "📱";
+            default: return "";
         }
     }
 }    

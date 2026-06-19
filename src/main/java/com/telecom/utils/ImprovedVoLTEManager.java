@@ -18,7 +18,7 @@ public class ImprovedVoLTEManager {
         System.out.println("\n" + "=".repeat(80));
         System.out.println("📶 ENABLING VOLTE");
         System.out.println("=".repeat(80));
-        System.out.println("📱 Device: " + deviceId);
+        System.out.println(" Device: " + deviceId);
         
         try {
             // Method 1: Enable VoLTE via settings database
@@ -55,7 +55,7 @@ public class ImprovedVoLTEManager {
             if (enabled) {
                 System.out.println(" VOLTE ENABLED SUCCESSFULLY");
             } else {
-                System.out.println("⚠️ VoLTE enabled but not yet registered");
+                System.out.println(" VoLTE enabled but not yet registered");
                 System.out.println("💡 IMS may take 10-30 seconds to register");
             }
             
@@ -76,7 +76,7 @@ public class ImprovedVoLTEManager {
         System.out.println("\n" + "=".repeat(80));
         System.out.println("📴 DISABLING VOLTE");
         System.out.println("=".repeat(80));
-        System.out.println("📱 Device: " + deviceId);
+        System.out.println(" Device: " + deviceId);
         
         try {
             // Method 1: Disable VoLTE via settings database
@@ -113,7 +113,7 @@ public class ImprovedVoLTEManager {
             if (!enabled) {
                 System.out.println(" VOLTE DISABLED SUCCESSFULLY");
             } else {
-                System.out.println("⚠️ VoLTE still showing as enabled");
+                System.out.println(" VoLTE still showing as enabled");
                 System.out.println("💡 IMS may take time to deregister");
             }
             
@@ -196,7 +196,7 @@ public class ImprovedVoLTEManager {
             }
             
         } catch (Exception e) {
-            System.out.println("⚠️ Error checking VoLTE: " + e.getMessage());
+            System.out.println(" Error checking VoLTE: " + e.getMessage());
             status.put("volteEnabled", "false");
             status.put("volteStatus", "UNKNOWN");
         }
@@ -238,16 +238,16 @@ public class ImprovedVoLTEManager {
         System.out.println("📊 CHECKING VOLTE STATUS - BOTH PARTIES");
         System.out.println("=".repeat(80));
         
-        System.out.println("\n📱 A-Party: " + aPartyDeviceId);
+        System.out.println("\n A-Party: " + aPartyDeviceId);
         Map<String, String> aPartyStatus = getDetailedVoLTEStatus(aPartyDeviceId);
         bothStatuses.put("aParty", aPartyStatus);
         
         if (bPartyDeviceId != null && !bPartyDeviceId.isEmpty()) {
-            System.out.println("\n📱 B-Party: " + bPartyDeviceId);
+            System.out.println("\n B-Party: " + bPartyDeviceId);
             Map<String, String> bPartyStatus = getDetailedVoLTEStatus(bPartyDeviceId);
             bothStatuses.put("bParty", bPartyStatus);
         } else {
-            System.out.println("\n⚠️ B-Party device ID not available");
+            System.out.println("\n B-Party device ID not available");
         }
         
         System.out.println("=".repeat(80) + "\n");

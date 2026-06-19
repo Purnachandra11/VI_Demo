@@ -60,7 +60,7 @@ function parseExcelTestData(filePath) {
 
     return result;
   } catch (error) {
-    console.error('❌ Error parsing Excel:', error);
+    console.error(' Error parsing Excel:', error);
     throw error;
   }
 }

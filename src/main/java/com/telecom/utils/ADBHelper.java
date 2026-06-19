@@ -18,7 +18,7 @@ public class ADBHelper {
             if (System.getProperty("os.name").toLowerCase().contains("win")) {
                 processBuilder.command("cmd.exe", "/c", command);
             } else {
-                processBuilder.command("bash", "-c", command);
+                processBuilder.command("/bin/bash", "-c", command);
             }
             
             Process process = processBuilder.start();
@@ -34,7 +34,7 @@ public class ADBHelper {
             reader.close();
             
             if (exitCode != 0) {
-                System.out.println("⚠️ Command exited with code: " + exitCode + " - " + command);
+                System.out.println(" Command exited with code: " + exitCode + " - " + command);
             }
             
         } catch (Exception e) {
@@ -137,7 +137,7 @@ public class ADBHelper {
             }
             System.out.println(" Permissions granted successfully");
         } catch (Exception e) {
-            System.out.println("⚠️ Some permissions couldn't be granted: " + e.getMessage());
+            System.out.println(" Some permissions couldn't be granted: " + e.getMessage());
         }
     }
     
@@ -223,7 +223,7 @@ public class ADBHelper {
             return success;
             
         } catch (Exception e) {
-            System.out.println("⚠️ Auto-answer service stop failed: " + e.getMessage());
+            System.out.println(" Auto-answer service stop failed: " + e.getMessage());
             return false;
         }
     }
@@ -383,7 +383,7 @@ public class ADBHelper {
                 }
             }
         } catch (Exception e) {
-            System.out.println("⚠️ Enhanced netstats parsing failed: " + e.getMessage());
+            System.out.println(" Enhanced netstats parsing failed: " + e.getMessage());
         }
         return "Unknown";
     }
@@ -483,7 +483,7 @@ public class ADBHelper {
             return true;
             
         } catch (Exception e) {
-            System.out.println("⚠️ Data usage reset failed: " + e.getMessage());
+            System.out.println(" Data usage reset failed: " + e.getMessage());
             return false;
         }
     }
@@ -587,7 +587,7 @@ public class ADBHelper {
             System.out.println("📊 Data usage statistics reset: " + result);
             return true;
         } catch (Exception e) {
-            System.out.println("⚠️ Could not reset data usage: " + e.getMessage());
+            System.out.println(" Could not reset data usage: " + e.getMessage());
             return false;
         }
     }
@@ -619,7 +619,7 @@ public class ADBHelper {
             // Check if mobile data is enabled
             return isMobileDataEnabled(deviceId);
         } catch (Exception e) {
-            System.out.println("⚠️ Could not force mobile data connection: " + e.getMessage());
+            System.out.println(" Could not force mobile data connection: " + e.getMessage());
             return false;
         }
     }
@@ -641,7 +641,7 @@ public class ADBHelper {
      */
     public static boolean installDownloadTools(String deviceId) {
         try {
-            System.out.println("🔧 Installing download tools...");
+            System.out.println(" Installing download tools...");
             
             // Try to install wget/curl via busybox or package manager
             String[] installCommands = {
@@ -667,7 +667,7 @@ public class ADBHelper {
             return wgetAvailable || curlAvailable;
             
         } catch (Exception e) {
-            System.out.println("⚠️ Tool installation failed: " + e.getMessage());
+            System.out.println(" Tool installation failed: " + e.getMessage());
             return false;
         }
     }

@@ -201,7 +201,7 @@ public class DataUsageTestExecutor {
                     String mismatchMsg = "WARNING: Phone number mismatch! Expected: " + expectedPhoneNumber + 
                                         " Detected: " + detectedPhoneNumber;
                     phoneMismatchWarning.append(mismatchMsg);
-                    System.out.println("   ⚠️ " + mismatchMsg);
+                    System.out.println("    " + mismatchMsg);
                 }
                 
                 // Mark if it was reused from cache
@@ -217,7 +217,7 @@ public class DataUsageTestExecutor {
                     System.out.println("   📅 Validity: " + beforeUSSD.get("validity"));
                 }
             } else {
-                System.out.println("   ⚠️ USSD check failed after retries");
+                System.out.println("    USSD check failed after retries");
                 result.put("beforeBalance", "N/A");
                 result.put("ussdCheckFailed", true);
                 result.put("ussdApartyNumber", "N/A");
@@ -258,7 +258,7 @@ public class DataUsageTestExecutor {
             String status = (String) testResults.getOrDefault("status", "FAILED");
             
             if (!trafficGenerated) {
-                System.out.println("⚠️ Traffic generation had issues, but measurement completed");
+                System.out.println(" Traffic generation had issues, but measurement completed");
             }
             
             System.out.println("📊 Consumed: " + String.format("%.4f GB (%.2f MB)", consumedGB, consumedMB));
@@ -333,11 +333,11 @@ public class DataUsageTestExecutor {
                                 System.out.println("   💸 Balance Deduction: ₹" + String.format("%.2f", deduction));
                             }
                         } catch (Exception e) {
-                            System.out.println("   ⚠️ Could not calculate balance deduction: " + e.getMessage());
+                            System.out.println("    Could not calculate balance deduction: " + e.getMessage());
                         }
                     }
                 } else {
-                    System.out.println("   ⚠️ After-balance USSD check failed (non-critical)");
+                    System.out.println("    After-balance USSD check failed (non-critical)");
                     // Clear cache on failure
                     lastPostDataUSSDCache.remove(deviceId);
                 }
@@ -481,7 +481,7 @@ public class DataUsageTestExecutor {
                         cachedUSSD.put("cachedFromPreviousTest", true);
                         return cachedUSSD;
                     } else {
-                        System.out.println("      ⚠️ Phone number mismatch - performing fresh check");
+                        System.out.println("       Phone number mismatch - performing fresh check");
                         System.out.println("         Expected: " + cleanExpected);
                         System.out.println("         Cached: " + cleanCached);
                     }
@@ -505,7 +505,7 @@ public class DataUsageTestExecutor {
                     String cleanDetected = cleanNumber(detectedNumber);
                     
                     if (!cleanExpected.equals(cleanDetected)) {
-                        System.out.println("   ⚠️ WARNING: Phone number mismatch!");
+                        System.out.println("    WARNING: Phone number mismatch!");
                         System.out.println("      Expected: " + cleanExpected);
                         System.out.println("      Detected: " + cleanDetected);
                     } else {
@@ -621,7 +621,7 @@ public class DataUsageTestExecutor {
                             Double numericBalance = parseBalance(balanceStr);
                             ussdResult.put("balanceNumeric", numericBalance);
                         } catch (Exception e) {
-                            System.out.println("   ⚠️ Could not parse balance: " + balanceStr);
+                            System.out.println("    Could not parse balance: " + balanceStr);
                         }
                     }
                     
@@ -672,7 +672,7 @@ public class DataUsageTestExecutor {
             }
         }
         
-        System.out.println("   ⚠️ USSD check failed after " + MAX_USSD_RETRIES + " attempts");
+        System.out.println("    USSD check failed after " + MAX_USSD_RETRIES + " attempts");
         
         //  NEW: Report USSD failure after retries
         ProgressReporter.reportCallingProgress(
@@ -711,7 +711,7 @@ public class DataUsageTestExecutor {
             return Double.parseDouble(balanceStr);
             
         } catch (Exception e) {
-            System.out.println("   ⚠️ Could not parse balance: " + balanceObj);
+            System.out.println("    Could not parse balance: " + balanceObj);
             return null;
         }
     }
@@ -781,9 +781,9 @@ public class DataUsageTestExecutor {
             System.out.println("=".repeat(50));
             System.out.println("   Total Tests: " + totalTests);
             System.out.println("    Success: " + successCount);
-            System.out.println("   ⚠️ Partial: " + partialCount);
+            System.out.println("    Partial: " + partialCount);
             System.out.println("   ❌ Failed: " + failedCount);
-            System.out.println("   📱 Total Consumed: " + String.format("%.4f GB (%.2f MB)", 
+            System.out.println("    Total Consumed: " + String.format("%.4f GB (%.2f MB)", 
                 totalConsumedGB, totalConsumedGB * 1024));
             System.out.println("   🎯 Total Target: " + String.format("%.2f GB", totalTargetGB));
             System.out.println("   📈 Success Rate: " + String.format("%.1f%%", (successCount * 100.0 / totalTests)));

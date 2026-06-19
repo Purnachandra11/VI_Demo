@@ -1,199 +1,188 @@
-const { exec } = require("child_process");
-const util = require("util");
-const execPromise = util.promisify(exec);
+const path = require('path');
+const fs = require('fs');
 
-async function getSimNumberViaUSSD(deviceId, res) {
-  if (res) {
-    function send(data) {
-      res.write(`data: ${JSON.stringify(data)}\n\n`);
+const PROJECT_ROOT = path.resolve(__dirname, '..');
+let ussdModule = null;
+
+// Configuration
+const USSD_CONFIG = {
+  code: '*199#',
+  maxRetries: 2,
+  retryDelay: 1000,
+  tsNodeOptions: {
+    transpileOnly: true,
+    compilerOptions: {
+      module: 'commonjs',
+      target: 'ES2019',
+      skipLibCheck: true,
+      esModuleInterop: true,
+      resolveJsonModule: true,
+      strict: false
     }
   }
+};
 
-  console.log("📞 Dialing USSD to get SIM number...");
-  await execPromise(`adb -s ${deviceId} shell am start -a android.intent.action.CALL -d tel:*199%23`);
-  if (res) send({ status: "Dialing USSD", progress: 10 });
+// Path resolution - cache for performance
+const getPossiblePaths = () => [
+  path.join(PROJECT_ROOT, 'dist', 'test', 'utils', 'ussdService.js'),
+  path.join(PROJECT_ROOT, 'test', 'utils', 'ussdService.ts'),
+  path.join(PROJECT_ROOT, 'test', 'utils', 'ussdService.js'),
+  path.join(__dirname, '..', 'test', 'utils', 'ussdService.ts'),
+];
 
-  console.log("⏳ Waiting for USSD popup...");
-  const timeout = Date.now() + 15000;
-  let popupText = "";
-  while (Date.now() < timeout) {
-    try {
-      await execPromise(`adb -s ${deviceId} shell uiautomator dump /sdcard/ussd_dump.xml`);
-      const { stdout } = await execPromise(`adb -s ${deviceId} shell cat /sdcard/ussd_dump.xml`);
-      const textNodes = Array.from(stdout.matchAll(/text=\"([^\"]+)\"/g)).map(m => m[1]);
-      if (textNodes && textNodes.length) {
-        const joined = textNodes.join("\n");
-        if (!joined.toLowerCase().includes("running") && !joined.toLowerCase().includes("loading")) {
-          popupText = joined;
-          break;
-        }
-      }
-    } catch (_) {}
-    await new Promise(r => setTimeout(r, 400));
-  }
-
-  console.log("📱 USSD Response:", popupText);
-
-  // Extract phone number and balance
-  let phoneNumber = null;
-  let balance = null;
-  let validityDate = null;
-  let validityIsFuture = null;
-
-  const lines = popupText.split("\n").map(l => l.trim()).filter(Boolean);
-  for (const line of lines) {
-    if (!phoneNumber) {
-      const m = line.match(/msisdn\s*[:]?\s*(\d{10,})/i) || line.match(/mobile\s*number\s*[:]?\s*(\d{10,})/i);
-      if (m) phoneNumber = m[1];
-    }
-    if (!balance) {
-      const b1 = line.match(/main\s*bal(?:ance)?\s*[:]?\s*(?:rs\.?|₹)?\s*([\d\.]+)/i);
-      const b2 = line.match(/balance\s*[:]?\s*(?:rs\.?|₹)?\s*([\d\.]+)/i);
-      if (b1) balance = b1[1];
-      else if (b2) balance = b2[1];
-    }
-    if (!validityDate) {
-      const v1 = line.match(/ul\s*vldty\s*[:]?\s*([\w\-\/ ]+)/i);
-      const v2 = line.match(/validity\s*[:]?\s*([\w\-\/ ]+)/i);
-      const raw = v1 ? v1[1] : (v2 ? v2[1] : null);
-      if (raw) {
-        const parsed = parseValidity(raw);
-        if (parsed) validityDate = parsed.toISOString();
-      }
-    }
-  }
-
-  if (validityDate) {
-    const dt = new Date(validityDate);
-    const today = new Date();
-    dt.setHours(0,0,0,0);
-    today.setHours(0,0,0,0);
-    validityIsFuture = dt >= today;
-  }
-
-  console.log(" Phone Number:", phoneNumber);
-  console.log("💰 Balance:", balance);
-
-  if (res) send({ 
-    status: `Device Ready`, 
-    balance, 
-    validityDate, 
-    validityIsFuture,
-    progress: 30 
-  });
-
-  await closeUssdWithButton(deviceId);
-  await clearResidualUssdPopups(deviceId);
-
-  return { phoneNumber, balance, validityDate, validityIsFuture };
-}
-
-// async function closeUssdWithBackKey(deviceId) {
-//   try {
-//     await execPromise(`adb -s ${deviceId} shell input keyevent 4`);
-//     await new Promise(r => setTimeout(r, 300));
-//     await execPromise(`adb -s ${deviceId} shell input keyevent 4`);
-//     return true;
-//   } catch (_) {
-//     return false;
-//   }
-// }
-// ---------------------------------------------------------------
-// CLOSE POP-UP
-// ---------------------------------------------------------------
-async function closeUssdWithButton(deviceId) {
-    const xpaths = [
-        '//android.widget.Button[@text="OK"]',
-        '//android.widget.Button[@text="Dismiss"]',
-        '//android.widget.Button[@text="CANCEL"]',
-        '//android.widget.Button[@resource-id="android:id/button1"]',
-        '//android.widget.Button[@resource-id="android:id/button2"]',
-        '//android.widget.Button' // fallback
-    ];
-
-    for (let xpath of xpaths) {
-        try {
-            const btn = await deviceId.$(xpath);
-            if (await btn.isDisplayed()) {
-                await btn.click();
-                return true;
-            }
-        } catch (_) { }
-    }
-
-    return false;
-}
-// ---------------------------------------------------------------
-// CLEAR ANY REMAINING POPUPS
-// ---------------------------------------------------------------
-async function clearResidualUssdPopups(deviceId) {
-    const timeout = Date.now() + 15000;
-
-    while (Date.now() < timeout) {
-        try {
-            const msg = await deviceId.$('//*[@resource-id="android:id/message"]');
-            if (await msg.isDisplayed()) {
-                console.log("Closing secondary USSD...");
-                await closeUssdWithBackKey(deviceId);
-                await new Promise(r => setTimeout(r, 500));
-                continue;
-            }
-        } catch (_) { }
-
-        await new Promise(r => setTimeout(r, 300));
-    }
-}
-// async function clearResidualUssdPopups(deviceId) {
-//   const timeout = Date.now() + 15000;
-//   while (Date.now() < timeout) {
-//     try {
-//       await execPromise(`adb -s ${deviceId} shell uiautomator dump /sdcard/ussd_dump.xml`);
-//       const { stdout } = await execPromise(`adb -s ${deviceId} shell cat /sdcard/ussd_dump.xml`);
-//       const hasMessage = /resource-id=\"android:id\/message\"/.test(stdout);
-//       if (hasMessage) {
-//         console.log("Closing secondary USSD...");
-//         await closeUssdWithBackKey(deviceId);
-//         await new Promise(r => setTimeout(r, 500));
-//         continue;
-//       }
-//     } catch (_) {}
-//     await new Promise(r => setTimeout(r, 300));
-//   }
-// }
-
-function parseValidity(text) {
-  const t = text.trim();
-  const m1 = t.match(/(\d{2})[\-\/](\d{2})[\-\/](\d{4})/);
-  if (m1) {
-    const d = `${m1[3]}-${m1[2]}-${m1[1]}`;
-    const dt = new Date(d);
-    if (!isNaN(dt.getTime())) return dt;
-  }
-  const m2 = t.match(/(\d{2})[\-\/](\d{2})[\-\/](\d{2})/);
-  if (m2) {
-    const yy = parseInt(m2[3], 10);
-    const year = yy + (yy >= 70 ? 1900 : 2000);
-    const d = `${year}-${m2[2]}-${m2[1]}`;
-    const dt = new Date(d);
-    if (!isNaN(dt.getTime())) return dt;
-  }
-  const m3 = t.match(/(\d{2})\s+([A-Za-z]{3,})\s+(\d{4})/);
-  if (m3) {
-    const month = mapMonth(m3[2]);
-    if (month) {
-      const d = `${m3[3]}-${month}-${m3[1]}`;
-      const dt = new Date(d);
-      if (!isNaN(dt.getTime())) return dt;
+function findUssdServicePath() {
+  for (const p of getPossiblePaths()) {
+    if (fs.existsSync(p)) {
+      console.log(`USSD Found service at: ${p}`);
+      return p;
     }
   }
   return null;
 }
 
-function mapMonth(m) {
-  const s = m.toLowerCase();
-  const map = { jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06', jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12' };
-  const k = s.slice(0,3);
-  return map[k];
+function registerTsNode() {
+  try {
+    process.env.TS_NODE_IGNORE_DEPRECATIONS = '6.0';
+    process.env.TS_NODE_TRANSPILE_ONLY = 'true';
+    process.env.TS_NODE_SKIP_IGNORE = 'true';
+
+    const tsNode = require('ts-node');
+    tsNode.register(USSD_CONFIG.tsNodeOptions);
+    return true;
+  } catch (error) {
+    console.log('USSD  Programmatic registration failed, trying fallback...');
+    
+    const registerPath = path.join(PROJECT_ROOT, 'node_modules', 'ts-node', 'register', 'transpile-only.js');
+    if (fs.existsSync(registerPath)) {
+      require(registerPath);
+      return true;
+    }
+    
+    throw new Error('ts-node not found. Run "npm install" first.');
+  }
 }
 
-module.exports = { getSimNumberViaUSSD };
+function loadUssdService() {
+  if (ussdModule) {
+    return ussdModule;
+  }
+
+  const ussdPath = findUssdServicePath();
+  if (!ussdPath) {
+    throw new Error('USSD service file not found');
+  }
+
+  if (ussdPath.endsWith('.ts')) {
+    registerTsNode();
+  }
+
+  delete require.cache[ussdPath];
+  ussdModule = require(ussdPath);
+
+  const requiredExports = ['checkBalanceAndValidity', 'toLegacyResponse'];
+  const missingExports = requiredExports.filter(exp => !ussdModule[exp]);
+  
+  if (missingExports.length > 0) {
+    throw new Error(`Module missing exports: ${missingExports.join(', ')}`);
+  }
+
+  console.log('USSD Service loaded successfully');
+  return ussdModule;
+}
+
+async function retryOperation(operation, maxRetries = USSD_CONFIG.maxRetries) {
+  let lastError;
+  
+  for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (attempt <= maxRetries) {
+        console.log(`USSD Retry ${attempt}/${maxRetries}...`);
+        await new Promise(resolve => setTimeout(resolve, USSD_CONFIG.retryDelay));
+        ussdModule = null;
+      }
+    }
+  }
+  
+  throw lastError;
+}
+
+async function getSimNumberViaUSSD(deviceId, res = null) {
+  console.log(`USSD check for device ${deviceId}`);
+
+  const send = res 
+    ? data => res.write(`data: ${JSON.stringify(data)}\n\n`)
+    : () => {};
+
+  send({ status: 'Dialing USSD', progress: 10 });
+
+  try {
+    const module = await retryOperation(() => loadUssdService());
+    
+    console.log('USSD Dialing!');
+    const result = await module.checkBalanceAndValidity(deviceId, USSD_CONFIG.code);
+    
+    if (!result || !result.success) {
+      throw new Error(result?.error || 'USSD request failed');
+    }
+
+    const legacy = module.toLegacyResponse(result);
+    const phoneNumber = legacy.phoneNumber ?? null;
+    const balance = legacy.balance ?? null;
+    const validityDate = legacy.validityDate ?? null;
+    const validityIsFuture = legacy.validityIsFuture ?? null;
+
+    console.log(`Phone: ${phoneNumber}`);
+    console.log(`Balance: ₹${balance}`);
+    console.log(`Validity: ${validityDate}`);
+
+    send({
+      status: 'Device Ready',
+      balance,
+      validityDate,
+      validityIsFuture,
+      progress: 30
+    });
+
+    return {
+      phoneNumber,
+      sim: phoneNumber,
+      balance,
+      balanceNumeric: result.balanceNumeric ?? null,
+      validity: result.validity ?? null,
+      validityDate,
+      validityIsFuture,
+      success: true,
+      error: null
+    };
+
+  } catch (error) {
+    console.error(`USSD Failed: ${error.message}`);
+    
+    send({ 
+      status: 'Failed', 
+      progress: 0,
+      error: error.message 
+    });
+
+    return {
+      phoneNumber: null,
+      sim: null,
+      balance: null,
+      balanceNumeric: null,
+      validity: null,
+      validityDate: null,
+      validityIsFuture: null,
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+module.exports = { 
+  getSimNumberViaUSSD, 
+  loadUssdService,
+  USSD_CONFIG
+};

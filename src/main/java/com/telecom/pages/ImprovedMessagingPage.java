@@ -39,6 +39,7 @@ public class ImprovedMessagingPage {
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(30));
         this.shortWait = new WebDriverWait(driver, Duration.ofSeconds(10));
         this.messageVerifier = new MessageVerifier(driver); 
+        
     }
     
     /**
@@ -46,7 +47,7 @@ public class ImprovedMessagingPage {
      */
     public boolean sendIndividualSMS(String phoneNumber, String message) {
         try {
-            System.out.println("📱 Starting Individual SMS to: " + phoneNumber);
+            System.out.println(" Starting Individual SMS to: " + phoneNumber);
             reportProgress(phoneNumber, "STARTED", "Starting SMS send", 0);
             
             openMessagingApp();
@@ -83,39 +84,83 @@ public class ImprovedMessagingPage {
     
     /**
      *  INDIVIDUAL VOICE MESSAGE - Updated with unified verification
-     */
-    public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
-        try {
-            System.out.println("🎤 Starting Individual Voice Message to: " + phoneNumber);
-            reportProgress(phoneNumber, "STARTED", "Starting voice message", 0);
-            
-            VoiceMessageHandler voiceHandler = new VoiceMessageHandler(driver);
-            boolean voiceSent = voiceHandler.sendVoiceMessage(phoneNumber);
-            
-            if (voiceSent) {
-                // Use unified verification for voice message too
-            	boolean verified = messageVerifier.verifyMessageSent();
-                
-                if (verified) {
-                    reportProgress(phoneNumber, "COMPLETED", "Voice message sent and verified", 100);
-                } else {
-                    reportProgress(phoneNumber, "VERIFICATION_FAILED", "Voice message verification failed", 50);
-                }
-                
-                System.out.println(" Voice message verification: " + verified);
-                return verified;
-            } else {
-                reportProgress(phoneNumber, "FAILED", "Voice recording failed", 0);
-                return false;
-            }
-            
-        } catch (Exception e) {
-            System.out.println("❌ Voice message failed: " + e.getMessage());
-            reportProgress(phoneNumber, "ERROR", "Exception: " + e.getMessage(), 0);
+  */
+    // Add this method to ImprovedMessagingPage class
+public boolean sendIndividualSMSWithTimestamp(String phoneNumber, String message) {
+    try {
+        System.out.println(" Starting Individual SMS to: " + phoneNumber);
+        messageVerifier.setRecipientNumber(phoneNumber);
+        
+        long startTime = System.currentTimeMillis();
+        
+        openMessagingApp();
+        ensureMainScreen();
+        startNewConversation();
+        enterPhoneNumber(phoneNumber);
+        enterMessage(message);
+        sendMessage();
+        
+        // Wait for message to be saved
+        Thread.sleep(2000);
+        
+        // Verify with timestamp
+        MessageVerifier.SentSmsInfo sentInfo = messageVerifier.verifyMessageSentWithTimestamp(message);
+        
+        long endTime = System.currentTimeMillis();
+        
+        if (sentInfo != null) {
+            System.out.println("✅ SMS VERIFIED!");
+            System.out.println("   Sent at: " + sentInfo.getFormattedDate());
+            System.out.println("   Total time: " + (endTime - startTime) + " ms");
+            return true;
+        } else {
+            System.out.println("❌ SMS verification failed");
             return false;
         }
+        
+    } catch (Exception e) {
+        System.out.println("❌ SMS failed: " + e.getMessage());
+        return false;
     }
-    
+}
+
+// Update sendIndividualVoiceMessageFixed method
+public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
+    try {
+        System.out.println("🎤 Starting Individual Voice Message to: " + phoneNumber);
+        reportProgress(phoneNumber, "STARTED", "Starting voice message", 0);
+        
+        // Set recipient number for verification
+        messageVerifier.setRecipientNumber(phoneNumber);
+        
+        VoiceMessageHandler voiceHandler = new VoiceMessageHandler(driver);
+        Map<String, Object> result = voiceHandler.sendVoiceMessageWithDetails(phoneNumber);
+        boolean voiceSent = (boolean) result.get("success");
+        
+        if (voiceSent) {
+            // Get detailed verification with timestamp
+            MessageVerifier.SentSmsInfo sentInfo = messageVerifier.getLatestSentMessage();
+            
+            if (sentInfo != null) {
+                reportProgress(phoneNumber, "COMPLETED", 
+                    "Voice message sent at: " + sentInfo.getFormattedDate(), 100);
+                System.out.println(" Voice message sent at: " + sentInfo.getFormattedDate());
+                return true;
+            } else {
+                reportProgress(phoneNumber, "VERIFICATION_FAILED", "Voice message verification failed", 50);
+                return false;
+            }
+        } else {
+            reportProgress(phoneNumber, "FAILED", "Voice recording failed", 0);
+            return false;
+        }
+        
+    } catch (Exception e) {
+        System.out.println("❌ Voice message failed: " + e.getMessage());
+        reportProgress(phoneNumber, "ERROR", "Exception: " + e.getMessage(), 0);
+        return false;
+    }
+}
     /**
      *  GROUP SMS (Text Message) - Updated with unified verification
      */
@@ -255,7 +300,7 @@ public class ImprovedMessagingPage {
     // ==================== CORE METHODS ====================
     
     private void openMessagingApp() throws Exception {
-        System.out.println("  📱 Opening Google Messages...");
+        System.out.println("   Opening Google Messages...");
         
         try {
             driver.activateApp("com.google.android.apps.messaging");
@@ -296,7 +341,7 @@ public class ImprovedMessagingPage {
             System.out.println("   Proceeding with messaging (assuming user is on main screen)");
             
         } catch (Exception e) {
-            System.out.println("  ⚠️ Main screen check error: " + e.getMessage());
+            System.out.println("   Main screen check error: " + e.getMessage());
         }
     }
     
@@ -322,7 +367,7 @@ public class ImprovedMessagingPage {
                 driver.pressKey(new KeyEvent(key));
                 Thread.sleep(300);
             } catch (Exception e) {
-                System.out.println("  ⚠️ Failed to press digit: " + digit);
+                System.out.println("   Failed to press digit: " + digit);
                 throw e;
             }
         }
@@ -392,7 +437,7 @@ public class ImprovedMessagingPage {
                 return verifyRecordingStarted();
                 
             } catch (Exception e1) {
-                System.out.println("  ⚠️ W3C Actions failed: " + e1.getMessage());
+                System.out.println("   W3C Actions failed: " + e1.getMessage());
             }
             
             // Strategy 2: PointerInput with coordinates
@@ -422,7 +467,7 @@ public class ImprovedMessagingPage {
                 return verifyRecordingStarted();
                 
             } catch (Exception e2) {
-                System.out.println("  ⚠️ PointerInput failed: " + e2.getMessage());
+                System.out.println("   PointerInput failed: " + e2.getMessage());
             }
             
             // Strategy 3: Mobile shell command
@@ -497,7 +542,7 @@ public class ImprovedMessagingPage {
                 return true;
             }
             
-            System.out.println("  ⚠️ Recording not verified, assuming success");
+            System.out.println("   Recording not verified, assuming success");
             return true; // Assume success if we reached here
             
         } catch (Exception e) {
@@ -543,7 +588,7 @@ public class ImprovedMessagingPage {
                 Thread.sleep(3000);
                 return true;
             } catch (Exception e) {
-                System.out.println("  ⚠️ ENTER key failed");
+                System.out.println("   ENTER key failed");
             }
             
             // Strategy 3: Tap at known send button coordinates (right side)
@@ -638,7 +683,7 @@ public class ImprovedMessagingPage {
                     return findAndClickGroupInSearchResults(groupName);
                 }
             } catch (Exception e) {
-                System.out.println("  ⚠️ Search button not found, trying direct scroll...");
+                System.out.println("   Search button not found, trying direct scroll...");
             }
             
             return findGroupByScrolling(groupName);
@@ -756,4 +801,5 @@ public class ImprovedMessagingPage {
             }
         }
     }
+    
 }

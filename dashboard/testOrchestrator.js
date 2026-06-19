@@ -1,8 +1,6 @@
 const { getSimNumberViaUSSD } = require('./ussdHandler');
 const { parseExcelTestData } = require('./excelParser');
-const { exec } = require('child_process');
-const util = require('util');
-const execPromise = util.promisify(exec);
+const { runWdioTestAsync, enrichPartiesFromDeviceMap } = require('./wdioRunner');
 
 class TestOrchestrator {
   constructor(deviceId, excelFilePath, wsClients, phoneDeviceMap) {
@@ -17,17 +15,21 @@ class TestOrchestrator {
   broadcast(data) {
     const message = JSON.stringify({ deviceId: this.deviceId, ...data });
     this.wsClients.forEach(client => {
-      if (client.readyState === 1) { // WebSocket.OPEN
+      if (client.readyState === 1) {
         client.send(message);
       }
     });
   }
 
   async discoverConnectedDeviceNumbers() {
+    const { exec } = require('child_process');
+    const util = require('util');
+    const execPromise = util.promisify(exec);
+
     try {
       const { stdout } = await execPromise('adb devices');
-      const lines = stdout.split('\n');
-      const deviceIds = lines
+      const deviceIds = stdout
+        .split('\n')
         .map(l => l.trim())
         .filter(l => l && l.endsWith('device'))
         .map(l => l.split('\t')[0]);
@@ -39,14 +41,14 @@ class TestOrchestrator {
             this.phoneToDeviceId[phoneNumber] = devId;
             this.broadcast({
               type: 'log',
-              message: `🔗 Mapped ${phoneNumber} → ${devId}`,
+              message: `Mapped ${phoneNumber} -> ${devId}`,
               logType: 'info'
             });
           }
         } catch (e) {
           this.broadcast({
             type: 'log',
-            message: `⚠️ USSD mapping failed for ${devId}: ${e.message}`,
+            message: `USSD mapping failed for ${devId}: ${e.message}`,
             logType: 'warning'
           });
         }
@@ -54,7 +56,7 @@ class TestOrchestrator {
     } catch (err) {
       this.broadcast({
         type: 'log',
-        message: `❌ Failed to list devices: ${err.message}`,
+        message: `Failed to list devices: ${err.message}`,
         logType: 'error'
       });
     }
@@ -64,11 +66,10 @@ class TestOrchestrator {
     try {
       this.broadcast({
         type: 'log',
-        message: '🚀 Initializing test environment...',
+        message: 'Initializing test environment (WDIO + TypeScript)...',
         logType: 'info'
       });
 
-      // Step 1: Get device phone number via USSD
       this.broadcast({
         type: 'progress',
         progress: { percentage: 10, action: 'Getting device info', status: 'Running' }
@@ -83,17 +84,15 @@ class TestOrchestrator {
 
       this.broadcast({
         type: 'log',
-        message: ` Device phone number: ${this.devicePhoneNumber}`,
+        message: `Device phone number: ${this.devicePhoneNumber}`,
         logType: 'success'
       });
 
-      // Verification after Excel upload
       this.broadcast({
         type: 'progress',
         progress: { percentage: 15, action: 'Verifying numbers', status: 'Excel' }
       });
 
-      // Step 2: Parse Excel file
       this.broadcast({
         type: 'progress',
         progress: { percentage: 20, action: 'Reading test data', status: 'Parsing Excel' }
@@ -103,11 +102,10 @@ class TestOrchestrator {
 
       this.broadcast({
         type: 'log',
-        message: ` Test data loaded: ${this.testData.calling.length} calling tests, ${this.testData.sms.length} SMS tests`,
+        message: `Test data loaded: ${this.testData.calling.length} calling, ${this.testData.sms.length} SMS`,
         logType: 'success'
       });
 
-      // Verify A-Party and B-Party numbers
       let aMismatch = 0;
       const bSet = new Set();
       for (const t of this.testData.calling) {
@@ -121,61 +119,51 @@ class TestOrchestrator {
       const missingB = Array.from(bSet).filter(n => !this.phoneToDeviceId[n]);
       this.broadcast({
         type: 'log',
-        message: `🔎 Verification: A mismatches=${aMismatch}, B missing devices=${missingB.length}`,
+        message: `Verification: A mismatches=${aMismatch}, B missing devices=${missingB.length}`,
         logType: missingB.length ? 'warning' : 'info'
       });
-      if (missingB.length) {
-        this.broadcast({
-          type: 'log',
-          message: `❗ Missing B-Party device mapping for: ${missingB.join(', ')}`,
-          logType: 'warning'
-        });
-      }
 
       return true;
     } catch (error) {
       this.broadcast({
         type: 'log',
-        message: `❌ Initialization failed: ${error.message}`,
+        message: `Initialization failed: ${error.message}`,
         logType: 'error'
       });
       throw error;
     }
   }
 
+  buildWdioOptions(extra = {}) {
+    const base = enrichPartiesFromDeviceMap(this.deviceId, this.devicePhoneNumber);
+    const bPartyNumber = extra.bPartyNumber;
+    const bPartyDevice = bPartyNumber ? (this.phoneToDeviceId[bPartyNumber] || '') : base.bPartyDevice;
+
+    return {
+      deviceId: this.deviceId,
+      phone: this.devicePhoneNumber,
+      bPartyDevice,
+      bPartyNumber: bPartyNumber || base.bPartyNumber,
+      cPartyDevice: base.cPartyDevice,
+      cPartyNumber: base.cPartyNumber,
+      callDuration: extra.duration,
+      networkType: extra.preferredNetwork,
+      volteEnabled: extra.volteSupported
+    };
+  }
+
   async runSIMAutoLatchTests() {
-    const aPartyDevice = this.deviceId;
-    const aPartyNumber = this.devicePhoneNumber;
-    // Try to find matching B-Party from Excel by number mapping
-    const allNumbers = new Set([
-      ...this.testData.calling.map(t => t.bPartyNumber).filter(Boolean),
-      ...this.testData.sms.map(t => t.bPartyNumber).filter(Boolean)
-    ]);
-    let bPartyNumber = null;
-    let bPartyDevice = null;
-    for (const num of allNumbers) {
-      if (this.phoneToDeviceId[num]) {
-        bPartyNumber = num;
-        bPartyDevice = this.phoneToDeviceId[num];
-        break;
-      }
-    }
-
-    const cmd = `cd .. && mvn clean test -Dtest=SIMAutoLatchTestSuite ` +
-      `-DaPartyDevice=${aPartyDevice} -DaPartyNumber=${aPartyNumber} ` +
-      `${bPartyDevice ? `-DbPartyDevice=${bPartyDevice} -DbPartyNumber=${bPartyNumber}` : ``}`;
-
     try {
-      await execPromise(cmd);
+      await runWdioTestAsync('sim-auto-latch', this.buildWdioOptions());
       this.broadcast({
         type: 'log',
-        message: ` SIM auto-latch suite completed`,
+        message: 'SIM auto-latch suite completed (WDIO)',
         logType: 'success'
       });
     } catch (error) {
       this.broadcast({
         type: 'log',
-        message: `❌ SIM auto-latch failed: ${error.message}`,
+        message: `SIM auto-latch failed: ${error.message}`,
         logType: 'error'
       });
     }
@@ -199,13 +187,10 @@ class TestOrchestrator {
           await this.runSIMAutoLatchTests();
           break;
         case 'calling-sms':
-          await this.runCallingTests();
-          await this.runSMSTests();
+          await runWdioTestAsync('calling-sms', this.buildWdioOptions());
           break;
         case 'all':
-          await this.runCallingTests();
-          await this.runSMSTests();
-          await this.runDataTests();
+          await runWdioTestAsync('all', this.buildWdioOptions());
           break;
         default:
           throw new Error('Invalid test type');
@@ -248,30 +233,17 @@ class TestOrchestrator {
         }
       });
 
-      const aPartyDevice = this.deviceId;
-      const aPartyNumber = this.devicePhoneNumber;
-      const bPartyNumber = test.bPartyNumber;
-      const bPartyDevice = this.phoneToDeviceId[bPartyNumber] || '';
-
-      // Build Maven command with both parties
-      const cmd = `cd .. && mvn clean test -Dtest=CallingTest ` +
-        `-DaPartyDevice=${aPartyDevice} -DaPartyNumber=${aPartyNumber} ` +
-        `${bPartyDevice ? `-DbPartyDevice=${bPartyDevice} -DbPartyNumber=${bPartyNumber} ` : ''}` +
-        `-DcallDuration=${test.duration} ` +
-        `-DnetworkType=${test.preferredNetwork} ` +
-        `-DvolteEnabled=${test.volteSupported}`;
-
       try {
-        const { stdout, stderr } = await execPromise(cmd);
+        await runWdioTestAsync('calling', this.buildWdioOptions(test));
         this.broadcast({
           type: 'log',
-          message: ` Calling test ${i + 1} completed: ${test.bPartyNumber}`,
+          message: `Calling test ${i + 1} completed: ${test.bPartyNumber}`,
           logType: 'success'
         });
       } catch (error) {
         this.broadcast({
           type: 'log',
-          message: `❌ Calling test ${i + 1} failed: ${error.message}`,
+          message: `Calling test ${i + 1} failed: ${error.message}`,
           logType: 'error'
         });
       }
@@ -297,32 +269,17 @@ class TestOrchestrator {
         }
       });
 
-      const aPartyDevice = this.deviceId;
-      const aPartyNumber = this.devicePhoneNumber;
-      const bPartyNumber = test.bPartyNumber;
-      const bPartyDevice = bPartyNumber ? (this.phoneToDeviceId[bPartyNumber] || '') : '';
-
-      let cmd = `cd .. && mvn clean test -Dtest=SMSTest ` +
-        `-DaPartyDevice=${aPartyDevice} -DaPartyNumber=${aPartyNumber} ` +
-        `${bPartyDevice ? `-DbPartyDevice=${bPartyDevice} -DbPartyNumber=${bPartyNumber} ` : ''}`;
-
-      if (test.testType === 'Individual') {
-        cmd += ` -DbPartyNumber=${test.bPartyNumber} -DmessageText="${test.message}"`;
-      } else {
-        cmd += ` -DgroupName="${test.groupName}" -DmessageText="${test.message}"`;
-      }
-
       try {
-        const { stdout, stderr } = await execPromise(cmd);
+        await runWdioTestAsync('sms', this.buildWdioOptions(test));
         this.broadcast({
           type: 'log',
-          message: ` SMS test ${i + 1} completed`,
+          message: `SMS test ${i + 1} completed`,
           logType: 'success'
         });
       } catch (error) {
         this.broadcast({
           type: 'log',
-          message: `❌ SMS test ${i + 1} failed: ${error.message}`,
+          message: `SMS test ${i + 1} failed: ${error.message}`,
           logType: 'error'
         });
       }
@@ -350,23 +307,17 @@ class TestOrchestrator {
         }
       });
 
-      const cmd = `cd .. && mvn clean test -Dtest=DataUsageTest ` +
-        `-DdeviceId=${this.deviceId} ` +
-        `-DaPartyNumber=${this.devicePhoneNumber} ` +
-        `-DtargetDataGB=${test.targetDataGB} ` +
-        `-DdurationMin=${test.durationMin}`;
-
       try {
-        const { stdout, stderr } = await execPromise(cmd);
+        await runWdioTestAsync('data', this.buildWdioOptions(test));
         this.broadcast({
           type: 'log',
-          message: ` Data test ${i + 1} completed`,
+          message: `Data test ${i + 1} completed`,
           logType: 'success'
         });
       } catch (error) {
         this.broadcast({
           type: 'log',
-          message: `❌ Data test ${i + 1} failed: ${error.message}`,
+          message: `Data test ${i + 1} failed: ${error.message}`,
           logType: 'error'
         });
       }

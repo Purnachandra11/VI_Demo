@@ -115,7 +115,7 @@ public class DriverManager {
         
         // Complete last resort
         int defaultPort = 8392;
-        System.out.println("⚠️ Using default port " + defaultPort + " for device " + deviceId + " (ALL PORTS BUSY!)");
+        System.out.println(" Using default port " + defaultPort + " for device " + deviceId + " (ALL PORTS BUSY!)");
         return defaultPort;
     }
 
@@ -154,59 +154,80 @@ public class DriverManager {
         }
     }
 
-    @SuppressWarnings("deprecation")
 	private static void killProcessOnPort(int port) {
         try {
             if (System.getProperty("os.name").toLowerCase().contains("win")) {
-                // Run netstat command
-                Process process = Runtime.getRuntime().exec(
-                    new String[]{"cmd.exe", "/c", "netstat -ano | findstr :" + port}
-                );
-                
-                // Read output
-                java.io.BufferedReader reader = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(process.getInputStream())
-                );
-                
-                // Also read error stream to avoid hanging
-                Thread errorReader = new Thread(() -> {
-                    try (java.io.BufferedReader error = new java.io.BufferedReader(
-                        new java.io.InputStreamReader(process.getErrorStream()))) {
-                        while (error.readLine() != null) {
-                            // Just consume errors
-                        }
-                    } catch (Exception ignored) {}
-                });
-                errorReader.start();
-                
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (line.contains("LISTENING") || line.contains("TCP")) {
-                        // Parse PID - more robust parsing
-                        String[] parts = line.trim().split("\\s+");
-                        String pid = null;
-                        for (int i = parts.length - 1; i >= 0; i--) {
-                            if (parts[i].matches("\\d+")) {
-                                pid = parts[i];
-                                break;
-                            }
-                        }
-                        
-                        if (pid != null && !pid.equals("0")) {
-                            // Kill the process
-                            Runtime.getRuntime().exec("taskkill /F /PID " + pid);
-                            System.out.println("🗡️ Killed process " + pid + " on port " + port);
-                        }
-                    }
-                }
-                
-                reader.close();
-                errorReader.join();
-                process.waitFor();
+                killProcessOnPortWindows(port);
+            } else {
+                killProcessOnPortUnix(port);
             }
         } catch (Exception e) {
             // Silent fail - cleanup attempt only
         }
+    }
+
+    private static void killProcessOnPortWindows(int port) throws Exception {
+        Process process = Runtime.getRuntime().exec(
+                new String[]{"cmd.exe", "/c", "netstat -ano | findstr :" + port});
+
+        java.io.BufferedReader reader = new java.io.BufferedReader(
+                new java.io.InputStreamReader(process.getInputStream()));
+
+        Thread errorReader = new Thread(() -> {
+            try (java.io.BufferedReader error = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(process.getErrorStream()))) {
+                while (error.readLine() != null) {
+                    // consume
+                }
+            } catch (Exception ignored) {
+            }
+        });
+        errorReader.start();
+
+        String line;
+        while ((line = reader.readLine()) != null) {
+            if (line.contains("LISTENING") || line.contains("TCP")) {
+                String[] parts = line.trim().split("\\s+");
+                String pid = null;
+                for (int i = parts.length - 1; i >= 0; i--) {
+                    if (parts[i].matches("\\d+")) {
+                        pid = parts[i];
+                        break;
+                    }
+                }
+                if (pid != null && !pid.equals("0")) {
+                    new ProcessBuilder("taskkill", "/F", "/PID", pid).start().waitFor();
+                    System.out.println("🗡️ Killed process " + pid + " on port " + port);
+                }
+            }
+        }
+
+        reader.close();
+        errorReader.join();
+        process.waitFor();
+    }
+
+    /**
+     * Free listeners on {@code port} on Linux/macOS (lsof; optional fuser fallback).
+     */
+    private static void killProcessOnPortUnix(int port) throws Exception {
+        String script =
+                "for pid in $(lsof -t -iTCP:" + port + " -sTCP:LISTEN 2>/dev/null); do "
+                        + "kill -9 \"$pid\" 2>/dev/null; echo \"$pid\"; done; "
+                        + "if command -v fuser >/dev/null 2>&1; then fuser -k " + port + "/tcp 2>/dev/null; fi";
+        ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", script);
+        pb.redirectErrorStream(true);
+        Process process = pb.start();
+        try (java.io.BufferedReader out = new java.io.BufferedReader(
+                new java.io.InputStreamReader(process.getInputStream()))) {
+            String pidLine;
+            while ((pidLine = out.readLine()) != null) {
+                if (pidLine.matches("\\d+")) {
+                    System.out.println("🗡️ Killed process " + pidLine + " on port " + port);
+                }
+            }
+        }
+        process.waitFor();
     }
     
     
@@ -321,7 +342,7 @@ public class DriverManager {
             driver.set(androidDriver);
             
             System.out.println(" Driver initialized successfully");
-            System.out.println("   📱 Device: " + ADBHelper.getDeviceModel(deviceId));
+            System.out.println("    Device: " + ADBHelper.getDeviceModel(deviceId));
             System.out.println("   🤖 Android: " + platformVersion);
             System.out.println("   🔗 Connection: " + ADBHelper.getConnectionType(deviceId));
             
@@ -406,9 +427,9 @@ public class DriverManager {
             driver.set(androidDriver);
             
             System.out.println(" Messaging Driver initialized successfully");
-            System.out.println("   📱 Device: " + ADBHelper.getDeviceModel(deviceId));
+            System.out.println("    Device: " + ADBHelper.getDeviceModel(deviceId));
             System.out.println("   🤖 Android: " + platformVersion);
-            System.out.println("   📱 Messaging App: " + ConfigReader.getMessageAppPackage());
+            System.out.println("    Messaging App: " + ConfigReader.getMessageAppPackage());
             System.out.println("   🔗 Connection: " + ADBHelper.getConnectionType(deviceId));
             
             return androidDriver;
@@ -487,7 +508,7 @@ public class DriverManager {
                         deviceId = udid.toString();
                     }
                 } catch (Exception e) {
-                    System.out.println("⚠️ Could not extract device ID: " + e.getMessage());
+                    System.out.println(" Could not extract device ID: " + e.getMessage());
                 }
                 
                 // Try to quit gracefully
@@ -495,13 +516,13 @@ public class DriverManager {
                 System.out.println(" Driver quit successfully");
             }
         } catch (Exception e) {
-            System.out.println("⚠️ Driver quit had issues: " + e.getMessage());
+            System.out.println(" Driver quit had issues: " + e.getMessage());
             if (currentDriver != null) {
                 try {
                     // Force cleanup
                     currentDriver.quit();
                 } catch (Exception e2) {
-                    System.out.println("⚠️ Force quit also failed: " + e2.getMessage());
+                    System.out.println(" Force quit also failed: " + e2.getMessage());
                 }
             }
         } finally {
@@ -511,7 +532,7 @@ public class DriverManager {
             if (deviceId != null) {
                 releasePortForDevice(deviceId);
             } else {
-                System.out.println("⚠️ Could not release port - deviceId unknown");
+                System.out.println(" Could not release port - deviceId unknown");
             }
         }
     }
@@ -527,7 +548,7 @@ public class DriverManager {
                 }
                 
                 if (e.getMessage().contains("port") && e.getMessage().contains("busy")) {
-                    System.out.println("⚠️ Port conflict detected, performing cleanup...");
+                    System.out.println(" Port conflict detected, performing cleanup...");
                     releasePortForDevice(deviceId);
                     Thread.sleep(2000); // Wait before retry
                 }

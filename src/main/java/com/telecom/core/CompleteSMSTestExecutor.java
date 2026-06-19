@@ -159,7 +159,7 @@ public class CompleteSMSTestExecutor {
      * BUILD DEVICE MAPPING from A/B/C Party info
      */
     private void buildDeviceMapping(List<Map<String, Object>> testCases) {
-        System.out.println("🔧 Building Device Mapping...");
+        System.out.println(" Building Device Mapping...");
         
         // Get from DeviceManager
         String aPartyDevice = System.getProperty("aPartyDevice");
@@ -169,20 +169,17 @@ public class CompleteSMSTestExecutor {
         
         if (aPartyNumber != null && aPartyDevice != null) {
             numberToDeviceMap.put(cleanNumber(aPartyNumber), aPartyDevice);
-            System.out.println("   📱 A-Party: " + aPartyNumber + " -> " + aPartyDevice);
+            System.out.println("    A-Party: " + aPartyNumber + " -> " + aPartyDevice);
         }
         
         if (bPartyNumber != null && bPartyDevice != null) {
             numberToDeviceMap.put(cleanNumber(bPartyNumber), bPartyDevice);
-            System.out.println("   📱 B-Party: " + bPartyNumber + " -> " + bPartyDevice);
+            System.out.println("    B-Party: " + bPartyNumber + " -> " + bPartyDevice);
         }
         
         System.out.println("Device mapping complete: " + numberToDeviceMap.size() + " devices\n");
     }
     
-    /**
-     * EXECUTE SINGLE TEST - Main Test Logic with Enhanced Error Handling
-     */
     /**
      * EXECUTE SINGLE TEST - Main Test Logic with Enhanced Error Handling
      */
@@ -237,7 +234,7 @@ public class CompleteSMSTestExecutor {
             
             System.out.println("   📤 Sender: " + senderNumber + " (" + senderDevice + ")");
             if (receiverNumber != null) {
-                System.out.println("   📥 Receiver: " + receiverNumber + " (" + receiverDevice + ")");
+                System.out.println("    Receiver: " + receiverNumber + " (" + receiverDevice + ")");
             }
             
          // STEP 2: Validate device connectivity - ENHANCED
@@ -246,7 +243,7 @@ public class CompleteSMSTestExecutor {
             );
 
             if (!validation.isValid) {
-                System.out.println("\n⚠️ SKIPPING TEST: " + validation.reason);
+                System.out.println("\n SKIPPING TEST: " + validation.reason);
                 
                 // NEW: Report test skip
                 ProgressReporter.reportSMSProgress(
@@ -334,7 +331,7 @@ public class CompleteSMSTestExecutor {
                     lastPostCallUSSDCache.remove(senderDevice);
                     return result;
                 } else {
-                    System.out.println("   ⚠️ Sender USSD check failed (continuing)");
+                    System.out.println("    Sender USSD check failed (continuing)");
                     if ("INCOMING".equals(direction)) {
                         result.put("bPartyBeforeBalance", "N/A");
                     } else {
@@ -387,7 +384,7 @@ public class CompleteSMSTestExecutor {
                         result.put("receiverMSISDN", beforeUSSD_Receiver.get("phoneNumber"));
                     }
                 } else {
-                    System.out.println("   ⚠️ Receiver USSD check failed (non-critical)");
+                    System.out.println("    Receiver USSD check failed (non-critical)");
                     if ("INCOMING".equals(direction)) {
                         result.put("beforeBalance", "N/A");
                     } else {
@@ -544,7 +541,7 @@ public class CompleteSMSTestExecutor {
                             );
                         }
                     } else {
-                        System.out.println("   ⚠️ Could not verify receipt time");
+                        System.out.println("    Could not verify receipt time");
                         result.put("deliveryStatus", verificationStatus); // Use verification status
                         
                         // REPORT SPECIFIC STATUS
@@ -576,7 +573,7 @@ public class CompleteSMSTestExecutor {
                     }
                 } else {
                     // HANDLE DEVICE UNAVAILABLE CASE
-                    System.out.println("   ⚠️ Receiver device not available for verification");
+                    System.out.println("    Receiver device not available for verification");
                     String unavailableStatus = "DEVICE_UNAVAILABLE";
                     result.put("deliveryStatus", unavailableStatus);
                     result.put("verificationStatus", unavailableStatus);
@@ -661,7 +658,7 @@ public class CompleteSMSTestExecutor {
                                 }
                             }
                         } catch (Exception e) {
-                            System.out.println("   ⚠️ Could not calculate sender balance deduction: " + e.getMessage());
+                            System.out.println("    Could not calculate sender balance deduction: " + e.getMessage());
                         }
                     }
                     
@@ -673,7 +670,7 @@ public class CompleteSMSTestExecutor {
                         95.0
                     );
                 } else {
-                    System.out.println("   ⚠️ Sender after-balance USSD check failed");
+                    System.out.println("    Sender after-balance USSD check failed");
                     lastPostCallUSSDCache.remove(senderDevice);
                     
                     ProgressReporter.reportSMSProgress(
@@ -732,7 +729,7 @@ public class CompleteSMSTestExecutor {
                                 }
                             }
                         } catch (Exception e) {
-                            System.out.println("   ⚠️ Could not calculate receiver balance deduction: " + e.getMessage());
+                            System.out.println("    Could not calculate receiver balance deduction: " + e.getMessage());
                         }
                     }
                     
@@ -744,7 +741,7 @@ public class CompleteSMSTestExecutor {
                         100.0
                     );
                 } else {
-                    System.out.println("   ⚠️ Receiver after-balance USSD check failed");
+                    System.out.println("    Receiver after-balance USSD check failed");
                 }
             }
             
@@ -898,7 +895,7 @@ public class CompleteSMSTestExecutor {
 //        // Check receiver device (if individual)
 //        if (isIndividual && receiverDevice != null) {
 //            if (!ADBHelper.isDeviceConnected(receiverDevice)) {
-//                System.out.println("   ⚠️ Receiver device not connected: " + receiverDevice);
+//                System.out.println("    Receiver device not connected: " + receiverDevice);
 //                System.out.println("   ℹ️ Will skip delivery verification");
 //            } else {
 //                System.out.println("   Receiver device connected: " + receiverDevice);
@@ -942,7 +939,7 @@ public class CompleteSMSTestExecutor {
             // Validate RECEIVER device (optional for outgoing)
             if (isIndividual && receiverDevice != null) {
                 if (!ADBHelper.isDeviceConnected(receiverDevice)) {
-                    System.out.println("   ⚠️ Receiver device not connected: " + receiverDevice);
+                    System.out.println("    Receiver device not connected: " + receiverDevice);
                     System.out.println("   ℹ️ For outgoing tests, receiver may be external - continuing");
                 } else {
                     System.out.println("   Receiver device connected: " + receiverDevice);
@@ -954,7 +951,7 @@ public class CompleteSMSTestExecutor {
         
         // SCENARIO B: INCOMING TEST
         else if ("INCOMING".equals(direction)) {
-            System.out.println("   📥 INCOMING TEST VALIDATION");
+            System.out.println("    INCOMING TEST VALIDATION");
             
             // Validate SENDER device (B-Party/Recipient device)
             if (senderDevice == null) {
@@ -1059,7 +1056,7 @@ public class CompleteSMSTestExecutor {
                 try {
                     resetDriverAfterUSSD(deviceId);
                 } catch (Exception resetEx) {
-                    System.out.println("   ⚠️ Driver reset error (continuing): " + resetEx.getMessage());
+                    System.out.println("    Driver reset error (continuing): " + resetEx.getMessage());
                 }
                 
                 // Check result
@@ -1158,7 +1155,7 @@ public class CompleteSMSTestExecutor {
         }
         
         // All retries exhausted
-        System.out.println("   ⚠️ USSD check failed after " + MAX_USSD_RETRIES + " attempts");
+        System.out.println("    USSD check failed after " + MAX_USSD_RETRIES + " attempts");
         
         // NEW: Report USSD final failure
         ProgressReporter.reportSMSProgress(
@@ -1187,7 +1184,7 @@ public class CompleteSMSTestExecutor {
      */
     private void resetDriverAfterUSSD(String deviceId) {
         try {
-            System.out.println("   🔧 Resetting Appium session after USSD...");
+            System.out.println("    Resetting Appium session after USSD...");
             
             // Step 1: Force stop messaging app via ADB (always works)
             try {
@@ -1198,7 +1195,7 @@ public class CompleteSMSTestExecutor {
                 System.out.println("   Messaging app force stopped");
                 Thread.sleep(2000);
             } catch (Exception e) {
-                System.out.println("   ⚠️ Force stop failed: " + e.getMessage());
+                System.out.println("    Force stop failed: " + e.getMessage());
             }
             
             // Step 2: Terminate via driver (if still alive)
@@ -1214,7 +1211,7 @@ public class CompleteSMSTestExecutor {
             try {
                 driver.getPageSource();
             } catch (Exception e) {
-                System.out.println("   ⚠️ Driver is unresponsive, recreating session...");
+                System.out.println("    Driver is unresponsive, recreating session...");
                 driverDead = true;
             }
             
@@ -1297,7 +1294,7 @@ public class CompleteSMSTestExecutor {
                         cachedUSSD.put("cachedFromPreviousTest", true);
                         return cachedUSSD;
                     } else {
-                        System.out.println("      ⚠️ Phone number mismatch - performing fresh check");
+                        System.out.println("       Phone number mismatch - performing fresh check");
                         System.out.println("         Expected: " + cleanExpected);
                         System.out.println("         Cached: " + cleanCached);
                     }
@@ -1321,7 +1318,7 @@ public class CompleteSMSTestExecutor {
                     String cleanDetected = cleanNumber(detectedNumber);
                     
                     if (!cleanExpected.equals(cleanDetected)) {
-                        System.out.println("   ⚠️ WARNING: Phone number mismatch!");
+                        System.out.println("    WARNING: Phone number mismatch!");
                         System.out.println("      Expected: " + cleanExpected);
                         System.out.println("      Detected: " + cleanDetected);
                     } else {
@@ -1359,7 +1356,7 @@ public class CompleteSMSTestExecutor {
             return Double.parseDouble(balanceStr);
             
         } catch (Exception e) {
-            System.out.println("   ⚠️ Could not parse balance: " + balanceObj);
+            System.out.println("    Could not parse balance: " + balanceObj);
             return null;
         }
     }
@@ -1382,7 +1379,7 @@ public class CompleteSMSTestExecutor {
         boolean success;
         
         if (isIndividual) {
-            System.out.println("   📱 Individual SMS to: " + receiverNumber);
+            System.out.println("    Individual SMS to: " + receiverNumber);
             success = messagingPage.sendIndividualSMS(receiverNumber, message);
         } else {
             System.out.println("   👥 Group SMS to: " + groupName);
@@ -1421,7 +1418,7 @@ public class CompleteSMSTestExecutor {
         boolean success;
         
         if (isIndividual) {
-            System.out.println("   📱 Individual voice message to: " + receiverNumber);
+            System.out.println("    Individual voice message to: " + receiverNumber);
             success = messagingPage.sendIndividualVoiceMessage(receiverNumber);
         } else {
             System.out.println("   👥 Group voice message to: " + groupName);
@@ -1446,14 +1443,10 @@ public class CompleteSMSTestExecutor {
     /**
      * VERIFY MESSAGE RECEIVED (T2)
      */
-    /**
-     * ENHANCED MESSAGE RECEIPT VERIFICATION
-     * Returns: Map containing receiver timestamp and status
-     */
     private Map<String, Object> verifyMessageReceived(String receiverDevice, String senderNumber, 
                                        String messageType, String direction, 
                                        String aPartyNumber, String recipientNumber) {
-        System.out.println("\n📥 ENHANCED MESSAGE RECEIPT VERIFICATION");
+        System.out.println("\n ENHANCED MESSAGE RECEIPT VERIFICATION");
         System.out.println("   Direction: " + direction);
         System.out.println("   From: " + senderNumber + " | Type: " + messageType);
         
@@ -1469,9 +1462,9 @@ public class CompleteSMSTestExecutor {
                 String aPartyDevice = numberToDeviceMap.get(cleanNumber(aPartyNumber));
                 if (aPartyDevice != null && ADBHelper.isDeviceConnected(aPartyDevice)) {
                     actualReceiverDevice = aPartyDevice;
-                    System.out.println("   📱 INCOMING: Receiver is aParty device: " + aPartyDevice);
+                    System.out.println("    INCOMING: Receiver is aParty device: " + aPartyDevice);
                 } else {
-                    System.out.println("   ⚠️ INCOMING: aParty device not available");
+                    System.out.println("    INCOMING: aParty device not available");
                     verificationStatus = "DEVICE_UNAVAILABLE";
                     verificationResult.put("receiverTimestamp", 0L);
                     verificationResult.put("verificationStatus", verificationStatus);
@@ -1481,7 +1474,7 @@ public class CompleteSMSTestExecutor {
             
             // 2. Check if receiver device is available
             if (actualReceiverDevice == null) {
-                System.out.println("   ⚠️ No receiver device available for verification");
+                System.out.println("    No receiver device available for verification");
                 verificationStatus = "DEVICE_UNAVAILABLE";
                 verificationResult.put("receiverTimestamp", 0L);
                 verificationResult.put("verificationStatus", verificationStatus);
@@ -1489,7 +1482,7 @@ public class CompleteSMSTestExecutor {
             }
             
             if (!ADBHelper.isDeviceConnected(actualReceiverDevice)) {
-                System.out.println("   ⚠️ Receiver device not connected: " + actualReceiverDevice);
+                System.out.println("    Receiver device not connected: " + actualReceiverDevice);
                 verificationStatus = "DEVICE_UNAVAILABLE";
                 verificationResult.put("receiverTimestamp", 0L);
                 verificationResult.put("verificationStatus", verificationStatus);
@@ -1502,7 +1495,7 @@ public class CompleteSMSTestExecutor {
             }
             
             // 4. Clear notifications and open messaging app fresh
-            System.out.println("   🔧 Preparing receiver device...");
+            System.out.println("    Preparing receiver device...");
             clearNotifications(actualReceiverDevice);
             Thread.sleep(2000);
             
@@ -1564,7 +1557,7 @@ public class CompleteSMSTestExecutor {
                 System.out.println("   📅 Receiver Timestamp: " + 
                     TIMESTAMP_FORMAT.format(new Date(receiverTimestamp)));
             } else {
-                System.out.println("   ⚠️ Message not received within expected time");
+                System.out.println("    Message not received within expected time");
             }
             
             verificationResult.put("receiverTimestamp", receiverTimestamp);
@@ -1595,7 +1588,7 @@ public class CompleteSMSTestExecutor {
             process.waitFor();
             System.out.println("   🔭 Cleared notifications");
         } catch (Exception e) {
-            System.out.println("   ⚠️ Could not clear notifications: " + e.getMessage());
+            System.out.println("    Could not clear notifications: " + e.getMessage());
         }
     }
 
@@ -1617,7 +1610,7 @@ public class CompleteSMSTestExecutor {
             
             System.out.println("   Messaging app opened fresh");
         } catch (Exception e) {
-            System.out.println("   ⚠️ Error opening fresh app: " + e.getMessage());
+            System.out.println("    Error opening fresh app: " + e.getMessage());
             throw e;
         }
     }
@@ -1634,7 +1627,7 @@ public class CompleteSMSTestExecutor {
                 Thread.sleep(1000);
                 System.out.println("   App terminated via driver");
             } catch (Exception e) {
-                System.out.println("   ⚠️ Driver terminate failed (expected after USSD)");
+                System.out.println("    Driver terminate failed (expected after USSD)");
             }
 
             // Method 2: Force stop via ADB (always works)
@@ -1647,13 +1640,13 @@ public class CompleteSMSTestExecutor {
                     System.out.println("   Messaging app force stopped via ADB");
                 }
             } catch (Exception e) {
-                System.out.println("   ⚠️ ADB force stop failed: " + e.getMessage());
+                System.out.println("    ADB force stop failed: " + e.getMessage());
             }
             
             Thread.sleep(2000);
 
         } catch (Exception e) {
-            System.out.println("   ⚠️ Close app error: " + e.getMessage());
+            System.out.println("    Close app error: " + e.getMessage());
         }
     }
 
@@ -1682,12 +1675,12 @@ public class CompleteSMSTestExecutor {
                         process.waitFor();
                         Thread.sleep(1000);
                     } catch (Exception adbEx) {
-                        System.out.println("   ⚠️ ADB BACK failed: " + adbEx.getMessage());
+                        System.out.println("    ADB BACK failed: " + adbEx.getMessage());
                     }
                 }
             }
         } catch (Exception e) {
-            System.out.println("   ⚠️ Main screen check: " + e.getMessage());
+            System.out.println("    Main screen check: " + e.getMessage());
         }
     }
 
@@ -1735,7 +1728,7 @@ public class CompleteSMSTestExecutor {
             return false;
             
         } catch (Exception e) {
-            System.out.println("   ⚠️ Error finding conversation: " + e.getMessage());
+            System.out.println("    Error finding conversation: " + e.getMessage());
             return false;
         }
     }
@@ -1781,7 +1774,7 @@ public class CompleteSMSTestExecutor {
             return null;
             
         } catch (Exception e) {
-            System.out.println("   ⚠️ Could not get last message timestamp: " + e.getMessage());
+            System.out.println("    Could not get last message timestamp: " + e.getMessage());
             return null;
         }
     }
@@ -1870,12 +1863,12 @@ public class CompleteSMSTestExecutor {
                 Thread.sleep(MESSAGE_POLL_INTERVAL);
                 
             } catch (Exception e) {
-                System.out.println("   ⚠️ Poll error: " + e.getMessage());
+                System.out.println("    Poll error: " + e.getMessage());
                 Thread.sleep(MESSAGE_POLL_INTERVAL);
             }
         }
         
-        System.out.println("   ⚠️ Timeout waiting for message in conversation");
+        System.out.println("    Timeout waiting for message in conversation");
         return 0;
     }
 
@@ -1928,12 +1921,12 @@ public class CompleteSMSTestExecutor {
                 Thread.sleep(MESSAGE_POLL_INTERVAL);
                 
             } catch (Exception e) {
-                System.out.println("   ⚠️ Notification poll error: " + e.getMessage());
+                System.out.println("    Notification poll error: " + e.getMessage());
                 Thread.sleep(MESSAGE_POLL_INTERVAL);
             }
         }
         
-        System.out.println("   ⚠️ Timeout waiting for notification");
+        System.out.println("    Timeout waiting for notification");
         return 0;
     }
 
@@ -1981,7 +1974,7 @@ public class CompleteSMSTestExecutor {
             return output.toString();
             
         } catch (Exception e) {
-            System.out.println("   ⚠️ Could not get notifications: " + e.getMessage());
+            System.out.println("    Could not get notifications: " + e.getMessage());
             return "";
         }
     }
@@ -1998,7 +1991,7 @@ public class CompleteSMSTestExecutor {
             tapProcess.waitFor();
             
         } catch (Exception e) {
-            System.out.println("   ⚠️ Could not tap notification: " + e.getMessage());
+            System.out.println("    Could not tap notification: " + e.getMessage());
         }
     }
 
@@ -2082,7 +2075,7 @@ public class CompleteSMSTestExecutor {
             System.out.println("   HTML Report: " + htmlReport);
             
         } catch (Exception e) {
-            System.out.println("   ⚠️ Report generation error: " + e.getMessage());
+            System.out.println("    Report generation error: " + e.getMessage());
         }
     }
     

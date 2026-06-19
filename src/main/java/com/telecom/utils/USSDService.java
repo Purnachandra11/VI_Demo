@@ -14,6 +14,7 @@ public class USSDService {
     private static final int CONNECT_TIMEOUT = 150000; // 150 seconds
     private static final int READ_TIMEOUT = 150000;    // 150 seconds
     private static final String API_URL = "http://localhost:5175/getBalance";
+    //   private static final String API_URL = "http://13.233.121.125:5175/getBalance";
     
     /**
      *  CHECK BALANCE AND VALIDITY - Enhanced Version
@@ -165,7 +166,7 @@ public class USSDService {
                 }
             }
         } catch (Exception e) {
-            System.out.println("⚠️ Quick balance check failed: " + e.getMessage());
+            System.out.println(" Quick balance check failed: " + e.getMessage());
         }
         return null;
     }
@@ -186,7 +187,7 @@ public class USSDService {
                     
                     boolean match = normalizedExpected.equals(normalizedActual);
                     
-                    System.out.println("📱 Phone Number Verification:");
+                    System.out.println(" Phone Number Verification:");
                     System.out.println("   Expected: " + expectedNumber + " → " + normalizedExpected);
                     System.out.println("   Actual: " + actualNumber + " → " + normalizedActual);
                     System.out.println("   Match: " + (match ? "" : "❌"));

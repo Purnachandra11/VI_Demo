@@ -324,7 +324,7 @@ public class SIMToolkitCaptureTest extends BaseTest {
         if (capturedCount >= totalRequired) {
             System.out.println("\n ALL SCREENSHOTS CAPTURED SUCCESSFULLY!");
         } else {
-            System.out.println("\n⚠️ SOME SCREENSHOTS ARE MISSING!");
+            System.out.println("\n SOME SCREENSHOTS ARE MISSING!");
             
             System.out.println("\n📋 Missing screenshots:");
             for (Map.Entry<String, Boolean> entry : verificationResults.entrySet()) {
@@ -343,7 +343,7 @@ public class SIMToolkitCaptureTest extends BaseTest {
         System.out.println("  TEST SUMMARY");
         System.out.println("═".repeat(70));
         
-        System.out.println("\n📱 SIM Configuration:");
+        System.out.println("\n SIM Configuration:");
         System.out.println("   Type: " + detectedSimType.getDescription());
         System.out.println("   Vi Branding: " + (brandingVerified ? " Verified" : "❌ Not Found"));
         

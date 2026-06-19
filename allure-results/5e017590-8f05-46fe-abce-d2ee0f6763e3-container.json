@@ -1,0 +1,1 @@
+{"uuid":"5e017590-8f05-46fe-abce-d2ee0f6763e3","name":"\"before all\" hook for Calling Tests","children":["ddaa370d-60bc-4155-b1ee-a66b54fd7651"],"befores":[{"status":"passed","statusDetails":{},"stage":"finished","steps":[],"attachments":[],"parameters":[],"start":1780436435948,"name":"\"before all\" hook for Calling Tests","stop":1780436440247}],"afters":[]}

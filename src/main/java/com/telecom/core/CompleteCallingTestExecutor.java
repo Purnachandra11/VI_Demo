@@ -49,7 +49,7 @@ public class CompleteCallingTestExecutor {
         this.bPartyNumber = System.getProperty("bPartyNumber");
         
         System.out.println("\n" + "=".repeat(100));
-        System.out.println("📱 CALLING TEST EXECUTOR INITIALIZED (OPTIMIZED USSD)");
+        System.out.println(" CALLING TEST EXECUTOR INITIALIZED (OPTIMIZED USSD)");
         System.out.println("=".repeat(100));
         System.out.println("A-Party Device: " + aPartyDeviceId);
         System.out.println("A-Party Number: " + aPartyNumber);
@@ -58,13 +58,13 @@ public class CompleteCallingTestExecutor {
         System.out.println("=".repeat(100) + "\n");
         
         if (bPartyDeviceId != null && bPartyNumber != null) {
-            System.out.println("🔧 Initializing DeviceManager with devices...");
+            System.out.println(" Initializing DeviceManager with devices...");
             DeviceManager.initializeDevices(
                 aPartyDeviceId, aPartyNumber, bPartyDeviceId, bPartyNumber
             );
             DeviceManager.printDeviceStatus();
         } else {
-            System.out.println("⚠️ B-Party information not provided - auto-answer will not be available");
+            System.out.println(" B-Party information not provided - auto-answer will not be available");
         }
     }
     
@@ -230,7 +230,7 @@ public class CompleteCallingTestExecutor {
             String aPartyNumber = this.aPartyNumber;
             if (aPartyNumber != null && aPartyDevice != null) {
                 numberToDeviceMap.put(cleanNumber(aPartyNumber), aPartyDevice);
-                System.out.println("   📱 A-Party mapped: " + aPartyNumber + " -> " + aPartyDevice);
+                System.out.println("    A-Party mapped: " + aPartyNumber + " -> " + aPartyDevice);
             }
 
             // Add B-Party mapping if provided in system properties
@@ -238,7 +238,7 @@ public class CompleteCallingTestExecutor {
             String bPartyNumber = this.bPartyNumber;
             if (bPartyNumber != null && bPartyDevice != null) {
                 numberToDeviceMap.put(cleanNumber(bPartyNumber), bPartyDevice);
-                System.out.println("   📱 B-Party mapped: " + bPartyNumber + " -> " + bPartyDevice);
+                System.out.println("    B-Party mapped: " + bPartyNumber + " -> " + bPartyDevice);
             }
 
             System.out.println("\n📊 EXCEL NUMBERS DEVICE MAPPING CHECK:");
@@ -254,7 +254,7 @@ public class CompleteCallingTestExecutor {
                 callerDeviceId = numberToDeviceMap.get(cleanNumber(callerNumber));
                 receiverDeviceId = numberToDeviceMap.get(cleanNumber(receiverNumber));
                 
-                System.out.println("\n📥 INCOMING call mode");
+                System.out.println("\n INCOMING call mode");
                 System.out.println("   Caller (B-Party): " + callerNumber + 
                                   " -> Device: " + (callerDeviceId != null ? callerDeviceId : "NOT MAPPED"));
                 System.out.println("   Receiver (A-Party): " + receiverNumber + 
@@ -304,7 +304,7 @@ public class CompleteCallingTestExecutor {
                 String cleanSystemAParty = cleanNumber(this.aPartyNumber);
                 
                 if (!cleanExcelAParty.equals(cleanSystemAParty)) {
-                    System.out.println("\n⚠️ WARNING: A-Party number mismatch!");
+                    System.out.println("\n WARNING: A-Party number mismatch!");
                     System.out.println("   Excel A-Party: " + cleanExcelAParty);
                     System.out.println("   System A-Party: " + cleanSystemAParty);
                     System.out.println("   Continuing with Excel A-Party number");
@@ -328,7 +328,7 @@ public class CompleteCallingTestExecutor {
             );
 
             if (!validation.isValid) {
-                System.out.println("\n⚠️ SKIPPING TEST: " + validation.reason);
+                System.out.println("\n SKIPPING TEST: " + validation.reason);
                 
                 ProgressReporter.reportCallingProgress(
                     aPartyDeviceId,
@@ -363,7 +363,7 @@ public class CompleteCallingTestExecutor {
                 //  INCOMING: Check both B-Party (caller) and A-Party (receiver) balances
                 
                 // 1. Check B-Party (caller) balance
-                System.out.println("   📱 Checking B-Party (Caller) balance...");
+                System.out.println("    Checking B-Party (Caller) balance...");
                 ProgressReporter.reportCallingProgress(
                     callerDeviceId,
                     callerNumber,
@@ -387,7 +387,7 @@ public class CompleteCallingTestExecutor {
                 );
                 
                 // 2. Check A-Party (receiver) balance
-                System.out.println("   📱 Checking A-Party (Receiver) balance...");
+                System.out.println("    Checking A-Party (Receiver) balance...");
                 ProgressReporter.reportCallingProgress(
                     receiverDeviceId,
                     receiverNumber,
@@ -609,7 +609,7 @@ public class CompleteCallingTestExecutor {
                     // For incoming calls, check both parties
                     
                     // // 1. Check B-Party (caller) after balance
-                    // System.out.println("   📱 Checking B-Party (Caller) after balance...");
+                    // System.out.println("    Checking B-Party (Caller) after balance...");
                     // ProgressReporter.reportCallingProgress(
                     //     callerDeviceId,
                     //     callerNumber,
@@ -622,7 +622,7 @@ public class CompleteCallingTestExecutor {
                     // Map<String, Object> afterUSSD = performPostCallUSSDCheck(callerDeviceId, callerNumber);
                     
                     // 2. Check A-Party (receiver) after balance
-                    System.out.println("   📱 Checking A-Party (Receiver) after balance...");
+                    System.out.println("    Checking A-Party (Receiver) after balance...");
                     ProgressReporter.reportCallingProgress(
                         receiverDeviceId,
                         receiverNumber,
@@ -642,7 +642,7 @@ public class CompleteCallingTestExecutor {
                         
                     //     System.out.println("    Caller After Balance: ₹" + afterUSSD.get("balance"));
                     // } else {
-                    //     System.out.println("   ⚠️ Caller after-balance USSD check failed");
+                    //     System.out.println("    Caller after-balance USSD check failed");
                     //     result.put("bPartyAfterBalance", "N/A");
                     //     lastPostCallUSSDCache.remove(callerDeviceId);
                     // }
@@ -655,7 +655,7 @@ public class CompleteCallingTestExecutor {
                         
                         System.out.println("    Receiver After Balance: ₹" + receiverAfterUSSD.get("balance"));
                     } else {
-                        System.out.println("   ⚠️ Receiver after-balance USSD check failed");
+                        System.out.println("    Receiver after-balance USSD check failed");
                         result.put("aPartyAfterBalance", "N/A");
                         lastPostCallUSSDCache.remove(receiverDeviceId);
                     }
@@ -688,12 +688,12 @@ public class CompleteCallingTestExecutor {
                                 double deduction = beforeBal - afterBal;
                                 result.put("aPartyBalanceDeduction", deduction);
                                 if (Math.abs(deduction) > 0.01) { // Small threshold
-                                    System.out.println("   ⚠️ Receiver Balance Changed: ₹" + String.format("%.2f", deduction));
+                                    System.out.println("    Receiver Balance Changed: ₹" + String.format("%.2f", deduction));
                                 }
                             }
                         }
                     } catch (Exception e) {
-                        System.out.println("   ⚠️ Could not calculate balance deduction: " + e.getMessage());
+                        System.out.println("    Could not calculate balance deduction: " + e.getMessage());
                     }
                     
                 } else {
@@ -720,11 +720,11 @@ public class CompleteCallingTestExecutor {
                                     System.out.println("   💸 Balance Deduction: ₹" + String.format("%.2f", deduction));
                                 }
                             } catch (Exception e) {
-                                System.out.println("   ⚠️ Could not calculate balance deduction: " + e.getMessage());
+                                System.out.println("    Could not calculate balance deduction: " + e.getMessage());
                             }
                         }
                     } else {
-                        System.out.println("   ⚠️ After-balance USSD check failed (non-critical)");
+                        System.out.println("    After-balance USSD check failed (non-critical)");
                         result.put("afterBalance", "N/A");
                         lastPostCallUSSDCache.remove(callerDeviceId);
                     }
@@ -789,7 +789,7 @@ public class CompleteCallingTestExecutor {
             //  Validate RECEIVER device (optional for outgoing)
             if (receiverDevice != null) {
                 if (!ADBHelper.isDeviceConnected(receiverDevice)) {
-                    System.out.println("   ⚠️ Receiver device not connected: " + receiverDevice);
+                    System.out.println("    Receiver device not connected: " + receiverDevice);
                     System.out.println("   ℹ️ For outgoing tests, receiver may be external - continuing");
                 } else {
                     System.out.println("    Receiver device connected: " + receiverDevice);
@@ -801,7 +801,7 @@ public class CompleteCallingTestExecutor {
         
         // SCENARIO B: INCOMING TEST ⭐ CRITICAL FIX
         else if ("INCOMING".equals(direction)) {
-            System.out.println("   📥 INCOMING TEST VALIDATION");
+            System.out.println("    INCOMING TEST VALIDATION");
             
             //  Validate CALLER device (B-Party device)
             if (callerDevice == null) {
@@ -901,7 +901,7 @@ public class CompleteCallingTestExecutor {
                         cachedUSSD.put("cachedFromPreviousTest", true);
                         return cachedUSSD;
                     } else {
-                        System.out.println("      ⚠️ Phone number mismatch - performing fresh check");
+                        System.out.println("       Phone number mismatch - performing fresh check");
                         System.out.println("         Expected: " + cleanExpected);
                         System.out.println("         Cached: " + cleanCached);
                     }
@@ -925,7 +925,7 @@ public class CompleteCallingTestExecutor {
                     String cleanDetected = cleanNumber(detectedNumber);
                     
                     if (!cleanExpected.equals(cleanDetected)) {
-                        System.out.println("   ⚠️ WARNING: Phone number mismatch!");
+                        System.out.println("    WARNING: Phone number mismatch!");
                         System.out.println("      Expected: " + cleanExpected);
                         System.out.println("      Detected: " + cleanDetected);
                     } else {
@@ -999,7 +999,7 @@ public class CompleteCallingTestExecutor {
              try {
                  resetDriverAfterUSSD(deviceId);
              } catch (Exception resetEx) {
-                 System.out.println("   ⚠️ Driver reset error (continuing): " + resetEx.getMessage());
+                 System.out.println("    Driver reset error (continuing): " + resetEx.getMessage());
              }
              
              prepareDialerAppAfterUSSD(deviceId);
@@ -1020,7 +1020,7 @@ public class CompleteCallingTestExecutor {
                          Double numericBalance = parseBalance(balanceStr);
                          ussdResult.put("balanceNumeric", numericBalance);
                      } catch (Exception e) {
-                         System.out.println("   ⚠️ Could not parse balance: " + balanceStr);
+                         System.out.println("    Could not parse balance: " + balanceStr);
                      }
                  }
                  
@@ -1071,7 +1071,7 @@ public class CompleteCallingTestExecutor {
          }
      }
      
-     System.out.println("   ⚠️ USSD check failed after " + MAX_USSD_RETRIES + " attempts");
+     System.out.println("    USSD check failed after " + MAX_USSD_RETRIES + " attempts");
      
      Map<String, Object> failureResult = new HashMap<>();
      failureResult.put("success", false);
@@ -1089,7 +1089,7 @@ public class CompleteCallingTestExecutor {
   */
  private void resetDriverAfterUSSD(String deviceId) {
      try {
-         System.out.println("   🔧 Resetting Appium session after USSD...");
+         System.out.println("    Resetting Appium session after USSD...");
          
          // Step 1: Force stop dialer app via ADB (always works)
          try {
@@ -1100,7 +1100,7 @@ public class CompleteCallingTestExecutor {
              System.out.println("    Dialer app force stopped");
              Thread.sleep(2000);
          } catch (Exception e) {
-             System.out.println("   ⚠️ Force stop failed: " + e.getMessage());
+             System.out.println("    Force stop failed: " + e.getMessage());
          }
          
          // Step 2: Terminate via driver (if still alive)
@@ -1116,7 +1116,7 @@ public class CompleteCallingTestExecutor {
          try {
              driver.getPageSource();
          } catch (Exception e) {
-             System.out.println("   ⚠️ Driver is unresponsive, recreating session...");
+             System.out.println("    Driver is unresponsive, recreating session...");
              driverDead = true;
          }
          
@@ -1179,11 +1179,11 @@ public class CompleteCallingTestExecutor {
                  System.out.println("    Dialer app force stopped via ADB");
              }
          } catch (Exception e) {
-             System.out.println("   ⚠️ Force stop failed: " + e.getMessage());
+             System.out.println("    Force stop failed: " + e.getMessage());
          }
          
      } catch (Exception e) {
-         System.out.println("   ⚠️ Close dialer app error: " + e.getMessage());
+         System.out.println("    Close dialer app error: " + e.getMessage());
      }
  }
 
@@ -1201,7 +1201,7 @@ public class CompleteCallingTestExecutor {
          }
          System.out.println("   🏠 Returned to home screen");
      } catch (Exception e) {
-         System.out.println("   ⚠️ Home screen error: " + e.getMessage());
+         System.out.println("    Home screen error: " + e.getMessage());
      }
  }
 
@@ -1210,7 +1210,7 @@ public class CompleteCallingTestExecutor {
   */
  private void prepareDialerAppAfterUSSD(String deviceId) {
      try {
-         System.out.println("   📱 Preparing dialer app after USSD...");
+         System.out.println("    Preparing dialer app after USSD...");
          
          // Wait for any popups to clear
          Thread.sleep(2000);
@@ -1222,7 +1222,7 @@ public class CompleteCallingTestExecutor {
          System.out.println("    Dialer app ready");
          
      } catch (Exception e) {
-         System.out.println("   ⚠️ Dialer app preparation warning: " + e.getMessage());
+         System.out.println("    Dialer app preparation warning: " + e.getMessage());
      }
  }
 
@@ -1244,7 +1244,7 @@ public class CompleteCallingTestExecutor {
          return Double.parseDouble(balanceStr);
          
      } catch (Exception e) {
-         System.out.println("   ⚠️ Could not parse balance: " + balanceObj);
+         System.out.println("    Could not parse balance: " + balanceObj);
          return null;
      }
  }
@@ -1306,7 +1306,7 @@ public class CompleteCallingTestExecutor {
                 
                 // Dial the number from CALLER device
                 callerDialerPage.dialNumberViaIntent(receiverNumber);
-                System.out.println("  📱 Dialing initiated from " + callerDeviceId + " at: " + callStartTime);
+                System.out.println("   Dialing initiated from " + callerDeviceId + " at: " + callStartTime);
                 
              //  Report ringing progress
                 ProgressReporter.reportCallingProgress(
@@ -1417,7 +1417,7 @@ public class CompleteCallingTestExecutor {
             return newDriver;
             
         } catch (Exception e) {
-            System.out.println("  ⚠️ Could not switch to device " + deviceId + ", using current driver");
+            System.out.println("   Could not switch to device " + deviceId + ", using current driver");
             return driver;
         }
     }
@@ -1517,7 +1517,7 @@ public class CompleteCallingTestExecutor {
         }
         
         if (!durationStarted) {
-            System.out.println("  ⚠️ Could not detect timer, using fallback method");
+            System.out.println("   Could not detect timer, using fallback method");
             durationStartTime = System.currentTimeMillis();
             durationStarted = true;
         }
@@ -1549,7 +1549,7 @@ public class CompleteCallingTestExecutor {
                     pageSource.contains("Call completed") ||
                     !(pageSource.contains("00:") || pageSource.contains("In call") || pageSource.contains("Connected"))) {
                     
-                    System.out.println("  ⚠️ Call ended prematurely at " + actualDuration + "s");
+                    System.out.println("   Call ended prematurely at " + actualDuration + "s");
                     
                     ProgressReporter.reportCallingProgress(
                         deviceId,
@@ -1570,7 +1570,7 @@ public class CompleteCallingTestExecutor {
                 }
                 
             } catch (Exception e) {
-                System.out.println("  ⚠️ Duration tracking error: " + e.getMessage());
+                System.out.println("   Duration tracking error: " + e.getMessage());
                 
                 // Fallback: sleep 1 second and continue
                 try {
@@ -1730,7 +1730,7 @@ public class CompleteCallingTestExecutor {
             boolean aPartyVolteActive = "true".equals(result.get("aPartyVolteEnabled"));
             
             if (!aPartyVolteActive) {
-                System.out.println("  ⚠️ VoLTE not active on A-Party, will fallback to CS");
+                System.out.println("   VoLTE not active on A-Party, will fallback to CS");
                 result.put("volteStatus", "FALLBACK_TO_CS");
             }
             
@@ -1837,7 +1837,7 @@ public class CompleteCallingTestExecutor {
             NetworkManager.setNetworkType(deviceId, networkType);
             System.out.println("   Network set to: " + networkType);
         } catch (Exception e) {
-            System.out.println("  ⚠️ Network change failed: " + e.getMessage());
+            System.out.println("   Network change failed: " + e.getMessage());
         }
     }
     
@@ -2016,7 +2016,7 @@ public class CompleteCallingTestExecutor {
             System.out.println("Excel: " + excelReport);
             System.out.println("=".repeat(100));
         } catch (Exception e) {
-            System.out.println("⚠️ Report generation failed: " + e.getMessage());
+            System.out.println(" Report generation failed: " + e.getMessage());
         }
     }
     
@@ -2106,7 +2106,7 @@ public class CompleteCallingTestExecutor {
             // Clear cache for this device
             lastPostCallUSSDCache.remove(deviceId);
         } else {
-            System.out.println("   ⚠️ " + partyType + " USSD check failed after retries");
+            System.out.println("    " + partyType + " USSD check failed after retries");
         }
     }
     

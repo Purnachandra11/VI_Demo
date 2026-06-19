@@ -1,0 +1,21 @@
+{
+  "generatedAt": "2026-06-02T22:53:43.643Z",
+  "framework": "WebdriverIO + TypeScript + Gen AI",
+  "deviceId": "ZA2237FKXH",
+  "phoneNumber": "9672417412",
+  "suites": [
+    "calling"
+  ],
+  "reports": [
+    {
+      "suite": "calling",
+      "excel": "D:\\New VI UAT PROJECT\\WIP\\Automation Folder\\VI Demo 31.05.2026\\VI Demo\\test-output\\comprehensive-reports\\Calling_Report_9672417412_20260603_042342.xlsx",
+      "html": "D:\\New VI UAT PROJECT\\WIP\\Automation Folder\\VI Demo 31.05.2026\\VI Demo\\test-output\\comprehensive-reports\\Calling_Report_9672417412_20260603_042342.html"
+    }
+  ],
+  "junitFiles": [
+    "results-0-0.xml",
+    "siebel-results-0-0.xml"
+  ],
+  "allureHint": "npm run report:allure:open"
+}

@@ -37,7 +37,7 @@ public class SIMAutoLatchTestSuite {
             }
         }
         
-        System.out.println("📱 Configuration:");
+        System.out.println(" Configuration:");
         System.out.println("   A-Party Device: " + aPartyDeviceId);
         System.out.println("   A-Party Number: " + aPartyNumber);
         System.out.println("   B-Party Device: " + bPartyDeviceId);
@@ -90,7 +90,7 @@ public class SIMAutoLatchTestSuite {
                 .count();
             
             System.out.println(" PASS (< 30s): " + passed);
-            System.out.println("⚠️  MARGINAL (30-60s): " + marginal);
+            System.out.println("  MARGINAL (30-60s): " + marginal);
             System.out.println("🐌 SLOW (> 60s): " + slow);
             System.out.println("❌ FAILED: " + failed);
             

@@ -218,7 +218,7 @@ public class SIMAutoLatchMonitor {
             String simState = executeADBCommand("shell getprop gsm.sim.state").trim();
             String operator = executeADBCommand("shell getprop gsm.operator.alpha").trim();
             
-            System.out.println("   📱 Device: " + serialNo);
+            System.out.println("    Device: " + serialNo);
             System.out.println("   📞 SIM: " + simState);
             System.out.println("   🏢 Operator: " + operator);
             
@@ -281,7 +281,7 @@ public class SIMAutoLatchMonitor {
             }
             
         } catch (Exception e) {
-            System.out.println("   ⚠️ State capture error: " + e.getMessage());
+            System.out.println("    State capture error: " + e.getMessage());
         }
         
         return state;
@@ -336,7 +336,7 @@ public class SIMAutoLatchMonitor {
                 return true;
             }
         } catch (Exception e) {
-            System.out.println("   ⚠️ ADB method failed: " + e.getMessage());
+            System.out.println("    ADB method failed: " + e.getMessage());
         }
         
         // Fallback: Try UI automation
@@ -355,7 +355,7 @@ public class SIMAutoLatchMonitor {
             executeADBCommand("shell input tap 100 200");
             Thread.sleep(2000);
             
-            System.out.println("   ⚠️ UI automation attempted");
+            System.out.println("    UI automation attempted");
             return true;
             
         } catch (Exception e) {
@@ -382,7 +382,7 @@ public class SIMAutoLatchMonitor {
                 return true;
             }
         } catch (Exception e) {
-            System.out.println("   ⚠️ ADB method failed: " + e.getMessage());
+            System.out.println("    ADB method failed: " + e.getMessage());
         }
         
         // Fallback: UI automation
@@ -393,7 +393,7 @@ public class SIMAutoLatchMonitor {
             executeADBCommand("shell input tap 100 200");
             Thread.sleep(2000);
             
-            System.out.println("   ⚠️ UI automation attempted");
+            System.out.println("    UI automation attempted");
             return true;
             
         } catch (Exception e) {
@@ -448,7 +448,7 @@ public class SIMAutoLatchMonitor {
                 Thread.sleep(POLL_INTERVAL_MS);
                 
             } catch (Exception e) {
-                System.out.println("   ⚠️ Monitoring error: " + e.getMessage());
+                System.out.println("    Monitoring error: " + e.getMessage());
             }
         }
         

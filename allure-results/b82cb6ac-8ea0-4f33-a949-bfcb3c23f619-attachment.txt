@@ -1,0 +1,52 @@
+.........Console Logs.........
+
+
+⚙️ Initializing test environment...
+
+ Test environment ready
+   Device: GooglePixel
+   UDID: ZA2237FKXH
+   Platform: Android 13
+
+[WDIO] Starting: captures complete SIM Toolkit screenshot flow
+
+══════════════════════════════════════════════════════════════════════
+  TEST: Complete Vi SIM Toolkit Screenshot Capture
+══════════════════════════════════════════════════════════════════════
+Test start time set: 2026-05-31T20:38:45.403Z
+
+🚀 Step 1: Launch SIM Toolkit
+📡 Executing ADB command to launch SIM Toolkit...
+  Command: adb -s ZA2237FKXH shell monkey -p com.android.stk -c android.intent.category.LAUNCHER 1
+ ADB command executed successfully
+  Output: bash arg: -p
+  bash arg: com.android.stk
+  bash arg: -c
+  bash arg: android.intent.category.LAUNCHER
+  bash arg: 1
+// Monkey Version Informations:  
+// Build Label: motorola/manila_g/manila:15/VUOA35.116-100/1bc569:user/release-keys
+// Build Time: 1765339680000
+// Build Type: user
+// Build Tags: release-keys
+// Build Debugable: false
+// Build Changelist: 1bc569
+// Monkey Start Time : 919411772; Monkey Start Calendar Time : 2026-06-01 02:08:45.482 
+Events injected: 1
+## Network stats: elapsed time=59ms (0ms mobile, 0ms wifi, 59ms not connected)
+ Found indicator: Vodafone
+Screenshot saved: D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo\test-output\screenshots\001_sim_toolkit_launch_20260601_020852.png
+ SIM Toolkit launched successfully via ADB
+┌─ Step 2: Detect & Handle SIM Scenario
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"sim-latch","timestamp":1780259933444,"completed":false,"progress":{"action":"STARTED","status":"Starting SIM Toolkit detection","percentage":10,"progressBar":"██░░░░░░░░░░░░░░░░░░"}}
+  Detected: Dual SIM (Both Vi)
+Screenshot saved: D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo\test-output\screenshots\002_vi_menu_home_20260601_020853.png
+[INFO] WS_PROGRESS:{"deviceId":"ZA2237FKXH","testType":"sim-latch","timestamp":1780259934050,"completed":false,"progress":{"action":"COMPLETED","status":"SIM scenario handled","percentage":40,"progressBar":"████████░░░░░░░░░░░░"}}
+  → Navigate to Flash
+Screenshot saved: D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo\test-output\screenshots\003_flash_option_20260601_020856.png
+  → Navigate to Roaming
+Screenshot saved: D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo\test-output\screenshots\004_roaming_option_20260601_020900.png
+Test end time set: 2026-05-31T20:39:16.242Z
+[AI] test execution failed: element ("//*[contains(@text, "vodafone in")]") still not displayed after 15000ms error: test execution failed: element ("//*[contains(@text, "vodafone in")]") still not displayed after 15000ms
+[AI] Suggestions: Review screenshots/; Check logs/ and Appium server output
+[WDIO] Test failed: captures complete SIM Toolkit screenshot flow

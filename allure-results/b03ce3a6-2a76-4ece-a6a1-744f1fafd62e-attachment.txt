@@ -1,0 +1,9 @@
+.........Console Logs.........
+
+[WDIO] Starting: runs calling scenarios from uploaded Excel
+[AI] ADB device disconnected or wrong device id.
+[AI] Suggestions: Run adb devices; Reconnect USB/wireless ADB
+2026-05-25T10:54:26.402Z INFO webdriver: COMMAND takeScreenshot()
+2026-05-25T10:54:26.405Z INFO webdriver: [GET] http://127.0.0.1:4723/session/2e99e390-f202-4c04-9689-4339fe241689/screenshot
+2026-05-25T10:54:28.732Z INFO webdriver: RESULT iVBORw0KGgoAAAANSUhEUgAABDgAAAlgCAYAAABtGofVAAAAAXNSR0IArs4c6...
+[WDIO] Test failed: runs calling scenarios from uploaded Excel

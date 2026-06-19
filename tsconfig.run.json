@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2019",
+    "outDir": "./dist-scripts",
+    "skipLibCheck": true,
+    "esModuleInterop": true
+  },
+  "include": ["run-sms-test.ts", "test/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

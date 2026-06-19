@@ -301,7 +301,7 @@ public class PreTestVerifier {
             ADBHelper.executeCommand("adb -s " + deviceId + " shell pm grant com.android.dialer android.permission.CAMERA");
             System.out.println(" Camera permissions granted");
         } catch (Exception e) {
-            System.out.println("⚠️ Could not grant camera permissions: " + e.getMessage());
+            System.out.println(" Could not grant camera permissions: " + e.getMessage());
         }
     }
 }

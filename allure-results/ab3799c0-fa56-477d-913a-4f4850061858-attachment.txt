@@ -1,0 +1,6 @@
+.........Console Logs.........
+
+[WDIO] Starting: runs individual voice call scenario
+
+ℹ️ Individual scenario tests would use specific data from Excel
+[WDIO] Test passed: runs individual voice call scenario

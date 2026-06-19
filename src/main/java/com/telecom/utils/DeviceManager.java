@@ -25,7 +25,7 @@ public class DeviceManager {
 		stopAllAutoAnswerServices();
 		
 		System.out.println("\n" + "=".repeat(80));
-		System.out.println("📱 INITIALIZING DEVICE MANAGER");
+		System.out.println(" INITIALIZING DEVICE MANAGER");
 		System.out.println("=".repeat(80));
 		
 		// Configure A-party
@@ -63,13 +63,13 @@ public class DeviceManager {
         
         //  CHANGED: Check all required properties
         if (aPartyDevice == null || aPartyNumber == null) {
-            System.out.println("⚠️ A-Party properties missing:");
+            System.out.println(" A-Party properties missing:");
             System.out.println("   -DaPartyDevice=" + aPartyDevice);
             System.out.println("   -DaPartyNumber=" + aPartyNumber);
         }
         
         if (bPartyDevice == null || bPartyNumber == null) {
-            System.out.println("⚠️ B-Party properties missing:");
+            System.out.println(" B-Party properties missing:");
             System.out.println("   -DbPartyDevice=" + bPartyDevice);
             System.out.println("   -DbPartyNumber=" + bPartyNumber);
         }
@@ -82,7 +82,7 @@ public class DeviceManager {
                 // Initialize with A-Party only
                 deviceMap.put(aPartyNumber, aPartyDevice);
                 System.out.println(" A-Party configured: " + aPartyNumber + " -> " + aPartyDevice);
-                System.out.println("⚠️ B-Party not configured - auto-answer will not be available");
+                System.out.println(" B-Party not configured - auto-answer will not be available");
             }
         } else {
             System.out.println("❌ Cannot initialize - A-Party properties are required");
@@ -140,7 +140,7 @@ public class DeviceManager {
                 
                 //  ADDED: Show connected devices
                 List<String> connected = ADBHelper.getConnectedDevices();
-                System.out.println("\n📱 Currently connected devices:");
+                System.out.println("\n Currently connected devices:");
                 if (connected.isEmpty()) {
                     System.out.println("   (none)");
                 } else {
@@ -205,7 +205,7 @@ public class DeviceManager {
                 System.out.println(" Auto-answer stopped for: " + bPartyNumber);
             }
         } catch (Exception e) {
-            System.out.println("⚠️ Auto-answer stop error: " + e.getMessage());
+            System.out.println(" Auto-answer stop error: " + e.getMessage());
         }
     }
     
@@ -273,7 +273,7 @@ public class DeviceManager {
             
             return false;
         } catch (Exception e) {
-            System.out.println("⚠️ Error checking device connection: " + e.getMessage());
+            System.out.println(" Error checking device connection: " + e.getMessage());
             return false;
         }
     }
@@ -300,12 +300,12 @@ public class DeviceManager {
         }
         
         if (!allConnected) {
-            System.out.println("\n⚠️ WARNING: Not all devices are connected!");
+            System.out.println("\n WARNING: Not all devices are connected!");
             System.out.println("💡 Run 'adb devices' to check connections");
             
             // Show what's actually connected
             List<String> connected = ADBHelper.getConnectedDevices();
-            System.out.println("\n📱 Actually connected devices:");
+            System.out.println("\n Actually connected devices:");
             if (connected.isEmpty()) {
                 System.out.println("   (none)");
             } else {
@@ -322,12 +322,12 @@ public class DeviceManager {
      */
     public static void printDeviceStatus() {
         System.out.println("\n" + "=".repeat(80));
-        System.out.println("📱 DEVICE STATUS");
+        System.out.println(" DEVICE STATUS");
         System.out.println("=".repeat(80));
         
         System.out.println("\n📋 Configured Devices:");
         if (deviceMap.isEmpty()) {
-            System.out.println("   ⚠️ No devices configured!");
+            System.out.println("    No devices configured!");
             System.out.println("   💡 Call DeviceManager.initializeDevices() first");
         } else {
             for (Map.Entry<String, String> entry : deviceMap.entrySet()) {
@@ -345,7 +345,7 @@ public class DeviceManager {
         System.out.println("\n🔌 Currently Connected (from adb devices):");
         List<String> connectedDevices = ADBHelper.getConnectedDevices();
         if (connectedDevices.isEmpty()) {
-            System.out.println("   ⚠️ No devices found!");
+            System.out.println("    No devices found!");
         } else {
             for (String deviceId : connectedDevices) {
                 String model = ADBHelper.getDeviceModel(deviceId);

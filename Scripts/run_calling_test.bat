@@ -1,6 +1,6 @@
 @echo off
 echo ============================================
-echo 📱 Telecom Test Automation Runner
+echo  Telecom Test Automation Runner
 echo ============================================
 echo.
 
@@ -27,7 +27,7 @@ for /f "tokens=1,2" %%a in ('adb devices ^| findstr "connected device"') do (
 
 :skip
 if "%B_PARTY_DEVICE%"=="" (
-    echo ⚠️ No wireless device found. Please connect B-party device.
+    echo  No wireless device found. Please connect B-party device.
     pause
     exit /b 1
 )

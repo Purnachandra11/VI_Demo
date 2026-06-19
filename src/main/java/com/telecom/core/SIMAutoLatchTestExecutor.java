@@ -41,7 +41,7 @@ public class SIMAutoLatchTestExecutor {
             List<Map<String, Object>> testCases = EnhancedExcelReader.readSIMAutoLatchTestData(excelFilePath);
             
             if (testCases.isEmpty()) {
-                System.out.println("⚠️ No SIM auto-latch test data found");
+                System.out.println(" No SIM auto-latch test data found");
                 return testResults;
             }
             
@@ -62,20 +62,20 @@ public class SIMAutoLatchTestExecutor {
                 } else if (bPartyNumber != null && bPartyNumber.equals(partyNumber)) {
                     bPartyTests.add(testCase);
                 } else {
-                    System.out.println("⚠️ Party number " + partyNumber + " doesn't match. Using A-Party device.");
+                    System.out.println(" Party number " + partyNumber + " doesn't match. Using A-Party device.");
                     aPartyTests.add(testCase);
                 }
             }
             
             // Execute A-Party tests
             if (!aPartyTests.isEmpty()) {
-                System.out.println("\n" + "📱".repeat(50));
-                System.out.println("📱 EXECUTING A-PARTY TESTS (" + aPartyTests.size() + " tests)");
-                System.out.println("📱".repeat(50) + "\n");
+                System.out.println("\n" + "".repeat(50));
+                System.out.println(" EXECUTING A-PARTY TESTS (" + aPartyTests.size() + " tests)");
+                System.out.println("".repeat(50) + "\n");
                 
                 for (int i = 0; i < aPartyTests.size(); i++) {
                     Map<String, Object> testCase = aPartyTests.get(i);
-                    System.out.println("\n📱 A-PARTY TEST " + (i + 1) + "/" + aPartyTests.size() + 
+                    System.out.println("\n A-PARTY TEST " + (i + 1) + "/" + aPartyTests.size() + 
                                      ": " + testCase.get("name"));
                     
                     Map<String, Object> result = executeSingleAutoLatchTest(
@@ -89,13 +89,13 @@ public class SIMAutoLatchTestExecutor {
             
             // Execute B-Party tests
             if (!bPartyTests.isEmpty() && bPartyDeviceId != null) {
-                System.out.println("\n" + "📱".repeat(50));
-                System.out.println("📱 EXECUTING B-PARTY TESTS (" + bPartyTests.size() + " tests)");
-                System.out.println("📱".repeat(50) + "\n");
+                System.out.println("\n" + "".repeat(50));
+                System.out.println(" EXECUTING B-PARTY TESTS (" + bPartyTests.size() + " tests)");
+                System.out.println("".repeat(50) + "\n");
                 
                 for (int i = 0; i < bPartyTests.size(); i++) {
                     Map<String, Object> testCase = bPartyTests.get(i);
-                    System.out.println("\n📱 B-PARTY TEST " + (i + 1) + "/" + bPartyTests.size() + 
+                    System.out.println("\n B-PARTY TEST " + (i + 1) + "/" + bPartyTests.size() + 
                                      ": " + testCase.get("name"));
                     
                     Map<String, Object> result = executeSingleAutoLatchTest(
@@ -153,7 +153,7 @@ public class SIMAutoLatchTestExecutor {
                 System.out.println("📡 Setting network to: " + preferredNetwork);
                 boolean networkSet = setNetworkType(deviceId, preferredNetwork);
                 if (!networkSet) {
-                    System.out.println("⚠️ Warning: Failed to set network type");
+                    System.out.println(" Warning: Failed to set network type");
                 }
                 Thread.sleep(5000);
             }
@@ -185,7 +185,7 @@ public class SIMAutoLatchTestExecutor {
                                              safeGetString(latchResult.getErrorMessage(), "Unknown error"));
                         }
                     } else {
-                        System.out.println("⚠️ Attempt " + attempt + " returned null result");
+                        System.out.println(" Attempt " + attempt + " returned null result");
                         AutoLatchResult failedResult = createFailedResult("Null result returned");
                         attemptResults.add(failedResult);
                     }
@@ -305,7 +305,7 @@ public class SIMAutoLatchTestExecutor {
                 }
             }
         } catch (Exception e) {
-            System.out.println("⚠️ Error building transitions: " + e.getMessage());
+            System.out.println(" Error building transitions: " + e.getMessage());
         }
         
         return "No transitions recorded";
@@ -326,7 +326,7 @@ public class SIMAutoLatchTestExecutor {
             List<String> devices = ADBHelper.getConnectedDevices();
             return devices.contains(deviceId);
         } catch (Exception e) {
-            System.out.println("⚠️ Device availability check failed: " + e.getMessage());
+            System.out.println(" Device availability check failed: " + e.getMessage());
             return false;
         }
     }
@@ -435,7 +435,7 @@ public class SIMAutoLatchTestExecutor {
             if (success) {
                 System.out.println(" Network type set to: " + networkType);
             } else {
-                System.out.println("⚠️ Failed to set network type");
+                System.out.println(" Failed to set network type");
             }
             return success;
         } catch (Exception e) {
@@ -459,18 +459,18 @@ public class SIMAutoLatchTestExecutor {
             if (excelReport != null) {
                 System.out.println(" Excel Report: " + excelReport);
             } else {
-                System.out.println("⚠️ Excel report generation failed");
+                System.out.println(" Excel report generation failed");
             }
             
             if (htmlReport != null) {
                 System.out.println(" HTML Report: " + htmlReport);
             } else {
-                System.out.println("⚠️ HTML report generation failed");
+                System.out.println(" HTML report generation failed");
             }
             
             System.out.println("=".repeat(100));
         } catch (Exception e) {
-            System.out.println("⚠️ Report generation failed: " + e.getMessage());
+            System.out.println(" Report generation failed: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -499,7 +499,7 @@ public class SIMAutoLatchTestExecutor {
         
         System.out.println("Total Tests: " + totalTests);
         System.out.println(" PASS (< 30s): " + passTests);
-        System.out.println("⚠️ MARGINAL (30-60s): " + marginalTests);
+        System.out.println(" MARGINAL (30-60s): " + marginalTests);
         System.out.println("🐌 SLOW (> 60s): " + slowTests);
         System.out.println("❌ FAILED: " + failedTests);
         

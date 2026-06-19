@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    // "ignoreDeprecations": "6.0",
+    "lib": ["ES2019"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    "baseUrl": ".",
+    "forceConsistentCasingInFileNames": true,
+    "types": [
+      "node",
+      "mocha",
+      "@wdio/globals/types",
+      "expect-webdriverio"
+    ],
+    "paths": {
+      "*": ["*", "test/*"]
+    }
+  },
+  "include": [
+    "config/**/*.ts",
+    "test/**/*.ts",
+    "*.ts",
+    "run-sms-tests.ts",
+    "test-simple.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "dashboard",
+    "automation"
+  ]
+}

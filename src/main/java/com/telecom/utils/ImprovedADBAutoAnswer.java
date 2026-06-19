@@ -92,7 +92,7 @@ public class ImprovedADBAutoAnswer {
                 
                 // Get incoming number
                 String incomingNumber = getIncomingNumber();
-                System.out.println("📱 Incoming from: " + incomingNumber);
+                System.out.println(" Incoming from: " + incomingNumber);
                 System.out.println("👤 Expected caller: " + expectedCaller);
                 
                 // ⚡ IMMEDIATE MULTI-METHOD ANSWER
@@ -161,7 +161,7 @@ public class ImprovedADBAutoAnswer {
 //                    Thread.sleep(300);
 //                    
 //                } catch (Exception e) {
-//                    System.out.println("   ⚠️ Method " + (i + 1) + " failed: " + e.getMessage());
+//                    System.out.println("    Method " + (i + 1) + " failed: " + e.getMessage());
 //                }
 //            }
 //            
@@ -202,7 +202,7 @@ public class ImprovedADBAutoAnswer {
             }
 
         } catch (Exception e) {
-            System.out.println("   ⚠️ Failed: " + e.getMessage());
+            System.out.println("    Failed: " + e.getMessage());
         }
 
         return false;
@@ -271,13 +271,13 @@ public class ImprovedADBAutoAnswer {
                 return true;
             }
             
-            System.out.println("   ⚠️ Call state not confirmed");
+            System.out.println("    Call state not confirmed");
             System.out.println("   Call state: " + callState);
             System.out.println("   Audio state: " + audioState.substring(0, Math.min(100, audioState.length())));
             return false;
             
         } catch (Exception e) {
-            System.out.println("   ⚠️ Verification error: " + e.getMessage());
+            System.out.println("    Verification error: " + e.getMessage());
             return false;
         }
     }

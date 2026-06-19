@@ -1,87 +1,104 @@
+# Telecom UAT Automation — WebdriverIO + TypeScript
 
-#  VERIFIED WORKING SOLUTION
+## Stack (replaces Core Java + Appium Client)
 
-## What Was Fixed:
+| Replace (legacy) | Use (current) |
+|------------------|---------------|
+| JVM startup overhead | **Node.js** — same runtime as the dashboard |
+| Verbose Java / Maven | **TypeScript** — concise, type-safe tests |
+| Thread / TestNG complexity | **WDIO async parallel** — multi-device with minimal config |
+| Maven / Gradle builds | **npm** scripts |
+| java-client Appium | **WebdriverIO v9** — native Appium 2.x, auto-wait |
 
-### 1. ExcelReader.java
--  Dynamic column detection (works regardless of column order)
--  Handles "Actual Call Duration (s)" with direct seconds (20, 30, 15)
--  Handles C Party with "-" or empty values
--  SMS with "Group Name" and "Group/Number" columns
--  Data Usage with "Target Data (GB)" column
+**Benefits:** async parallel execution, native Appium 2.x support, shared Node.js stack with the dashboard, built-in auto-wait, Gen AI failure analysis (rule-based + optional LLM).
 
-### 2. DataUsagePage.java
--  Uses curl instead of wget (available on Android)
--  Downloads from speedtest.tele2.net
--  Downloads to /dev/null (no storage issues)
--  Proper data usage monitoring with ADBHelper
--  Handles Map<String, String> correctly (no 'var' keyword)
+---
 
-### 3. Integration
--  Works with your existing ImprovedDialerPage
--  Works with your existing MessagingPage
--  Works with your existing ADBHelper methods
--  Compatible with Java 8+
-
-## How to Use:
-
-### Step 1: Create Excel Files
-
-#### calling_data.xlsx (Sheet: "Calling")
-| Name | B Party Number | Actual Call Duration (s) | No of Attempts | C Party Number |
-|------|----------------|-------------------------|----------------|----------------|
-| Prakash | 6376759498 | 20 | 1 | - |
-| Chandra | 9876543210 | 30 | 2 | 9876543211 |
-
-#### sms_data.xlsx (Sheet: "SMS")
-| Group Name | Group/Number | Message Template | SMS Count |
-|------------|--------------|------------------|-----------|
-| Individual | 6376759498 | Hello {name} | 2 |
-| Team | 9876543210 | Hi {name} | 1 |
-
-#### data_usage_data.xlsx (Sheet: "DataUsage")
-| Test Scenario | Target Data (GB) | Duration (min) | Apps to Use | Validation Criteria |
-|---------------|------------------|----------------|-------------|---------------------|
-| Light Usage | 0.5 | 15 | Browser | ≥ 450 MB |
-| Medium Usage | 1 | 30 | YouTube | ≥ 950 MB |
-
-### Step 2: Run Tests
+## Quick start
 
 ```bash
-# Calling Only
-mvn test -Dtest=CallingTest -DdeviceId=LFMVIBEMW8HUR4XK
+# 1. Install (project root + dashboard)
+npm run setup
+cp .env.example .env
+# Edit .env — APARTY_DEVICE, APPIUM_PORT, etc.
 
-# SMS Only
-mvn test -Dtest=SMSTest -DdeviceId=LFMVIBEMW8HUR4XK
+# 2. Start Appium
+appium
 
-# Data Usage Only
-mvn test -Dtest=DataUsageTest -DdeviceId=LFMVIBEMW8HUR4XK
+# 3. Run tests
+npm run test:smoke
+npm run test:calling
+npm run test:sms
+npm run test:data
+npm run test:all
 
-# All Tests
-mvn test -Dtest=ComprehensiveTest -DdeviceId=LFMVIBEMW8HUR4XK
+# 4. Dashboard (orchestrates WDIO instead of Maven)
+cd dashboard && npm start
 ```
 
-### Step 3: Wireless Connection
+---
+
+## Project layout
+
+```
+config/           # wdio.android.conf.ts, hooks, dual-device
+test/
+  specs/          # calling, sms, data, smoke
+  core/           # callExecutor, smsExecutor, dataExecutor
+  pages/          # Page objects (POM)
+  ai/             # FailureAnalyzer, TestSummarizer
+  utils/          # ADB, Excel, progress → dashboard API
+dashboard/        # Express UI + WebSocket (unchanged entry point)
+src/main/java/    # Legacy Java tests (optional reference)
+```
+
+---
+
+## Environment variables
+
+Set in `.env` or via dashboard / `cross-env`:
+
+| Variable | Purpose |
+|----------|---------|
+| `APARTY_DEVICE` | A-party device id (adb) |
+| `APARTY_NUMBER` | A-party MSISDN |
+| `BPARTY_DEVICE` / `BPARTY_NUMBER` | B-party for calls/SMS |
+| `CALL_DURATION` | Active call seconds |
+| `EXCEL_FILE` | Path to Excel test data |
+| `AI_ENABLED` / `AI_API_KEY` | Optional LLM failure analysis |
+
+---
+
+## Excel templates
+
+Same sheets as before: **Calling**, **SMS**, **DataUsage** under `src/test/resources/`.
+
+---
+
+## Wireless ADB
 
 ```bash
-# Pair device
-adb pair 100.84.166.5:36999 499861
-
-# Connect
-adb connect 100.84.166.5:38819
-
-# Run tests wirelessly
-mvn test -Dtest=CallingTest -DdeviceId=100.84.166.5:38819
+adb pair <ip>:<pair-port> <code>
+adb connect <ip>:<connect-port>
+export APARTY_DEVICE=<ip>:<connect-port>
+npm run test:calling
 ```
 
-## Verified Working:
- Excel reading with any column order
- Direct seconds format (20, 30, 15)
- C Party handling (empty or "-")
- Data downloads using curl (not wget)
- Proper data usage tracking
- USB and Wireless connections
- Individual test execution
- Compatible with existing code
+---
 
-This is a PRODUCTION-READY, TESTED solution!
+## Reports
+
+- **JUnit:** `reports/junit/`
+- **Allure:** `allure-results/` → `npx allure generate && npx allure open`
+- **Progress:** real-time via dashboard WebSocket (`PROGRESS_ENDPOINT`)
+
+---
+
+## Legacy Java (optional)
+
+Java + Maven tests remain under `src/` for reference. The dashboard and `Scripts/run_tests.sh` now use **WDIO** by default.
+
+```bash
+# Legacy only, if needed:
+mvn test -Dtest=CallingTest -DdeviceId=YOUR_DEVICE
+```
