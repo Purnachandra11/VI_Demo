@@ -1,19 +1,7 @@
 // src/types/network.types.ts
 
-/**
- * Supported network types in India
- * Maps to Android preferred_network_mode values
- */
 export type NetworkType = '2G' | '3G' | '4G' | '5G' | 'AUTO';
 
-/**
- * Android preferred_network_mode integers
- *
- * 1  = GSM only (2G)
- * 2  = WCDMA only (3G)
- * 11 = LTE only (4G)
- * 33 = NR/LTE/WCDMA/GSM auto (5G preferred)
- */
 export const NETWORK_MODE_MAP: Record<NetworkType, number> = {
   '2G':   1,
   '3G':   2,

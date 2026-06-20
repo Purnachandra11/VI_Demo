@@ -21,17 +21,35 @@ const { TestOrchestrator } = require('./testOrchestrator');
 const { getSimNumberViaUSSD, loadUssdService } = require('./ussdHandler');
 const { runWdioTest, enrichPartiesFromDeviceMap } = require('./wdioRunner');
 const { shouldShowUserLog, formatUserLogLine, inferLogType } = require('./userLogFilter');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const { SwiftCrmOrchestrator } = require('./swiftCrmOrchestrator');
 
 
-require("./config")
-const {Registration, FileInfo} = require("./schema")
-// Create WebSocket server
-const wss = new WebSocket.Server({ server });
 
 // Store connected clients
 const clients = new Set();
+
+// Create WebSocket server with manual upgrade handling for routing
+const wss = new WebSocket.Server({ noServer: true });
+
+// SWIFT WebSocket clients
+const swiftClients = new Map();
+
+// Handle HTTP upgrade requests manually
+server.on('upgrade', (request, socket, head) => {
+  const pathname = new URL(request.url, 'http://localhost').pathname;
+  
+  if (pathname === '/swift-ws') {
+    // Route to SWIFT WebSocket handler
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request, 'swift');
+    });
+  } else {
+    // Route to original WebSocket handler
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request, 'default');
+    });
+  }
+});
 
 const cors = require('cors');
 app.use(cors());
@@ -2041,7 +2059,17 @@ app.get('/api/debug/adb-devices', async (req, res) => {
   }
 });
 // WebSocket connection handling
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, request, type = 'default') => {
+  if (type === 'swift') {
+    // SWIFT CRM WebSocket connection
+    handleSwiftConnection(ws, request);
+  } else {
+    // Original/default WebSocket connection
+    handleDefaultConnection(ws);
+  }
+});
+
+function handleDefaultConnection(ws) {
   console.log(' New WebSocket client connected');
   clients.add(ws);
 
@@ -2070,7 +2098,79 @@ wss.on('connection', (ws) => {
     console.error('WebSocket error:', error);
     clients.delete(ws);
   });
-});
+}
+
+function handleSwiftConnection(ws, request) {
+  const url = new URL(request.url, 'http://localhost');
+  const sessionId = url.searchParams.get('sessionId');
+  
+  if (!sessionId) {
+    ws.close(1008, 'Session ID required');
+    return;
+  }
+
+  console.log(`[SWIFT] 🔌 New client connected: ${sessionId}`);
+  swiftClients.set(sessionId, ws);
+
+  let orchestrator = null;
+  let uploadPath = null;
+
+  // Find the uploaded file for this session (simplified)
+  const uploadDir = path.join(__dirname, 'swift-uploads');
+  if (fs.existsSync(uploadDir)) {
+    const files = fs.readdirSync(uploadDir).sort((a, b) => {
+      return fs.statSync(path.join(uploadDir, b)).mtime - fs.statSync(path.join(uploadDir, a)).mtime;
+    });
+    if (files.length > 0) {
+      uploadPath = path.join(uploadDir, files[0]);
+    }
+  }
+
+  ws.on('message', async (message) => {
+    try {
+      const data = JSON.parse(message);
+      
+      if (data.type === 'start' && uploadPath) {
+        console.log(`[SWIFT] 🚀 Starting automation...`);
+        
+        // Create clients set for this session
+        const clientSet = new Set();
+        clientSet.add(ws);
+        
+        orchestrator = new SwiftCrmOrchestrator(uploadPath, clientSet, __dirname);
+        swiftSessions.set(sessionId, { orchestrator, ws });
+        
+        try {
+          await orchestrator.runRechargeUAT();
+        } catch (error) {
+          console.error(`[SWIFT] ❌ Automation error:`, error);
+          ws.send(JSON.stringify({
+            type: 'complete',
+            success: false,
+            message: error.message
+          }));
+        }
+      } else if (data.type === 'captcha' && orchestrator) {
+        console.log(`[SWIFT] 🔐 CAPTCHA received: ${data.answer}`);
+        await orchestrator.setCaptchaAnswer(data.answer);
+      }
+    } catch (error) {
+      console.error(`[SWIFT] ❌ WebSocket error:`, error);
+    }
+  });
+
+  ws.on('close', () => {
+    console.log(`[SWIFT] 👋 Client disconnected: ${sessionId}`);
+    swiftClients.delete(sessionId);
+    swiftSessions.delete(sessionId);
+  });
+
+  ws.on('error', (error) => {
+    console.error(`[SWIFT] ❌ WebSocket error:`, error);
+    swiftClients.delete(sessionId);
+    swiftSessions.delete(sessionId);
+  });
+}
 
 function broadcastToAll(data) {
   const message = JSON.stringify(data);
@@ -2269,6 +2369,102 @@ function executeWdioProcess(options, res, deviceId, testType = 'calling') {
       }
     });
 }
+
+// ========== SWIFT CRM Automation ==========
+
+// Store active SWIFT sessions
+const swiftSessions = new Map();
+let latestReportPath = null;
+
+// Global function to set latest report path from orchestrator
+global.setSwiftLatestReport = (path) => {
+  latestReportPath = path;
+  console.log(`[SWIFT] Report generated: ${path}`);
+};
+
+// Configure multer for SWIFT CRM uploads
+const swiftStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, 'swift-uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'input-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const swiftUpload = multer({
+  storage: swiftStorage,
+  fileFilter: function (req, file, cb) {
+    const name = file.originalname.toLowerCase();
+    if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only Excel files allowed'), false);
+    }
+  }
+});
+
+// Upload endpoint
+app.post('/api/swift/upload', swiftUpload.single('excel'), (req, res) => {
+  if (!req.file) {
+    return res.json({ success: false, message: 'No file uploaded' });
+  }
+
+  const sessionId = crypto.randomBytes(16).toString('hex');
+  
+  console.log(`[SWIFT] 📄 File uploaded: ${req.file.originalname} (Session: ${sessionId})`);
+  
+  res.json({
+    success: true,
+    sessionId,
+    filename: req.file.originalname,
+    filePath: req.file.path
+  });
+});
+
+
+
+// Serve screenshots
+app.use('/screenshots', express.static(path.join(__dirname, '..', 'swift-crm-automation', 'screenshots')));
+
+// Download sample Excel file endpoint
+app.get('/api/swift/download-sample', (req, res) => {
+  const samplePath = path.join(__dirname, '..', 'swift-crm-automation', 'Sample file', 'Input_data.xlsx');
+  
+  if (fs.existsSync(samplePath)) {
+    res.download(samplePath, 'Input_data.xlsx');
+  } else {
+    res.status(404).json({ success: false, message: 'Sample file not found' });
+  }
+});
+
+// Download report endpoint
+app.get('/api/swift/download-report', (req, res) => {
+  if (!latestReportPath || !fs.existsSync(latestReportPath)) {
+    // Try to find the latest report
+    const reportsDir = path.join(__dirname, '..', 'swift-crm-automation', 'reports');
+    if (fs.existsSync(reportsDir)) {
+      const files = fs.readdirSync(reportsDir).filter(f => f.endsWith('.xlsx')).sort((a, b) => {
+        return fs.statSync(path.join(reportsDir, b)).mtime - fs.statSync(path.join(reportsDir, a)).mtime;
+      });
+      if (files.length > 0) {
+        latestReportPath = path.join(reportsDir, files[0]);
+      }
+    }
+  }
+
+  if (latestReportPath && fs.existsSync(latestReportPath)) {
+    res.download(latestReportPath, 'UAT_Recharge_Report.xlsx');
+  } else {
+    res.status(404).json({ success: false, message: 'No report found' });
+  }
+});
+
 // ========== Error Handling Middleware ==========
 
 app.use((err, req, res, next) => {
