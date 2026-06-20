@@ -1,7 +1,9 @@
 const mongoose = require("mongoose");
 const ObjectId = require('mongoose').Types.ObjectId;
+console.log("Require Schema file")
 const registrationSchema = new mongoose.Schema({
     
+    name: String,
     email: String,
     password: String,
     original_password : String,

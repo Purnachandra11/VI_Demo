@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
 
-const url = "mongodb://localhost:27017/VI_DB";
-
+// const url = "mongodb://localhost:27017/VI_DB";
+const url = "mongodb+srv://kpurnachandra_db_user:l5AMQMPH7MgEmK1N@automation.hqk012j.mongodb.net/VI_Atomation_DB"
+console.log("AAAAAAAAAAAAAAAAAAAAAAAAA")
 mongoose.connect(url)
   .then(() => {
     console.log(" Connected to MongoDB");
