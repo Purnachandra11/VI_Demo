@@ -23,7 +23,14 @@ const { runWdioTest, enrichPartiesFromDeviceMap } = require('./wdioRunner');
 const { shouldShowUserLog, formatUserLogLine, inferLogType } = require('./userLogFilter');
 const { SwiftCrmOrchestrator } = require('./swiftCrmOrchestrator');
 
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
+
+require("./config")
+const {Registration, FileInfo} = require("./schema")
+// Create WebSocket server
+// const wss = new WebSocket.Server({ server });
 
 // Store connected clients
 const clients = new Set();
