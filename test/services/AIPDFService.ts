@@ -98,7 +98,7 @@ async extractInvoiceData(pdfText: string): Promise<InvoiceData> {
         return `
         Extract the following information from this Vodafone Idea telecom invoice:
         
-        ${pdfText.substring(0, 15000)} // Limit text length
+        ${pdfText.substring(0, 15000)}
         
         Extract these fields as JSON:
         {
@@ -165,7 +165,6 @@ async extractInvoiceData(pdfText: string): Promise<InvoiceData> {
     }
     
     async validateExtractedData(data: InvoiceData): Promise<boolean> {
-        // Basic validation rules
         const errors: string[] = [];
         
         if (!data.invoiceNumber) errors.push('Missing invoice number');

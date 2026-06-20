@@ -1,0 +1,187 @@
+import { browser, $ } from '@wdio/globals';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as readline from 'readline';
+import * as https from 'https';
+
+export class CaptchaHelper {
+  static async solve(): Promise<string> {
+    if (process.env.CAPTCHA_ANSWER) {
+      console.log(`[CaptchaHelper] Using pre-supplied CAPTCHA: ${process.env.CAPTCHA_ANSWER}');
+      return process.env.CAPTCHA_ANSWER;
+    }
+
+    const captchaEl = await $('img#LoginCaptcha');
+    await captchaEl.waitForDisplayed({ timeout: 10000 });
+
+    const screenshotDir = path.resolve('./captcha_screenshots');
+    fs.mkdirSync(screenshotDir, { recursive: true });
+    const destPath = path.join(screenshotDir, `captcha_${Date.now()}.png`);
+    await browser.saveScreenshot(destPath);
+    console.log(`[CaptchaHelper] CAPTCHA screenshot saved → ${destPath}');
+
+    if (process.env.CAPTCHA_SERVICE_API_KEY) {
+      console.log('[CaptchaHelper] Using automatic CAPTCHA solving service...');
+      try {
+        const answer = await this.solveWithService(destPath);
+        console.log(`[CaptchaHelper] Automatic CAPTCHA solved: ${answer}');
+        return answer;
+      } catch (error) {
+        console.warn('[CaptchaHelper] Automatic solving failed, falling back to manual:', error);
+      }
+    }
+
+    const answer = await CaptchaHelper._prompt(
+      '\n>>> Open the browser, read the CAPTCHA, then type it here and press Enter: '
+    );
+    return answer.trim();
+  }
+
+  private static async solveWithService(imagePath: string): Promise<string> {
+    const apiKey = process.env.CAPTCHA_SERVICE_API_KEY!;
+    const serviceUrl = process.env.CAPTCHA_SERVICE_URL || 'api.2captcha.com';
+
+    const base64Image = fs.readFileSync(imagePath, { encoding: 'base64' });
+
+    const taskId = await this.createTask(serviceUrl, apiKey, base64Image);
+    console.log(`[CaptchaHelper] Task created, ID: ${taskId}');
+
+    await this.sleep(5000);
+
+    const result = await this.getTaskResult(serviceUrl, apiKey, taskId);
+    return result;
+  }
+
+  private static createTask(host: string, apiKey: string, base64Image: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const postData = JSON.stringify({
+        clientKey: apiKey,
+        task: {
+          type: 'ImageToTextTask',
+          body: base64Image,
+          phrase: false,
+          case: false,
+          numeric: 0,
+          math: false,
+          minLength: 0,
+          maxLength: 0
+        }
+      });
+
+      const options = {
+        hostname: host,
+        port: 443,
+        path: '/createTask',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(postData)
+        }
+      };
+
+      const req = https.request(options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          try {
+            const response = JSON.parse(data);
+            if (response.errorId === 0) {
+              resolve(response.taskId);
+            } else {
+              reject(new Error(`CAPTCHA service error: ${response.errorDescription}'));
+            }
+          } catch (e) {
+            reject(e);
+          }
+        });
+      });
+
+      req.on('error', reject);
+      req.write(postData);
+      req.end();
+    });
+  }
+
+  private static getTaskResult(host: string, apiKey: string, taskId: string, retries = 10): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const attempt = (attemptsLeft: number) => {
+        const postData = JSON.stringify({
+          clientKey: apiKey,
+          taskId: taskId
+        });
+
+        const options = {
+          hostname: host,
+          port: 443,
+          path: '/getTaskResult',
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData)
+          }
+        };
+
+        const req = https.request(options, (res) => {
+          let data = '';
+          res.on('data', (chunk) => { data += chunk; });
+          res.on('end', async () => {
+            try {
+              const response = JSON.parse(data);
+              if (response.errorId === 0) {
+                if (response.status === 'ready') {
+                  resolve(response.solution.text);
+                } else if (response.status === 'processing' && attemptsLeft > 0) {
+                  await this.sleep(3000);
+                  attempt(attemptsLeft - 1);
+                } else {
+                  reject(new Error('CAPTCHA solving timeout'));
+                }
+              } else {
+                reject(new Error(`CAPTCHA service error: ${response.errorDescription}'));
+              }
+            } catch (e) {
+              reject(e);
+            }
+          });
+        });
+
+        req.on('error', reject);
+        req.write(postData);
+        req.end();
+      };
+
+      attempt(retries);
+    });
+  }
+
+  private static sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  static async refresh(): Promise<void> {
+    try {
+      const captchaImg = await $('img#LoginCaptcha');
+      await browser.execute((el: HTMLImageElement) => {
+        const src = el.src.split('?')[0];
+        el.src = `${src}?${Date.now()}`;
+      }, captchaImg);
+      await browser.pause(800);
+    } catch (e) {
+      console.warn('[CaptchaHelper] Could not refresh CAPTCHA:', e);
+    }
+  }
+
+  private static _prompt(question: string): Promise<string> {
+    return new Promise((resolve) => {
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+        terminal: false,
+      });
+      rl.question(question, (answer) => {
+        rl.close();
+        resolve(answer);
+      });
+    });
+  }
+}
