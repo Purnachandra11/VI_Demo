@@ -25,7 +25,14 @@ const { runWdioTest, enrichPartiesFromDeviceMap } = require('./wdioRunner');
 const { shouldShowUserLog, formatUserLogLine, inferLogType } = require('./userLogFilter');
 const { SwiftCrmOrchestrator } = require('./swiftCrmOrchestrator');
 
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
+
+require("./config")
+const {Registration, FileInfo} = require("./schema")
+// Create WebSocket server
+// const wss = new WebSocket.Server({ server });
 
 // Store connected clients
 const clients = new Set();
@@ -110,6 +117,10 @@ app.get('/', (req, res) => {
 
 app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
 app.get('/device-progress.html', (req, res) => {
@@ -221,8 +232,7 @@ app.post("/api/search-files", (req, res) => {
         // Check if file was created/modified today
         const isToday = fileDate.toDateString() === today.toDateString();
 
-        filesWithStats.push({
-          file,
+        filesWithStats.push({          file,
           path: filePath,
           created: fileDate,
           isToday: isToday
@@ -460,25 +470,152 @@ app.post('/api/ussd/balance', async (req, res) => {
   }
 });
 
+// ==========================================
+// NEW USER SAVE/REGISTRATION ENDPOINT
+// ==========================================
+app.post('/api/users', async (req, res) => {
+  try {
+    const { email, password, name } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Email and password are required fields." 
+      });
+    }
 
-app.post('/api/auth/login', (req, res) => {
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Check if an active user already exists
+    const existingUser = await Registration.findOne({ 
+      email: normalizedEmail,
+      is_deleted: 0 
+    });
+    
+    if (existingUser) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "This email is already registered." 
+      });
+    }
+
+    // Encrypt password field
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Save mapping directly to your explicit schema structure
+    const newUser = new Registration({
+      name : name,
+      email: normalizedEmail,
+      password: hashedPassword,       // Hashed version for database security
+      original_password: password,     // Plain text version matching your schema field
+      is_deleted: 0,
+      created: new Date(),
+      modified: new Date()
+    });
+
+    const savedUser = await newUser.save();
+
+    return res.status(201).json({
+      success: true,
+      message: "User registered successfully.",
+      userId: savedUser._id
+    });
+
+  } catch (error) {
+    console.error("Registration API Error:", error);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Internal server error while saving user." 
+    });
+  }
+});
+
+app.get('/api/admin/users', async (req, res) => {
+  try {
+    const users = await Registration.find({ is_deleted: 0 }).select('name email created');
+    res.json({ success: true, users });
+  } catch (error) {
+    console.error('Admin users load error:', error);
+    res.status(500).json({ success: false, message: 'Unable to load users.' });
+  }
+});
+
+app.delete('/api/admin/users/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const user = await Registration.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+    user.is_deleted = 1;
+    user.modified = new Date();
+    await user.save();
+    res.json({ success: true, message: 'User deleted successfully.' });
+  } catch (error) {
+    console.error('Admin delete user error:', error);
+    res.status(500).json({ success: false, message: 'Unable to delete user.' });
+  }
+});
+
+app.get('/api/admin/reports', async (req, res) => {
+  try {
+    const files = fs.readdirSync(FILES_DIR);
+    const reports = files.map(file => {
+      const stats = fs.statSync(path.join(FILES_DIR, file));
+      return { name: file, modified: stats.mtime };
+    }).sort((a, b) => b.modified - a.modified);
+    res.json({ success: true, reports });
+  } catch (error) {
+    console.error('Admin reports load error:', error);
+    res.status(500).json({ success: false, message: 'Unable to load reports.' });
+  }
+});
+
+app.delete('/api/admin/reports', async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ success: false, message: 'Report name is required.' });
+    }
+    const filePath = path.join(FILES_DIR, name);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ success: false, message: 'Report not found.' });
+    }
+    fs.unlinkSync(filePath);
+    res.json({ success: true, message: 'Report deleted successfully.' });
+  } catch (error) {
+    console.error('Admin delete report error:', error);
+    res.status(500).json({ success: false, message: 'Unable to delete report.' });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
-  res.json({ success: true, email: email });
-  return;
+  console.log("QQQQQQQQQQQQQQQQQQQQQQ")
+
+  
   if (!email || !password) {
     return res.status(400).json({ success: false, message: 'Email and password are required' });
   }
 
-  const user = allowedUsers.find(
-    (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-  );
+  
 
+  
+  
+
+  const normalizedEmail = email.toLowerCase().trim();
+  const user = await Registration.findOne({ email: normalizedEmail, is_deleted: 0 });
   if (!user) {
     return res.status(401).json({ success: false, message: 'Invalid credentials' });
   }
 
+  const matches = await bcrypt.compare(password, user.password);
+  if (!matches) {
+    return res.status(401).json({ success: false, message: 'Invalid credentials' });
+  }
+
   const token = createSession(user.email);
-  res.json({ success: true, token, email: user.email });
+  res.json({ success: true, token, email: user.email, name: user.name || normalizedEmail.split('@')[0] });
 });
 
 app.post('/api/auth/logout', (req, res) => {

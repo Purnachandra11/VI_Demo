@@ -278,7 +278,7 @@
   
 
   <script>
-    const API_BASE = 'http://localhost:3000/api';
+    const API_BASE = 'http://localhost:5174/api';
 
     function showSimLoader(text) {
       const lo = document.getElementById('loginOverlay');
@@ -296,6 +296,7 @@
     }
 
     async function handleLogin() {
+      console.log("QQQQQQQQQQQQQQQQQQQQQQQQQq")
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
       const errorBox = document.getElementById('loginError');
