@@ -7,7 +7,7 @@ export interface InputData {
   msisdn: string;
   circle: string;
   rechargeMRP: string;
-  Recharge: string;
+  recharge: string;
   swift: string;
   inFlag: string;
   viApp: string;
@@ -43,7 +43,7 @@ export class ExcelDataService {
       msisdn: String(row['MSISDN'] ?? '').trim(),
       circle: String(row['CIRCLE'] ?? '').trim(),
       rechargeMRP: String(row['Recharge MRP'] ?? '').trim(),
-      recharge: String(row['Recharge'] ?? '').trim(),
+      recharge: String(row['recharge'] ?? '').trim(),
       swift: String(row['SWIFT'] ?? '').trim(),
       inFlag: String(row['IN'] ?? '').trim(),
       viApp: String(row['Vi App'] ?? '').trim(),

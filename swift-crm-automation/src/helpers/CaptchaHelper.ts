@@ -21,18 +21,32 @@ export class CaptchaHelper {
     const captchaEl = await $('img#LoginCaptcha');
     await captchaEl.waitForDisplayed({ timeout: 10000 });
 
-    // Get the actual image data via screenshot (ensures perfect match with browser)
-    const screenshotDir = path.resolve('./captcha_screenshots');
-    fs.mkdirSync(screenshotDir, { recursive: true });
-    const imagePath = path.join(screenshotDir, `captcha_${Date.now()}.png`);
-    
-    // Take screenshot of just the CAPTCHA element
-    await captchaEl.saveScreenshot(imagePath);
-    console.log(`[CaptchaHelper] CAPTCHA screenshot saved → ${imagePath}`);
-    
-    // Convert to base64
-    const base64Image = fs.readFileSync(imagePath, { encoding: 'base64' });
-    console.log(`[CaptchaHelper] CAPTCHA converted to base64 (${base64Image.length} bytes)`);
+    // Get the actual image data
+    let base64Image = '';
+
+    try {
+      // Method 1: Download image directly from src with SSL bypass
+      const src = await captchaEl.getAttribute('src');
+      if (src) {
+        const fullUrl = src.startsWith('http') ? src : `https://swiftcrm.vodafoneidea.in/swift-portal/${src}`;
+        console.log(`[CaptchaHelper] Downloading CAPTCHA from: ${fullUrl}`);
+        base64Image = await this.downloadImageAsBase64WithSSL(fullUrl);
+        console.log(`[CaptchaHelper] Image downloaded successfully (${base64Image.length} bytes)`);
+      }
+    } catch (error) {
+      console.warn('[CaptchaHelper] Failed to download image, falling back to screenshot:', error.message);
+      // Fallback: Take screenshot of just the CAPTCHA element
+      const screenshotDir = path.resolve('./captcha_screenshots');
+      fs.mkdirSync(screenshotDir, { recursive: true });
+      const imagePath = path.join(screenshotDir, `captcha_${Date.now()}.png`);
+      
+      // Use element screenshot instead of full page
+      await captchaEl.saveScreenshot(imagePath);
+      console.log(`[CaptchaHelper] CAPTCHA screenshot saved → ${imagePath}`);
+      
+      // Convert to base64
+      base64Image = fs.readFileSync(imagePath, { encoding: 'base64' });
+    }
 
     // Try automatic solving if API key is available
     if (process.env.CAPTCHA_SERVICE_API_KEY) {

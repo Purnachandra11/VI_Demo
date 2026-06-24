@@ -12,6 +12,8 @@ const fs = require("fs");
 const PORT = Number(process.env.PORT) || 5174;
 const SERVER_IP = process.env.SERVER_PUBLIC_IP || '13.233.121.125';
 const { spawn } = require('child_process');
+const PROJECT_ROOT = path.resolve(__dirname, '..');
+const SIEBEL_PROJECT_ROOT = path.resolve(__dirname, '..', 'siebel-crm-automation');
 // require('./config.js')
 const WebSocket = require('ws');
 const http = require('http');
@@ -33,6 +35,9 @@ const wss = new WebSocket.Server({ noServer: true });
 
 // SWIFT WebSocket clients
 const swiftClients = new Map();
+
+// Session-to-file mapping for SWIFT uploads
+const swiftUploadPaths = new Map();
 
 // Handle HTTP upgrade requests manually
 server.on('upgrade', (request, socket, head) => {
@@ -1817,7 +1822,7 @@ app.get('/api/download-sample-file-bill', (req, res) => {
   try {
     const filePath = path.resolve(
       __dirname,
-      '../test_data/input_data.xlsx'
+      '../siebel-crm-automation/Sample_file/input_data.xlsx'
     );
 
     console.log('File Path:', filePath);
@@ -1948,6 +1953,20 @@ function handleDefaultConnection(ws) {
       const data = JSON.parse(message.toString());
       if (data.type === 'challenge_response') {
         // Handle OTP/Answer response from frontend
+        if (data.deviceId === 'SIEBEL_SCRM') {
+          // Save response to Siebel comm directory
+          const commDir = path.join(SIEBEL_PROJECT_ROOT, 'comm');
+          if (!fs.existsSync(commDir)) {
+            fs.mkdirSync(commDir, { recursive: true });
+          }
+          const responseFile = path.join(commDir, 'challenge_response.json');
+          const responseData = {
+            timestamp: Date.now(),
+            response: data.response
+          };
+          fs.writeFileSync(responseFile, JSON.stringify(responseData, null, 2));
+          console.log('✅ Siebel challenge response saved:', responseData);
+        }
         broadcastToAll({
           type: 'challenge_received',
           deviceId: data.deviceId,
@@ -1983,46 +2002,47 @@ function handleSwiftConnection(ws, request) {
   swiftClients.set(sessionId, ws);
 
   let orchestrator = null;
-  let uploadPath = null;
 
-  // Find the uploaded file for this session (simplified)
-  const uploadDir = path.join(__dirname, 'swift-uploads');
-  if (fs.existsSync(uploadDir)) {
-    const files = fs.readdirSync(uploadDir).sort((a, b) => {
-      return fs.statSync(path.join(uploadDir, b)).mtime - fs.statSync(path.join(uploadDir, a)).mtime;
-    });
-    if (files.length > 0) {
-      uploadPath = path.join(uploadDir, files[0]);
-    }
+  // Look up the file for THIS session specifically
+  const uploadPath = swiftUploadPaths.get(sessionId) || null;
+  if (!uploadPath) {
+    console.warn(`[SWIFT] ⚠️ No upload found for session: ${sessionId}`);
   }
 
-  ws.on('message', async (message) => {
+ ws.on('message', async (message) => {
     try {
       const data = JSON.parse(message);
       
       if (data.type === 'start' && uploadPath) {
         console.log(`[SWIFT] 🚀 Starting automation...`);
+        const viAppOtp = data.viAppOtp || null;
         
         // Create clients set for this session
         const clientSet = new Set();
         clientSet.add(ws);
         
-        orchestrator = new SwiftCrmOrchestrator(uploadPath, clientSet, __dirname);
+        orchestrator = new SwiftCrmOrchestrator(uploadPath, clientSet, __dirname, viAppOtp);
         swiftSessions.set(sessionId, { orchestrator, ws });
         
-        try {
-          await orchestrator.runRechargeUAT();
-        } catch (error) {
+        // ✅ FIXED: Do NOT await — fires in background so this handler
+        // stays free to process incoming OTP / CAPTCHA messages
+        orchestrator.runRechargeUAT().catch(error => {
           console.error(`[SWIFT] ❌ Automation error:`, error);
-          ws.send(JSON.stringify({
-            type: 'complete',
-            success: false,
-            message: error.message
-          }));
-        }
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              type: 'complete',
+              success: false,
+              message: error.message
+            }));
+          }
+        });
+
       } else if (data.type === 'captcha' && orchestrator) {
         console.log(`[SWIFT] 🔐 CAPTCHA received: ${data.answer}`);
         await orchestrator.setCaptchaAnswer(data.answer);
+      } else if (data.type === 'otp' && orchestrator) {
+        console.log(`[SWIFT] 🔐 OTP received: ${data.otp}`);
+        await orchestrator.setOtp(data.otp);
       }
     } catch (error) {
       console.error(`[SWIFT] ❌ WebSocket error:`, error);
@@ -2033,12 +2053,14 @@ function handleSwiftConnection(ws, request) {
     console.log(`[SWIFT] 👋 Client disconnected: ${sessionId}`);
     swiftClients.delete(sessionId);
     swiftSessions.delete(sessionId);
+    swiftUploadPaths.delete(sessionId);
   });
 
   ws.on('error', (error) => {
     console.error(`[SWIFT] ❌ WebSocket error:`, error);
     swiftClients.delete(sessionId);
     swiftSessions.delete(sessionId);
+    swiftUploadPaths.delete(sessionId);
   });
 }
 
@@ -2138,7 +2160,7 @@ function parseAndBroadcastLogs(stdout, deviceId) {
   });
 }
 
-/** WDIO test execution with real-time WebSocket streaming (replaces mvn test) */
+/** WDIO test execution with real-time WebSocket streaming  */
 app.post('/api/test-command', upload.single('file'), async (req, res) => {
   try {
     const deviceId = req.body.deviceId;
@@ -2151,25 +2173,32 @@ app.post('/api/test-command', upload.single('file'), async (req, res) => {
 
     // Special handling for Bill Validation
     if (deviceId === 'SIEBEL_SCRM') {
-      console.log('📑 Starting Siebel Bill Validation flow...');
+      
+      const commDir = path.join(SIEBEL_PROJECT_ROOT, 'comm');
+      if (fs.existsSync(commDir)) {
+        const files = fs.readdirSync(commDir);
+        files.forEach(file => {
+          const filePath = path.join(commDir, file);
+          fs.unlinkSync(filePath);
+        });
+      } else {
+        fs.mkdirSync(commDir, { recursive: true });
+      }
       
       // If a file was uploaded, save it to the expected location
       if (req.file) {
-        const targetPath = path.join(PROJECT_ROOT, 'test', 'test_data', 'input_data.xlsx');
+        const targetPath = path.join(SIEBEL_PROJECT_ROOT, 'test_data', 'input_data.xlsx');
         const targetDir = path.dirname(targetPath);
         if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
         
         fs.copyFileSync(req.file.path, targetPath);
-        console.log(`✅ Input file saved to: ${targetPath}`);
+        console.log(`Input file saved to: ${targetPath}`);
       }
-      
-      // Override testType for Siebel flow
       const options = {
-        deviceId: 'SIEBEL_SCRM',
-        specs: './test/specs/siebel_invoice_validation.spec.ts'
+        deviceId: 'SIEBEL_SCRM'
       };
       
-      executeWdioProcess(options, res, 'SIEBEL_SCRM');
+      executeWdioProcess(options, res, 'SIEBEL_SCRM', 'siebel_invoice_validation');
       return;
     }
 
@@ -2286,9 +2315,12 @@ app.post('/api/swift/upload', swiftUpload.single('excel'), (req, res) => {
   }
 
   const sessionId = crypto.randomBytes(16).toString('hex');
-  
+
+  // Store file path keyed by sessionId
+  swiftUploadPaths.set(sessionId, req.file.path);
+
   console.log(`[SWIFT] 📄 File uploaded: ${req.file.originalname} (Session: ${sessionId})`);
-  
+
   res.json({
     success: true,
     sessionId,
@@ -2376,4 +2408,3 @@ server.listen(PORT, '0.0.0.0', () => {  // Listen on all interfaces
   console.log(`📊 API endpoints ready`);
   console.log(` Dashboard: http://localhost:${PORT}/`);
 });
-

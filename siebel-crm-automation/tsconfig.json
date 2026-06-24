@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "lib": ["ES2019"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    "forceConsistentCasingInFileNames": true,
+    "downlevelIteration": true,
+    "types": [
+      "node",
+      "mocha",
+      "@wdio/globals/types",
+      "expect-webdriverio"
+    ]
+  },
+  "include": [
+    "config/**/*.ts",
+    "pages/**/*.ts",
+    "utils/**/*.ts",
+    "services/**/*.ts",
+    "types/**/*.ts",
+    "specs/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

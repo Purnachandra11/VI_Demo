@@ -638,6 +638,19 @@
         </div>
       </div>
 
+      <!-- OTP OVERLAY (position:absolute inside grid) -->
+      <div class="overlay-wrap" id="otpOverlay">
+        <div class="captcha-box">
+          <h3>VI App OTP Verification</h3>
+          <p id="otpMessage">Please enter the OTP received on your mobile.</p>
+          <input type="text" id="otpInput" maxlength="6" inputmode="numeric" pattern="[0-9]{4,6}" class="form-control" placeholder="Enter 4-6 digit OTP…">
+          <div class="action-buttons" style="justify-content:center;">
+            <button class="btn btn-primary" onclick="submitOTP()">Submit</button>
+            <button class="btn btn-muted"   onclick="closeOTP()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
     </div>
     <!-- end step-grid -->
 
@@ -681,6 +694,9 @@
     const captchaImage = document.getElementById('captchaImage');
     const captchaInput = document.getElementById('captchaInput');
     const recentRunsBody = document.getElementById('recentRunsBody');
+    const otpOverlay = document.getElementById('otpOverlay');
+    const otpInput = document.getElementById('otpInput');
+    const otpMessage = document.getElementById('otpMessage');
 
     // stat refs
     const statTotal = document.getElementById('statTotal');
@@ -804,6 +820,11 @@
             showCaptcha(data.imageBase64);
           }
           break;
+        case 'otp':
+          if (data.action === 'show') {
+            showOTP(data.message);
+          }
+          break;
         case 'screenshots':
           updateScreenshots(data.screenshots);
           break;
@@ -820,6 +841,42 @@
           break;
       }
     }
+
+    // ── OTP ──
+    function showOTP(message) {
+      if (message) {
+        otpMessage.textContent = message;
+      }
+      otpOverlay.classList.add('visible');
+      otpInput.value = '';
+      otpInput.focus();
+    }
+
+    function submitOTP() {
+      const otp = otpInput.value.trim();
+      
+      // Validate OTP format (4-6 digits)
+      if (!otp) {
+        addLog('⚠️ OTP is empty', 'warning');
+        return;
+      }
+      
+      if (!/^\d{4,6}$/.test(otp)) {
+        addLog('⚠️ OTP must be 4-6 digits', 'warning');
+        return;
+      }
+      
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'otp', otp }));
+      }
+      closeOTP();
+      addLog(`✅ OTP submitted: ${otp}`, 'success');
+    }
+
+    function closeOTP() {
+      otpOverlay.classList.remove('visible');
+    }
+    otpInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitOTP(); });
 
     // ── UI helpers ──
     function addLog(message, type = 'info') {

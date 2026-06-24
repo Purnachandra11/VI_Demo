@@ -9,6 +9,7 @@ const os = require('os');
 const fs = require('fs');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..');
+const SIEBEL_PROJECT_ROOT = path.resolve(__dirname, '..', 'siebel-crm-automation');
 
 /** npm script or WDIO_SPECS override per dashboard test type */
 const TEST_MAP = {
@@ -112,10 +113,10 @@ function resolveNpmCommand() {
 }
 */
 
-function resolveWdioCommand() {
+function resolveWdioCommand(cwd = PROJECT_ROOT) {
   const isWin = os.platform() === 'win32';
   // Use local wdio binary directly to avoid npm/cross-env overhead (saves ~10-20s on Windows)
-  const localWdio = path.join(PROJECT_ROOT, 'node_modules', '.bin', isWin ? 'wdio.cmd' : 'wdio');
+  let localWdio = path.join(cwd, 'node_modules', '.bin', isWin ? 'wdio.cmd' : 'wdio');
   
   if (fs.existsSync(localWdio)) {
     return {
@@ -136,17 +137,21 @@ function resolveWdioCommand() {
  * Spawn WDIO test run. Returns child process for streaming stdout/stderr.
  */
 function runWdioTest(testType, options = {}, callbacks = {}) {
-  const mapping = TEST_MAP[testType];
+  const isSiebel = options.deviceId === 'SIEBEL_SCRM';
+  const cwd = isSiebel ? SIEBEL_PROJECT_ROOT : PROJECT_ROOT;
+  const mapping = isSiebel ? { specs: './specs/siebel_invoice_validation.spec.ts' } : TEST_MAP[testType];
   if (!mapping) {
     throw new Error(`Invalid test type: ${testType}`);
   }
 
-  const enriched = enrichPartiesFromDeviceMap(options.deviceId, options.phone);
+  const enriched = isSiebel ? {} : enrichPartiesFromDeviceMap(options.deviceId, options.phone);
   const merged = { ...enriched, ...options };
   const env = buildTestEnv(merged);
-  const { command, shell, argsPrefix = [] } = resolveWdioCommand();
+  const { command, shell, argsPrefix = [] } = resolveWdioCommand(cwd);
 
-  const configPath = path.join(PROJECT_ROOT, 'config', 'wdio.android.conf.ts');
+  const configPath = isSiebel 
+    ? path.join(SIEBEL_PROJECT_ROOT, 'config', 'wdio.siebel.conf.ts') 
+    : path.join(PROJECT_ROOT, 'config', 'wdio.android.conf.ts');
   let args = [...argsPrefix, 'run', configPath];
 
   // Pass specs via environment variable as defined in TEST_MAP
@@ -157,7 +162,7 @@ function runWdioTest(testType, options = {}, callbacks = {}) {
   } else if (mapping.npmScript) {
     // Legacy support for npm scripts if still needed, but we prefer direct specs
     const { command: npmCmd } = resolveNpmCommand();
-    return spawn(npmCmd, ['run', mapping.npmScript], { cwd: PROJECT_ROOT, env, shell: true });
+    return spawn(npmCmd, ['run', mapping.npmScript], { cwd, env, shell: true });
   } else {
     throw new Error(`No run configuration for test type: ${testType}`);
   }
@@ -165,7 +170,7 @@ function runWdioTest(testType, options = {}, callbacks = {}) {
   console.log(`[WDIO] ${command} ${args.join(' ')} (type=${testType}, device=${merged.deviceId})`);
 
   const child = spawn(command, args, {
-    cwd: PROJECT_ROOT,
+    cwd,
     env,
     shell
   });

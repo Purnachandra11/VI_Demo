@@ -1,0 +1,4 @@
+invalid argument: WebDriverError: The following required parameters are missing: ["strategy","selector"]
+Known required parameters are: ["strategy","selector"]
+Known optional parameters are: ["elementId","maxSwipes"]
+You have provided: ["direction"] when running "execute/sync" with method "POST"

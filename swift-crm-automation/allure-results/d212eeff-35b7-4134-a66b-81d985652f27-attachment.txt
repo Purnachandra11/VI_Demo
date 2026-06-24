@@ -1,2 +1,0 @@
-unknown error: WebDriverError: unknown error: net::ERR_NAME_NOT_RESOLVED
-  (Session info: chrome=149.0.7827.104) when running "url" with method "POST"

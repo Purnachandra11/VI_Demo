@@ -1,0 +1,1 @@
+unknown error: WebDriverError: 'GET /element/00000000-0000-0178-ffff-ffff00000073/attribute/displayed' cannot be proxied to UiAutomator2 server because the instrumentation process is not running (probably crashed). Check the server log and/or the logcat output for more details when running "element/00000000-0000-0178-ffff-ffff00000073/displayed" with method "GET"

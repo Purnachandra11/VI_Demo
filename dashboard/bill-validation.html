@@ -784,7 +784,7 @@
       if (!selectedFile) return;
       const formData = new FormData();
       formData.append('file', selectedFile);
-      formData.append('testType', 'calling');
+      formData.append('testType', 'siebel_invoice_validation');
       formData.append('deviceId', 'SIEBEL_SCRM');
 
       document.getElementById('startBtn').disabled = true;

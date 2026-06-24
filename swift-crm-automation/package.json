@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "test:swift": "wdio run ./wdio.swift.conf.ts",
-    "test:recharge": "wdio run ./wdio.recharge.conf.ts"
+    "test:recharge": "wdio run ./wdio.recharge.conf.ts",
+    "test:viapp": "wdio run ./Wdio.viapp.conf.ts"
   },
   "dependencies": {
     "@azure/cognitiveservices-computervision": "^8.2.0",
