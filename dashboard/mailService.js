@@ -2,10 +2,6 @@ const nodemailer = require('nodemailer');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
-/**
- * Mail Service for sending bulk emails with recharge details
- * Supports SMTP configuration from environment variables
- */
 
 class MailService {
   constructor() {
@@ -13,25 +9,26 @@ class MailService {
     this.initializeTransporter();
   }
 
-  /**
-   * Initialize email transporter with SMTP configuration
-   */
   initializeTransporter() {
     try {
       const mailHost = process.env.MAIL_HOST || 'qdegrees.icewarpcloud.in';
-      const mailPortRaw = process.env.MAIL_PORT ||'587';
+      const mailPortRaw = process.env.MAIL_PORT || '587';
       const mailPort = parseInt(mailPortRaw, 10) || 587;
 
       const mailEncryption = (process.env.MAIL_ENCRYPTION || '').toLowerCase();
       const smtpSecure = mailEncryption === 'ssl' ? true : false; // TLS => secure:false
 
       const mailUsername = process.env.MAIL_USERNAME || process.env.SMTP_USER || 'noreply-all@qdegrees.org';
-      const mailPassword = process.env.MAIL_PASSWORD || process.env.SMTP_PASS || 'Jaipur@2024';
+      const mailPassword = process.env.MAIL_PASSWORD || process.env.SMTP_PASS || "Jaipur@2024"
+
+      if (!mailPassword) {
+        console.error('Mail Service Error - MAIL_PASSWORD / SMTP_PASS not set in environment.');
+      }
 
       const smtpConfig = {
         host: mailHost,
         port: mailPort,
-        secure: process.env.SMTP_SECURE === 'true' ? true : smtpSecure, // TLS=false, SSL=true (unless SMTP_SECURE explicitly overrides)
+        secure: process.env.SMTP_SECURE === 'true' ? true : smtpSecure,
         auth: {
           user: mailUsername,
           pass: mailPassword
@@ -39,8 +36,7 @@ class MailService {
       };
 
       this.transporter = nodemailer.createTransport(smtpConfig);
-      
-      // Verify connection
+
       this.transporter.verify((error, success) => {
         if (error) {
           console.error('Mail Service Error - SMTP connection failed:', error.message);
@@ -54,16 +50,35 @@ class MailService {
     }
   }
 
+
+  buildConfirmUrl(detail, signToken) {
+    const baseUrl = process.env.APP_BASE_URL || 'https://recharge.qdegrees.org';
+    const txnId = encodeURIComponent(detail.transactionId || '');
+    const token = signToken(detail.transactionId);
+    return `${baseUrl}/recharge/confirm/${txnId}?token=${token}`;
+  }
+
+  isValidRechargeDetail(detail) {
+    return detail && (detail.isValid === true || String(detail.status || '').toLowerCase() === 'success');
+  }
+
   /**
-   * Format recharge details into HTML email body
+   * Format recharge details into HTML email body, with a per-row action button.
    * @param {Array} rechargeDetails - Array of recharge detail objects
    * @param {String} userName - Name of the user
+   * @param {Function} signToken - function(transactionId) => signed token string
    * @returns {String} HTML formatted email body
    */
-  formatRechargeDetailsHtml(rechargeDetails, userName = 'Customer') {
+  formatRechargeDetailsHtml(rechargeDetails, userName = 'Customer', signToken = (id) => id, options = {}) {
     const currentDate = new Date().toLocaleString('en-IN', {
       timeZone: 'Asia/Kolkata'
     });
+
+    const includeStatus = options.includeStatus !== false;
+    const includeActions = options.includeActions !== false;
+    const actionNote = includeActions
+      ? 'Open this email in an HTML-capable client to use the "Mark as Completed" action buttons.'
+      : 'This email contains recharge details only.';
 
     let tableRows = '';
     let totalAmount = 0;
@@ -73,6 +88,21 @@ class MailService {
         const amount = parseFloat(detail.amount || 0);
         totalAmount += amount;
 
+        const statusRaw = String(detail.status || (detail.isValid === true ? 'Valid' : 'Invalid') || 'Pending');
+        const status = statusRaw.charAt(0).toUpperCase() + statusRaw.slice(1);
+        const statusClass =
+          status.toLowerCase() === 'success' || status.toLowerCase() === 'valid' ? 'status-success' :
+          status.toLowerCase() === 'failed' || status.toLowerCase() === 'invalid' ? 'status-failed' : 'status-pending';
+
+        const statusCell = includeStatus
+          ? `<td style="padding: 10px;"><span class="${statusClass}">${status}</span></td>`
+          : '';
+
+        const confirmUrl = this.buildConfirmUrl(detail, signToken);
+        const actionCell = includeActions
+          ? `<td style="padding: 10px; text-align: center;"><a href="${confirmUrl}" target="_blank" class="action-btn">Mark as Completed</a></td>`
+          : '';
+
         tableRows += `
           <tr style="border-bottom: 1px solid #ddd;">
             <td style="padding: 10px; text-align: center;">${index + 1}</td>
@@ -80,13 +110,19 @@ class MailService {
             <td style="padding: 10px;">${detail.operatorName || 'N/A'}</td>
             <td style="padding: 10px;">${detail.planName || 'N/A'}</td>
             <td style="padding: 10px; text-align: right;">₹${amount.toFixed(2)}</td>
-            <td style="padding: 10px;">${detail.status || 'Pending'}</td>
+            ${statusCell}
             <td style="padding: 10px;">${detail.transactionId || 'N/A'}</td>
             <td style="padding: 10px;">${detail.date || new Date().toLocaleDateString('en-IN')}</td>
+            ${actionCell}
           </tr>
         `;
       });
     }
+
+    const statusHeader = includeStatus ? '<th>Status</th>' : '';
+    const actionHeader = includeActions ? '<th>Action</th>' : '';
+
+    const totalColumns = 7 + (includeStatus ? 1 : 0) + (includeActions ? 1 : 0);
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -105,7 +141,7 @@ class MailService {
             padding: 0;
           }
           .container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 20px auto;
             background: white;
             padding: 20px;
@@ -120,14 +156,8 @@ class MailService {
             margin-bottom: 20px;
             text-align: center;
           }
-          .header h1 {
-            margin: 0;
-            font-size: 28px;
-          }
-          .header p {
-            margin: 5px 0 0 0;
-            font-size: 14px;
-          }
+          .header h1 { margin: 0; font-size: 28px; }
+          .header p { margin: 5px 0 0 0; font-size: 14px; }
           .user-section {
             margin-bottom: 20px;
             padding: 15px;
@@ -135,59 +165,26 @@ class MailService {
             border-left: 4px solid #667eea;
             border-radius: 4px;
           }
-          .user-section h3 {
-            margin: 0 0 10px 0;
-            color: #667eea;
-          }
+          .user-section h3 { margin: 0 0 10px 0; color: #667eea; }
           .info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
             margin-bottom: 20px;
           }
-          .info-item {
-            padding: 10px;
-            background-color: #f0f0f0;
-            border-radius: 4px;
-          }
-          .info-item label {
-            font-weight: 600;
-            color: #667eea;
-            display: block;
-            font-size: 12px;
-          }
-          .info-item value {
-            display: block;
-            margin-top: 5px;
-            font-size: 14px;
-          }
+          .info-item { padding: 10px; background-color: #f0f0f0; border-radius: 4px; }
+          .info-item label { font-weight: 600; color: #667eea; display: block; font-size: 12px; }
+          .info-item value { display: block; margin-top: 5px; font-size: 14px; }
           table {
             width: 100%;
             border-collapse: collapse;
             margin: 20px 0;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
           }
-          thead {
-            background-color: #667eea;
-            color: white;
-          }
-          th {
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 13px;
-            text-transform: uppercase;
-          }
-          td {
-            padding: 10px;
-            font-size: 13px;
-          }
-          tbody tr:hover {
-            background-color: #f9f9f9;
-          }
-          tbody tr:nth-child(even) {
-            background-color: #fafafa;
-          }
+          thead { background-color: #667eea; color: white; }
+          th { padding: 12px; text-align: left; font-weight: 600; font-size: 13px; text-transform: uppercase; }
+          td { padding: 10px; font-size: 13px; }
+          tbody tr:nth-child(even) { background-color: #fafafa; }
           .summary {
             margin-top: 30px;
             padding: 20px;
@@ -196,12 +193,7 @@ class MailService {
             border-radius: 8px;
             text-align: right;
           }
-          .summary-item {
-            display: flex;
-            justify-content: space-between;
-            margin: 10px 0;
-            font-size: 16px;
-          }
+          .summary-item { display: flex; justify-content: space-between; margin: 10px 0; font-size: 16px; }
           .summary-item.total {
             font-size: 20px;
             font-weight: bold;
@@ -217,41 +209,33 @@ class MailService {
             color: #666;
             font-size: 12px;
           }
-          .footer p {
-            margin: 5px 0;
-          }
-          .success-badge {
-            display: inline-block;
-            background-color: #28a745;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            margin-left: 10px;
-          }
+          .footer p { margin: 5px 0; }
           .status-pending {
-            background-color: #ffc107;
-            color: #333;
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 11px;
-            font-weight: 600;
+            background-color: #ffc107; color: #333; padding: 4px 8px;
+            border-radius: 3px; font-size: 11px; font-weight: 600;
           }
           .status-success {
-            background-color: #28a745;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 11px;
-            font-weight: 600;
+            background-color: #28a745; color: white; padding: 4px 8px;
+            border-radius: 3px; font-size: 11px; font-weight: 600;
           }
           .status-failed {
-            background-color: #dc3545;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 11px;
+            background-color: #dc3545; color: white; padding: 4px 8px;
+            border-radius: 3px; font-size: 11px; font-weight: 600;
+          }
+          .action-btn {
+            display: inline-block;
+            background-color: #28a745;
+            color: #ffffff !important;
+            text-decoration: none;
+            padding: 8px 14px;
+            border-radius: 4px;
+            font-size: 12px;
             font-weight: 600;
+            white-space: nowrap;
+          }
+          .action-done {
+            color: #aaa;
+            font-size: 13px;
           }
         </style>
       </head>
@@ -280,6 +264,9 @@ class MailService {
           </div>
 
           <h3 style="color: #667eea; margin-top: 30px;">Recharge Details</h3>
+          <p style="font-size: 13px; color: #666; margin-top: -5px;">
+            ${actionNote}
+          </p>
           <table>
             <thead>
               <tr>
@@ -288,13 +275,14 @@ class MailService {
                 <th>Operator</th>
                 <th>Plan Name</th>
                 <th>Amount</th>
-                <th>Status</th>
+                ${statusHeader}
                 <th>Transaction ID</th>
                 <th>Date</th>
+                ${actionHeader}
               </tr>
             </thead>
             <tbody>
-              ${tableRows || '<tr><td colspan="8" style="text-align: center; padding: 20px; color: #999;">No recharge details available</td></tr>'}
+              ${tableRows || `<tr><td colspan="${totalColumns}" style="text-align: center; padding: 20px; color: #999;">No recharge details available</td></tr>`}
             </tbody>
           </table>
 
@@ -323,16 +311,9 @@ class MailService {
     return htmlContent;
   }
 
-  /**
-   * Format plain text email body (fallback for clients that don't support HTML)
-   * @param {Array} rechargeDetails - Array of recharge detail objects
-   * @param {String} userName - Name of the user
-   * @returns {String} Plain text formatted email body
-   */
-  formatRechargeDetailsText(rechargeDetails, userName = 'Customer') {
-    const currentDate = new Date().toLocaleString('en-IN', {
-      timeZone: 'Asia/Kolkata'
-    });
+  formatRechargeDetailsText(rechargeDetails, userName = 'Customer', options = {}) {
+    const currentDate = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+    const includeActions = options.includeActions !== false;
 
     let textContent = `
 MOBILE RECHARGE DETAILS
@@ -340,7 +321,8 @@ MOBILE RECHARGE DETAILS
 
 Dear ${userName},
 
-Please find below the details of your bulk mobile recharges:
+Please find below the details of your bulk mobile recharges.
+${includeActions ? 'Open this email in an HTML-capable client to use the "Mark as Completed" action buttons.' : 'This email contains recharge details only.'}
 
 Generated on: ${currentDate}
 
@@ -352,13 +334,14 @@ Generated on: ${currentDate}
       rechargeDetails.forEach((detail, index) => {
         const amount = parseFloat(detail.amount || 0);
         totalAmount += amount;
+        const status = String(detail.status || (detail.isValid === true ? 'Valid' : 'Invalid') || 'Pending');
 
         textContent += `
 ${index + 1}. Mobile: ${detail.mobileNumber || 'N/A'}
    Operator: ${detail.operatorName || 'N/A'}
    Plan: ${detail.planName || 'N/A'}
    Amount: ₹${amount.toFixed(2)}
-   Status: ${detail.status || 'Pending'}
+   Status: ${status}
    Transaction ID: ${detail.transactionId || 'N/A'}
    Date: ${detail.date || new Date().toLocaleDateString('en-IN')}
 
@@ -384,14 +367,11 @@ If you have any questions, please contact support at support@vi.com
   }
 
   /**
-   * Send bulk recharge details email to a single user
-   * @param {String} recipientEmail - Email address of the recipient
-   * @param {Array} rechargeDetails - Array of recharge detail objects
-   * @param {String} userName - Name of the user
-   * @param {Object} options - Additional options (subject, cc, bcc, etc.)
-   * @returns {Promise} - Email sending result
+   * @param {Function} signToken - function(transactionId) => signed token string, used to
+   *        build per-row confirmation links. Passed in so MailService doesn't need to know
+   *        about the signing secret directly.
    */
-  async sendRechargeDetailsEmail(recipientEmail, rechargeDetails, userName = 'Customer', options = {}) {
+  async sendRechargeDetailsEmail(recipientEmail, rechargeDetails, userName = 'Customer', options = {}, signToken = (id) => id) {
     try {
       if (!this.transporter) {
         throw new Error('Mail transporter not initialized. Check SMTP configuration.');
@@ -401,23 +381,33 @@ If you have any questions, please contact support at support@vi.com
         throw new Error('Recipient email address is required');
       }
 
-      const htmlContent = this.formatRechargeDetailsHtml(rechargeDetails, userName);
-      const textContent = this.formatRechargeDetailsText(rechargeDetails, userName);
+      const onlyValid = options.onlyValid === true;
+      const filteredDetails = Array.isArray(rechargeDetails)
+        ? (onlyValid ? rechargeDetails.filter((detail) => this.isValidRechargeDetail(detail)) : rechargeDetails)
+        : [];
+
+      if (!filteredDetails.length) {
+        throw new Error(onlyValid ? 'No valid recharge details available to email.' : 'No recharge details available to email.');
+      }
+
+      const htmlContent = this.formatRechargeDetailsHtml(filteredDetails, userName, signToken, options);
+      const textContent = this.formatRechargeDetailsText(filteredDetails, userName, options);
 
       const mailOptions = {
+        from: `"VI Automation" <${process.env.MAIL_USERNAME || process.env.SMTP_USER}>`,
         to: recipientEmail,
         subject: options.subject || `Mobile Recharge Details Report - ${new Date().toLocaleDateString('en-IN')}`,
         text: textContent,
         html: htmlContent,
         cc: options.cc || '',
         bcc: options.bcc || '',
-        replyTo: options.replyTo || process.env.SMTP_REPLY_TO || process.env.SMTP_USER
+        replyTo: options.replyTo || process.env.SMTP_REPLY_TO || process.env.MAIL_USERNAME || process.env.SMTP_USER
       };
 
       const result = await this.transporter.sendMail(mailOptions);
-      
+
       console.log(`Mail sent successfully to ${recipientEmail}:`, result.messageId);
-      
+
       return {
         success: true,
         messageId: result.messageId,
@@ -437,12 +427,46 @@ If you have any questions, please contact support at support@vi.com
     }
   }
 
-  /**
-   * Send bulk recharge details emails to multiple users
-   * @param {Array} recipients - Array of recipient objects {email, userName, rechargeDetails}
-   * @returns {Promise} - Array of sending results
-   */
-  async sendBulkRechargeEmails(recipients) {
+  async sendFormalRechargeEmail(recipientEmail, rechargeDetails, userName = 'Customer', options = {}, signToken = (id) => id) {
+    return this.sendRechargeDetailsEmail(
+      recipientEmail,
+      rechargeDetails,
+      userName,
+      Object.assign({}, options, { includeStatus: false, includeActions: false }),
+      signToken
+    );
+  }
+
+  async sendDualStatusEmails(rechargeDetails, actionRecipient, formalRecipient, userName = 'Customer', options = {}, signToken = (id) => id) {
+    const results = [];
+
+    if (actionRecipient) {
+      results.push(await this.sendRechargeDetailsEmail(
+        actionRecipient,
+        rechargeDetails,
+        userName,
+        Object.assign({}, options, { includeStatus: true, includeActions: true }),
+        signToken
+      ));
+    }
+
+    if (formalRecipient) {
+      results.push(await this.sendRechargeDetailsEmail(
+        formalRecipient,
+        rechargeDetails,
+        userName,
+        Object.assign({}, options, { includeStatus: true, includeActions: false }),
+        signToken
+      ));
+    }
+
+    return {
+      success: results.every(r => r.success),
+      results
+    };
+  }
+
+  async sendBulkRechargeEmails(recipients, signToken = (id) => id) {
     try {
       if (!Array.isArray(recipients) || recipients.length === 0) {
         throw new Error('Recipients array is required and must not be empty');
@@ -455,11 +479,11 @@ If you have any questions, please contact support at support@vi.com
           recipient.email,
           recipient.rechargeDetails || [],
           recipient.userName || 'Customer',
-          recipient.options || {}
+          recipient.options || {},
+          signToken
         );
         results.push(result);
 
-        // Add delay between emails to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 500));
       }
 
@@ -485,96 +509,30 @@ If you have any questions, please contact support at support@vi.com
     }
   }
 
-  /**
-   * Test SMTP connection
-   * @returns {Promise} - Connection test result
-   */
   async testConnection() {
     try {
       if (!this.transporter) {
         throw new Error('Mail transporter not initialized');
       }
-
       await this.transporter.verify();
       return {
         success: true,
         message: 'SMTP connection is working correctly',
-        host: process.env.SMTP_HOST,
-        port: process.env.SMTP_PORT,
+        host: process.env.MAIL_HOST,
+        port: process.env.MAIL_PORT,
         timestamp: new Date().toISOString()
       };
-
     } catch (error) {
       console.error('SMTP connection test failed:', error.message);
       return {
         success: false,
         error: error.message,
-        host: process.env.SMTP_HOST,
-        port: process.env.SMTP_PORT,
-        timestamp: new Date().toISOString()
-      };
-    }
-  }
-
-  /**
-   * Send test email to verify configuration
-   * @param {String} testEmail - Email address to send test email to
-   * @returns {Promise} - Test email result
-   */
-  async sendTestEmail(testEmail) {
-    try {
-      if (!testEmail) {
-        throw new Error('Test email address is required');
-      }
-
-      const mailOptions = {
-        from: `"VI Automation - Test" <${process.env.SMTP_USER}>`,
-        to: testEmail,
-        subject: 'VI Automation - SMTP Configuration Test',
-        html: `
-          <html>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-              <div style="max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f4f4f4; border-radius: 8px;">
-                <h2 style="color: #667eea; margin-bottom: 20px;">✅ SMTP Configuration Test</h2>
-                <p>Hello,</p>
-                <p>This is a test email to verify that your SMTP configuration is working correctly.</p>
-                <div style="background-color: white; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #667eea;">
-                  <p><strong>Test Details:</strong></p>
-                  <p>Sent on: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</p>
-                  <p>Status: <span style="color: #28a745; font-weight: bold;">✓ Success</span></p>
-                </div>
-                <p>You can now use the mail API to send bulk recharge details emails.</p>
-                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #999; font-size: 12px;">
-                  <p>© 2024 VI Automation System</p>
-                </div>
-              </div>
-            </body>
-          </html>
-        `,
-        text: `SMTP Configuration Test - Success\n\nSent on: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}\n\nYou can now use the mail API.`
-      };
-
-      const result = await this.transporter.sendMail(mailOptions);
-      
-      return {
-        success: true,
-        message: 'Test email sent successfully',
-        messageId: result.messageId,
-        testEmail: testEmail,
-        timestamp: new Date().toISOString()
-      };
-
-    } catch (error) {
-      console.error('Test email sending failed:', error.message);
-      return {
-        success: false,
-        error: error.message,
-        testEmail: testEmail,
+        host: process.env.MAIL_HOST,
+        port: process.env.MAIL_PORT,
         timestamp: new Date().toISOString()
       };
     }
   }
 }
 
-// Export singleton instance
 module.exports = new MailService();
