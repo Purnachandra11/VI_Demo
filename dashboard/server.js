@@ -24,6 +24,7 @@ const { getSimNumberViaUSSD, loadUssdService } = require('./ussdHandler');
 const { runWdioTest, enrichPartiesFromDeviceMap } = require('./wdioRunner');
 const { shouldShowUserLog, formatUserLogLine, inferLogType } = require('./userLogFilter');
 const { SwiftCrmOrchestrator } = require('./swiftCrmOrchestrator');
+const mailService = require('./mailService');
 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
