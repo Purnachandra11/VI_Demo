@@ -15,9 +15,9 @@ const SEL = {
   assetFieldAria: 'input[aria-label="Asset"]',
   assetFieldAlt : 'input[aria-labelledby="AssetNumTitle_Label"]',
   assetFieldFull: '//*[@id="a_3"]/table/tbody/tr/td/span/div/table[1]/tbody/tr/td[1]/input',
-  // ✅ FIXED: Use s_1_l instead of s_7_l
-  gridBody      : '#s_1_l tbody tr:not(.jqgfirstrow)',  // Excludes header row
-  gridTable     : '#s_1_l',  // Correct grid ID
+  // Use s_1_l instead of s_7_l // Excludes header row // Correct grid ID
+  gridBody      : '#s_1_l tbody tr:not(.jqgfirstrow)',  
+  gridTable     : '#s_1_l',  
   noDataMessage : '//div[contains(text(), "No records to display")]',
   loadingOverlay: '//div[contains(@class, "loading") or contains(@class, "wait")]',
 } as const;
@@ -338,7 +338,7 @@ export class SiebelSubscriptionsPage {
       );
       
       await browser.pause(1_000);
-      console.log('   ✅ Grid loaded successfully');
+      console.log(' Grid loaded successfully');
     } catch (err) {
       const error = err as Error;
       console.log(`   ⚠️ Grid may not have loaded completely: ${error.message}`);
@@ -346,17 +346,17 @@ export class SiebelSubscriptionsPage {
   }
 
   private async waitForAccountSummaryToLoad(): Promise<void> {
-    console.log('   ⏳ Waiting for Account Summary page to load...');
+    console.log('Waiting for Account Summary page to load...');
     
     try {
       const breadcrumb = await $(SEL.breadcrumb);
       await breadcrumb.waitForDisplayed({ timeout: 15_000 });
       const assetField = await this.findAssetField();
       await assetField.waitForDisplayed({ timeout: 10_000 });
-      console.log('   ✅ Account Summary page loaded successfully');
+      console.log('Account Summary page loaded successfully');
     } catch (err) {
       const error = err as Error;
-      console.log(`   ⚠️ Account Summary page may not have loaded completely: ${error.message}`);
+      console.log(`Account Summary page may not have loaded completely: ${error.message}`);
     }
   }
 

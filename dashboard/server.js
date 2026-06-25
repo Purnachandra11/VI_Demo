@@ -801,6 +801,175 @@ app.post('/api/adb/start', (req, res) => {
   });
 });
 
+// ===== Vi Number Validator APIs (migrated from vi-number-validator-api/server.ts) =====
+const { chromium } = require('playwright');
+
+const VI_URL = "https://www.myvi.in/prepaid/online-mobile-recharge";
+const SELECTORS = {
+  mobileInput: '#mobileNumber',
+  errorMsg: '.ORCMobileInput_errorMsg__TecyC'
+};
+const WAIT_MS = 1500;
+
+function isValidFormat(n) {
+  return typeof n === 'string' && /^\d{10}$/.test(n);
+  
+}
+
+function getBrowserLaunchOptions() {
+  return {
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-blink-features=AutomationControlled',
+      '--disable-features=IsolateOrigins,site-per-process',
+      '--disable-web-security',
+      '--disable-gpu',
+      '--disable-dev-shm-usage',
+      '--window-size=1920,1080'
+    ]
+  };
+}
+
+async function createRealisticPage(browser) {
+  const context = await browser.newContext({
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    viewport: { width: 1920, height: 1080 },
+    deviceScaleFactor: 1,
+    hasTouch: false,
+    isMobile: false,
+    locale: 'en-US',
+    timezoneId: 'Asia/Kolkata'
+  });
+  const page = await context.newPage();
+  await page.setExtraHTTPHeaders({
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Connection': 'keep-alive',
+    'Upgrade-Insecure-Requests': '1'
+  });
+  return page;
+}
+
+async function validateOnPage(page, mobileNumber) {
+  const input = page.locator(SELECTORS.mobileInput);
+  await input.waitFor({ state: 'visible', timeout: 15000 });
+  await input.click({ clickCount: 3 });
+  await input.fill(mobileNumber);
+  await page.waitForTimeout(WAIT_MS);
+  const errorLocator = page.locator(SELECTORS.errorMsg);
+  const hasError = await errorLocator.isVisible().catch(() => false);
+  const errorText = hasError ? (await errorLocator.innerText()).trim() : '';
+  const isNonViError = errorText.toLowerCase().includes('non vi number');
+  const isValid = !hasError || !isNonViError;
+  return {
+    number: mobileNumber,
+    isValid,
+    message: isValid ? 'Valid Vi number' : `Invalid Vi number – "${errorText}"`,
+    timestamp: new Date().toISOString()
+  };
+}
+
+app.get('/api/health', (_req, res) => {
+  console.log("hghghghghghghghgjkjkjkjkjkjkjkjkj")
+  res.json({ status: 'ok', service: 'vi-number-validator', ts: new Date().toISOString() });
+});
+
+app.post('/api/validate', async (req, res) => {
+  const number = (req.body || {}).number;
+  console.log("hghghgjhmmmmmmmmmmmmmmmmmmmmmmmmmmmm",req.body)
+  if (!isValidFormat(number)) {
+    return res.status(400).json({ error: 'Invalid input', detail: '"number" must be a 10-digit string' });
+  }
+  let browser = null;
+  try {
+    browser = await chromium.launch(getBrowserLaunchOptions());
+    const page = await createRealisticPage(browser);
+    await page.goto(VI_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    const result = await validateOnPage(page, number);
+    res.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: 'Internal server error', detail: message });
+  } finally {
+    try { await browser?.close(); } catch (e) { /* ignore */ }
+  }
+});
+
+app.post('/api/validate/bulk', async (req, res) => {
+  const numbers = (req.body || {}).numbers;
+  if (!Array.isArray(numbers) || numbers.length === 0) {
+    return res.status(400).json({ error: 'Invalid input', detail: '"numbers" must be a non-empty array of strings' });
+  }
+
+  // Partition into valid and invalid numbers
+  const invalid = numbers.filter((n) => !isValidFormat(n));
+  const validNumbers = numbers.filter((n) => isValidFormat(n));
+
+  if (validNumbers.length === 0) {
+    // Nothing to process
+    return res.status(400).json({ error: 'No valid numbers', detail: 'No valid 10-digit numbers to process', invalid: invalid.map(String) });
+  }
+
+  if (validNumbers.length > 50) {
+    return res.status(400).json({ error: 'Limit exceeded', detail: 'Maximum 50 numbers per bulk request (valid numbers)' });
+  }
+
+  const start = Date.now();
+  let browser = null;
+  try {
+    browser = await chromium.launch(getBrowserLaunchOptions());
+    const page = await createRealisticPage(browser);
+    await page.goto(VI_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+
+
+    const results = [];
+    // Process numbers in the original input order. For invalid-format numbers,
+    // add a result entry immediately and skip Playwright processing.
+    for (const num of numbers) {
+      if (!isValidFormat(num)) {
+        results.push({
+          number: String(num),
+          isValid: false,
+          message: 'Invalid MSISDN (must be 10 digits)',
+          timestamp: new Date().toISOString()
+        });
+        continue;
+      }
+
+      try {
+        const r = await validateOnPage(page, num);
+        results.push(r);
+      } catch (innerErr) {
+        const message = innerErr instanceof Error ? innerErr.message : String(innerErr);
+        results.push({ number: num, isValid: false, message: `Validation error: ${message}`, timestamp: new Date().toISOString() });
+      }
+    }
+
+    const validCount = results.filter((r) => r.isValid).length;
+    const invalidProcessed = results.filter((r) => !r.isValid).length;
+
+    const bulk = {
+      total_requested: numbers.length,
+      processed: results.length,
+      processed_valid: validCount,
+      processed_invalid: invalidProcessed,
+      skipped_invalid_format: invalid.map(String),
+      duration_ms: Date.now() - start,
+      results
+    };
+
+    res.json(bulk);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: 'Internal server error', detail: message });
+  } finally {
+    try { await browser?.close(); } catch (e) { /* ignore */ }
+  }
+});
+
+
 app.post('/api/adb/stop', (req, res) => {
   exec('adb kill-server', (error) => {
     if (error) {
