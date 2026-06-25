@@ -222,4 +222,8 @@ app.listen(PORT, () => {
   console.log(`GET  /api/health`);
   console.log(`POST /api/validate`);
   console.log(`POST /api/validate/bulk`);
+
+//   C:\Users\QD2245>curl -X POST http://localhost:4001/api/validate/bulk -H "Content-Type: application/json" -d "{\"numbers\":[\"000000000000000\"]}"
+// {"error":"Format error","detail":"These numbers are not 10 digits: 000000000000000"}
+// C:\Users\QD2245>curl -X POST http://localhost:4001/api/validate/bulk -H "Content-Type: application/json" -d "{\"numbers\":[\"9876543210\",\"8765432109\",\"1234567890\"]}"
 });
