@@ -1,67 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites tests="1" failures="1" errors="0" skipped="0">
-  <testsuite name="Siebel Invoice Validation Complete 6 Point Validation" timestamp="2026-06-23T18:38:58" time="95.688" tests="1" failures="1" errors="0" skipped="0">
+  <testsuite name="Siebel Invoice Validation Complete 6 Point Validation" timestamp="2026-06-25T01:48:01" time="2.551" tests="1" failures="1" errors="0" skipped="0">
     <properties>
       <property name="specId" value="0"/>
       <property name="suiteName" value="Siebel Invoice Validation - Complete 6-Point Validation"/>
-      <property name="capabilities" value="chrome.149_0_7827_115.windows"/>
+      <property name="capabilities" value="chrome.149_0_7827_156.windows"/>
       <property name="file" value="file:///D:/New%20VI%20UAT%20PROJECT/WIP/Automation%20Folder/VI%20Demo%2031.05.2026/VI%20Demo/siebel-crm-automation/specs/siebel_invoice_validation.spec.ts"/>
     </properties>
-    <testcase classname="chrome.149_0_7827_115.windows.Siebel_Invoice_Validation_-_Complete_6-Point_Validation" name="7434853216 Complete Invoice Validation Vi Max Family 871" time="95.676">
-      <failure message="Neither Account Summary nor subscription grid appeared"/>
+    <testcase classname="chrome.149_0_7827_156.windows.Siebel_Invoice_Validation_-_Complete_6-Point_Validation" name="7434853216 Complete Invoice Validation Vi Max Family 871" time="2.539">
+      <failure message="WebDriverError: unknown error: net::ERR_NAME_NOT_RESOLVED&#xA;  (Session info: chrome=149.0.7827.156) when running &quot;url&quot; with method &quot;POST&quot;"/>
       <system-out><![CDATA[
-COMMAND: GET /session/986114d2fc0e482b183f2d4710c456d9/element/f.39218F5AAC752A3C0A1316DF499B87E1.d.B5B465F6EE8868847D4142A1EBFE0116.e.10/text - {}
-RESULT: {}
-COMMAND: POST /session/986114d2fc0e482b183f2d4710c456d9/element/f.39218F5AAC752A3C0A1316DF499B87E1.d.B5B465F6EE8868847D4142A1EBFE0116.e.5/clear - {}
-RESULT: {}
-COMMAND: POST /session/986114d2fc0e482b183f2d4710c456d9/element/f.39218F5AAC752A3C0A1316DF499B87E1.d.B5B465F6EE8868847D4142A1EBFE0116.e.5/clear - {}
-RESULT: {}
-COMMAND: POST /session/986114d2fc0e482b183f2d4710c456d9/element/f.39218F5AAC752A3C0A1316DF499B87E1.d.B5B465F6EE8868847D4142A1EBFE0116.e.5/value - {"text":"COR4055772"}
-RESULT: {"text":"COR4055772"}
-COMMAND: POST /session/986114d2fc0e482b183f2d4710c456d9/element/f.39218F5AAC752A3C0A1316DF499B87E1.d.B5B465F6EE8868847D4142A1EBFE0116.e.6/clear - {}
-RESULT: {}
-COMMAND: POST /session/986114d2fc0e482b183f2d4710c456d9/element/f.39218F5AAC752A3C0A1316DF499B87E1.d.B5B465F6EE8868847D4142A1EBFE0116.e.6/clear - {}
-RESULT: {}
-COMMAND: POST /session/986114d2fc0e482b183f2d4710c456d9/element/f.39218F5AAC752A3C0A1316DF499B87E1.d.B5B465F6EE8868847D4142A1EBFE0116.e.6/value - {"text":"Test@123456789!"}
-RESULT: {"text":"Test@123456789!"}
-COMMAND: POST /session/986114d2fc0e482b183f2d4710c456d9/element/f.39218F5AAC752A3C0A1316DF499B87E1.d.B5B465F6EE8868847D4142A1EBFE0116.e.7/click - {}
-RESULT: {}
-COMMAND: GET /session/986114d2fc0e482b183f2d4710c456d9/alert/text - {}
-RESULT: {}
-COMMAND: GET /session/986114d2fc0e482b183f2d4710c456d9/window/handles - {}
-RESULT: {}
-COMMAND: GET /session/986114d2fc0e482b183f2d4710c456d9/alert/text - {}
-RESULT: {}
-COMMAND: GET /session/986114d2fc0e482b183f2d4710c456d9/window/handles - {}
-RESULT: {}
-COMMAND: GET /session/986114d2fc0e482b183f2d4710c456d9/element/f.39218F5AAC752A3C0A1316DF499B87E1.d.989CD93B8C8EFE7D7C14F5AA7A753943.e.44/text - {}
-RESULT: {}
-COMMAND: GET /session/986114d2fc0e482b183f2d4710c456d9/element/f.39218F5AAC752A3C0A1316DF499B87E1.d.989CD93B8C8EFE7D7C14F5AA7A753943.e.44/text - {}
-RESULT: {}
-COMMAND: POST /session/986114d2fc0e482b183f2d4710c456d9/element/f.39218F5AAC752A3C0A1316DF499B87E1.d.989CD93B8C8EFE7D7C14F5AA7A753943.e.43/click - {}
-RESULT: {}
-COMMAND: POST /session/986114d2fc0e482b183f2d4710c456d9/element/f.39218F5AAC752A3C0A1316DF499B87E1.d.5B26DDC54A7550CB453DEAFA86DB8165.e.115/click - {}
-RESULT: {}
-COMMAND: POST /session/986114d2fc0e482b183f2d4710c456d9/element/f.39218F5AAC752A3C0A1316DF499B87E1.d.5B26DDC54A7550CB453DEAFA86DB8165.e.197/click - {}
-RESULT: {}
-COMMAND: POST /session/986114d2fc0e482b183f2d4710c456d9/element/f.39218F5AAC752A3C0A1316DF499B87E1.d.5B26DDC54A7550CB453DEAFA86DB8165.e.604/clear - {}
-RESULT: {}
-COMMAND: POST /session/986114d2fc0e482b183f2d4710c456d9/element/f.39218F5AAC752A3C0A1316DF499B87E1.d.5B26DDC54A7550CB453DEAFA86DB8165.e.604/clear - {}
-RESULT: {}
-COMMAND: POST /session/986114d2fc0e482b183f2d4710c456d9/element/f.39218F5AAC752A3C0A1316DF499B87E1.d.5B26DDC54A7550CB453DEAFA86DB8165.e.604/value - {"text":"7434853216"}
-RESULT: {"text":"7434853216"}
-COMMAND: POST /session/986114d2fc0e482b183f2d4710c456d9/element/f.39218F5AAC752A3C0A1316DF499B87E1.d.5B26DDC54A7550CB453DEAFA86DB8165.e.615/click - {}
-RESULT: {}
-COMMAND: DELETE /session/986114d2fc0e482b183f2d4710c456d9 - {}
-COMMAND: GET /session/986114d2fc0e482b183f2d4710c456d9/window - {}
+COMMAND: POST /session/3de2da06b8288f5d6648255e47379f1e/url - {"url":"https://sumeru-south.vodafoneidea.in:6100/ecommunications_enu/start.swe?SWECmd=GotoView&SWEView=CUT+Home+Page+View+(CME)&SWERF=1&SWEHo=sumeru-south.vodafoneidea.in&SWEBU=1&SWEApplet0=Salutation+Applet+(WCC+Home)&SWERowId0=VRId-0"}
+RESULT: {"url":"https://sumeru-south.vodafoneidea.in:6100/ecommunications_enu/start.swe?SWECmd=GotoView&SWEView=CUT+Home+Page+View+(CME)&SWERF=1&SWEHo=sumeru-south.vodafoneidea.in&SWEBU=1&SWEApplet0=Salutation+Applet+(WCC+Home)&SWERowId0=VRId-0"}
+COMMAND: DELETE /session/3de2da06b8288f5d6648255e47379f1e - {}
 RESULT: {}
 ]]></system-out>
       <system-err><![CDATA[
-Error: Neither Account Summary nor subscription grid appeared
-    at <anonymous> (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\node_modules\webdriverio\build\node.js:6013:15)
+unknown error: WebDriverError: unknown error: net::ERR_NAME_NOT_RESOLVED
+  (Session info: chrome=149.0.7827.156) when running "url" with method "POST"
     at async Browser.wrapCommandFn (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\node_modules\@wdio\utils\build\index.js:982:23)
-    at async SiebelSubscriptionsPage.detectResultPage (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\siebel-crm-automation\pages\SiebelSubscriptionsPage.ts:172:3)
-    at async Context.<anonymous> (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\siebel-crm-automation\specs\siebel_invoice_validation.spec.ts:138:32)
+    at async Browser.url (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\node_modules\webdriverio\build\node.js:5932:24)
+    at async Browser.wrapCommandFn (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\node_modules\@wdio\utils\build\index.js:982:23)
+    at async SiebelLoginPage.open (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\siebel-crm-automation\pages\SiebelLoginPage.ts:61:5)
+    at async SiebelLoginPage.loginFull (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\siebel-crm-automation\pages\SiebelLoginPage.ts:324:5)
+    at async Context.<anonymous> (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\siebel-crm-automation\specs\siebel_invoice_validation.spec.ts:127:13)
     at async Context.executeAsync (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\node_modules\@wdio\utils\build\index.js:1108:20)
     at async Context.testFrameworkFnWrapper (D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\node_modules\@wdio\utils\build\index.js:1188:14)
 ]]></system-err>
