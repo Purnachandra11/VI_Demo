@@ -368,7 +368,7 @@ class SwiftCrmOrchestrator {
       // request.imageUrl  = "/captcha-images/captcha_<timestamp>.png"
        request.filename  = "captcha_<timestamp>.png"
       this.log(`📸 CAPTCHA screenshot ready: ${request.filename}`, 'info');
-debugger
+// debugger
 console.log(this.captchaScreenshotsDir+request.imageUrl,"this.captchaScreenshotsDir+request.imageUrl")
       this.broadcast({
         type      : 'captcha',

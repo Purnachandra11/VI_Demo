@@ -536,7 +536,7 @@
         <!-- Banner -->
         <div class="validation-banner">
           <span class="spin-ring"></span>
-          <span id="loaderMsg">Validating numbers via Vi network, please wait…</span>
+          <span id="loaderMsg">Validating each numbers via Vi system, please wait…</span>
         </div>
 
         <!-- Skeleton matched -->
@@ -575,6 +575,7 @@
       <div id="tablesContainer" style="display:none;">
 
         <!-- Matched -->
+          <div class="card">
          <div class="card-title">
           <span class="step-pill">STEP 2</span>
           Matched Test Cases
@@ -587,8 +588,10 @@
             <p>No matched records yet.</p>
           </div>
         </div>
-
-        <div class="card-title">
+        </div>
+        
+         <div class="card">
+          <div class="card-title">
           <span class="step-pill">STEP 3</span>
           Execution
         </div>
@@ -601,9 +604,12 @@
             <i class="bi bi-stop-circle-fill"></i> Stop Test
           </button>
         </div>
+         </div>
+        
 
         <!-- Unmatched -->
-          <div class="card-title">
+          <div class="card">
+              <div class="card-title">
           <!-- <span class="step-pill">STEP 2</span> -->
           Unmatched Test Cases
           <span class="tag-badge tag-orange" id="unmatchedCountBadge">0 records</span>
@@ -615,6 +621,8 @@
             <p>No unmatched records.</p>
           </div>
         </div>
+          </div>
+        
 
       </div><!-- /tablesContainer -->
 
@@ -904,7 +912,7 @@ async function parseExcelPreview(file) {
           progressPercent.textContent = '50%';
           
           // Call the email sending function with enriched results
-          await sendEmailsAfterValidation(enrichedResults);
+           sendEmailsAfterValidation(enrichedResults);
         } else {
           addLog('⚠️ No results to send emails.', 'warning');
         }
@@ -1008,7 +1016,7 @@ async function parseExcelPreview(file) {
     function renderUnmatchedTable(rows) {
   const wrap = document.getElementById('unmatchedTableWrap');
   if (!rows.length) {
-    wrap.innerHTML = `<div class="empty-preview"><span class="ep-icon">✅</span><p>All records matched — no unmatched entries!</p></div>`;
+    wrap.innerHTML = `<div class="empty-preview"><p>All records matched — no unmatched entries!</p></div>`;
     return;
   }
   let html = `
@@ -1157,7 +1165,7 @@ async function parseExcelPreview(file) {
     // ── CAPTCHA ──
    function showCaptcha(imageUrl) {
   console.log(imageUrl, "imageUrlimageUrl");
-  debugger
+  // debugger
   if (imageUrl) {
     // The imageUrl from the backend is "/captcha-images/captcha_xxx.png"
     // Use it directly with cache-busting

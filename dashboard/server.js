@@ -1154,7 +1154,7 @@ app.post('/api/process-validation-and-send-emails', async (req, res) => {
         recipient,
         'Customer',
         { 
-          subject: `📱 Mobile Recharge Details Report - ${new Date().toLocaleDateString('en-IN')}`,
+          subject: `Mobile Recharge Details Report - ${new Date().toLocaleDateString('en-IN')}`,
           includeActions: false
         },
         (id) => id
@@ -1177,7 +1177,7 @@ app.post('/api/process-validation-and-send-emails', async (req, res) => {
           validOnlyForAction,
           'Customer',
           { 
-            subject: `✅ Valid Vi Numbers Report (Action Required) - ${new Date().toLocaleDateString('en-IN')}`,
+            subject: `Valid Vi Numbers Report (Action Required) - ${new Date().toLocaleDateString('en-IN')}`,
             includeActions: true
           },
           (id) => id
