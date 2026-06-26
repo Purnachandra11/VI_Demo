@@ -348,8 +348,8 @@ class MailService {
           <div class="footer">
             <p><strong>VI Automation System</strong></p>
             <p>This is an automated email. Please do not reply to this message.</p>
-            <p>If you have any questions, please contact support at support@vi.com</p>
-            <p style="margin-top: 15px; color: #999;">© 2024 VI Telecom. All rights reserved.</p>
+            <p>If you have any questions, please contact support at noreply-all@qdegrees.org</p>
+            <p style="margin-top: 15px; color: #999;">© 2026 VI Telecom. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -418,9 +418,9 @@ Total Amount: ₹${totalAmount.toFixed(2)}
 ================================
 
 This is an automated email. Please do not reply to this message.
-If you have any questions, please contact support at support@vi.com
+If you have any questions, please contact support at noreply-all@qdegrees.org
 
-© 2024 VI Telecom. All rights reserved.
+© 2026 VI Telecom. All rights reserved.
     `;
 
     return textContent;
@@ -695,8 +695,8 @@ If you have any questions, please contact support at support@vi.com
           <div class="footer">
             <p><strong>VI Automation System</strong></p>
             <p>This is an automated email. Please do not reply to this message.</p>
-            <p>If you have any questions, please contact support at support@vi.com</p>
-            <p style="margin-top: 15px; color: #999;">© 2024 VI Telecom. All rights reserved.</p>
+            <p>If you have any questions, please contact support at noreply-all@qdegrees.org</p>
+            <p style="margin-top: 15px; color: #999;">© 2026 VI Telecom. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -920,8 +920,8 @@ If you have any questions, please contact support at support@vi.com
           <div class="footer">
             <p><strong>VI Automation System</strong></p>
             <p>This is an automated email. Please do not reply to this message.</p>
-            <p>If you have any questions, please contact support at support@vi.com</p>
-            <p style="margin-top: 15px; color: #999;">© 2024 VI Telecom. All rights reserved.</p>
+            <p>If you have any questions, please contact support at noreply-all@qdegrees.org</p>
+            <p style="margin-top: 15px; color: #999;">© 2026 VI Telecom. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -991,9 +991,9 @@ Total Amount: ₹${totalAmount.toFixed(2)}
 ================================
 
 This is an automated email. Please do not reply to this message.
-If you have any questions, please contact support at support@vi.com
+If you have any questions, please contact support at noreply-all@qdegrees.org
 
-© 2024 VI Telecom. All rights reserved.
+© 2026 VI Telecom. All rights reserved.
     `;
 
     return textContent;
@@ -1088,7 +1088,7 @@ If you have any questions, please contact support at support@vi.com
       const mailOptions = {
         from: `"VI Automation" <${senderEmail}>`,
         to: recipientEmail,
-        subject: options.subject || `✅ Valid Vi Numbers Report (Action Required) - ${new Date().toLocaleDateString('en-IN')}`,
+        subject: options.subject || `Valid Vi Numbers Report (Action Required) - ${new Date().toLocaleDateString('en-IN')}`,
         text: textContent,
         html: htmlContent,
         cc: options.cc || '',
@@ -1216,14 +1216,14 @@ If you have any questions, please contact support at support@vi.com
       const validWithBenefit = validDetails.filter(d => this.hasValidBenefitValue(d));
       if (validWithBenefit.length > 0) {
         console.log(`📤 Sending MATCHED email (${validWithBenefit.length} valid numbers with benefit) to: ${recipientEmail}`);
-        const result = await this.sendMatchedEmail(
-          recipientEmail,
-          validWithBenefit,
-          userName,
-          Object.assign({}, options, { includeActions: true }),
-          signToken
-        );
-        results.push({ type: 'matched', result });
+        // const result = await this.sendMatchedEmail(
+        //   recipientEmail,
+        //   validWithBenefit,
+        //   userName,
+        //   Object.assign({}, options, { includeActions: true }),
+        //   signToken
+        // );
+        // results.push({ type: 'matched', result });
       } else {
         console.log(`⚠️ No valid numbers with benefit for ${recipientEmail}`);
       }
