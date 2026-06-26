@@ -980,6 +980,154 @@ app.post('/api/adb/stop', (req, res) => {
   });
 });
 
+// ========== Process Validation and Send Emails ==========
+app.post('/api/process-validation-and-send-emails', async (req, res) => {
+  try {
+    const { validationResults, recipients = [] } = req.body;
+    
+    if (!validationResults || !Array.isArray(validationResults)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Validation results are required' 
+      });
+    }
+
+    const emailRecipients = recipients.length > 0 
+      ? recipients 
+      : ['kalidindi.chandra@qdegrees.org', 'testingqdegrees@gmail.com'];
+
+    // Separate valid and invalid numbers
+    const validNumbers = validationResults.filter(r => r.isValid === true);
+    const invalidNumbers = validationResults.filter(r => r.isValid === false);
+
+    console.log(`📊 Processing: ${validNumbers.length} valid, ${invalidNumbers.length} invalid`);
+
+    const emailResults = [];
+
+    // Prepare all recharge details with proper fields from the validation results
+    // We need to get the amount and benefit from the original data
+    // Since we don't have the Excel data here, we'll use the validation results
+    const allDetails = validationResults.map((r, index) => {
+      const isViValid = r.isValid === true;
+      
+      // Extract circle from message
+      let circle = 'N/A';
+      if (isViValid) {
+        circle = 'Vi';
+      } else if (r.message && r.message.includes('non Vi')) {
+        circle = 'Non-Vi';
+      } else if (r.message && r.message.includes('must be 10 digits')) {
+        circle = 'Invalid Format';
+      }
+      
+      // Check if it's a "MRP not found" case
+      const isMismatch = !isViValid && r.message && r.message.includes('MRP not found');
+      
+      return {
+        mobileNumber: r.number,
+        status: isViValid ? 'Valid' : (isMismatch ? 'Mismatch' : 'Invalid'),
+        isValid: isViValid,
+        isMismatch: isMismatch,
+        operatorName: isViValid ? 'Vi' : 'Unknown',
+        circle: circle,
+        planName: isViValid ? 'Recharge Plan' : 'N/A',
+        // Use the amount from the validation result if available, otherwise 0
+        amount: r.amount || 0,
+        benefit: r.benefit || (isViValid ? 'Recharge Plan' : 'N/A'),
+        transactionId: isViValid 
+          ? `TXN_${Date.now()}_${index}_${r.number}`
+          : `INV_${Date.now()}_${index}_${r.number}`,
+        date: new Date().toLocaleDateString('en-IN'),
+        errorMessage: isViValid ? '' : (r.message || 'Invalid Vi number'),
+        reason: isViValid ? '' : (r.message || 'Invalid Vi number'),
+        timestamp: r.timestamp || new Date().toISOString()
+      };
+    });
+
+    // For Email 2: Filter valid numbers that don't have MRP mismatch
+    const validOnlyForAction = allDetails.filter(d => 
+      d.isValid === true && !d.isMismatch
+    );
+
+    // For each recipient, send 2 emails
+    for (const recipient of emailRecipients) {
+      
+      // ============================================================
+      // EMAIL 1: Combined email with both valid and invalid (NO ACTIONS)
+      // ============================================================
+      const combinedResult = await mailService.sendCombinedEmails(
+        allDetails,
+        recipient,
+        'Customer',
+        { 
+          subject: `📱 Mobile Recharge Details Report - ${new Date().toLocaleDateString('en-IN')}`,
+          includeActions: false
+        },
+        (id) => id
+      );
+      emailResults.push({
+        recipient,
+        type: 'combined_no_actions',
+        result: combinedResult
+      });
+
+      // Small delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // ============================================================
+      // EMAIL 2: Only valid numbers with ACTION BUTTONS
+      // ============================================================
+      if (validOnlyForAction.length > 0) {
+        const validOnlyResult = await mailService.sendMatchedEmail(
+          recipient,
+          validOnlyForAction,
+          'Customer',
+          { 
+            subject: `✅ Valid Vi Numbers Report (Action Required) - ${new Date().toLocaleDateString('en-IN')}`,
+            includeActions: true
+          },
+          (id) => id
+        );
+        emailResults.push({
+          recipient,
+          type: 'valid_only_with_actions',
+          result: validOnlyResult
+        });
+      } else {
+        console.log(`⚠️ No valid numbers with matching MRP for ${recipient}`);
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    const successCount = emailResults.filter(e => e.result && e.result.success).length;
+    const totalEmails = emailResults.length;
+
+    res.json({
+      success: true,
+      summary: {
+        validCount: validNumbers.length,
+        invalidCount: invalidNumbers.length,
+        validForAction: validOnlyForAction.length,
+        emailsSent: totalEmails,
+        emailsSuccessful: successCount,
+        emailsFailed: totalEmails - successCount,
+        recipients: emailRecipients
+      },
+      details: emailResults,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('❌ Email processing failed:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process and send emails',
+      error: error.message
+    });
+  }
+});
+
 // ========== OLD Appium Functions ==========
 
 // app.post('/api/appium/start', (req, res) => {
@@ -2673,6 +2821,8 @@ app.get('/api/swift/download-report', (req, res) => {
     res.status(404).json({ success: false, message: 'No report found' });
   }
 });
+
+SwiftCrmOrchestrator.registerRoutes(app);
 
 // ========== Error Handling Middleware ==========
 

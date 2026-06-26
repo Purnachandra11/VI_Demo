@@ -450,19 +450,8 @@
           </button>
         </div>
 
-        <div class="action-buttons">
-          <button class="btn btn-primary" id="startBtn" onclick="startUAT()" disabled>
-            <i class="bi bi-play-circle-fill"></i> Start Validation
-          </button>
-          <button class="btn btn-danger" id="stopBtn" onclick="stopUAT()" disabled>
-            <i class="bi bi-stop-circle-fill"></i> Stop Test
-          </button>
-        </div>
 
         <hr class="divider">
-
-        <div class="card-title" style="margin-bottom:16px;">Execution Status</div>
-        <div id="statusBox" class="status-box info">Ready to start — upload a file first.</div>
 
         <div class="progress-section" id="progressSection">
           <div class="progress-info">
@@ -486,7 +475,7 @@
           <h3>CAPTCHA Verification</h3>
           <p>Please enter the characters shown in the image.</p>
           <div class="captcha-image-wrap">
-            <img id="captchaImage" src="" alt="CAPTCHA">
+            <img id="captchaImage" src="" alt="CAPTCHA" onerror="this.style.outline='2px solid red'; this.alt='⚠️ Image not found — check /captcha-images/ route'">
           </div>
           <input type="text" id="captchaInput" class="form-control" placeholder="Enter CAPTCHA code…">
           <div class="action-buttons" style="justify-content:center;">
@@ -521,7 +510,7 @@
 
       <div class="preview-heading">
         <div class="line"></div>
-        <h3>📊 Excel Data Preview &amp; Plan Matching</h3>
+        <h3>Excel Data Preview &amp; Plan Matching</h3>
         <div class="line"></div>
       </div>
 
@@ -586,10 +575,12 @@
       <div id="tablesContainer" style="display:none;">
 
         <!-- Matched -->
-        <div class="sub-head">
-          <h4>✅ Matched Test Cases</h4>
-          <span class="tag-badge tag-green" id="matchedCountBadge">0 records</span>
+         <div class="card-title">
+          <span class="step-pill">STEP 2</span>
+          Matched Test Cases
+           <span class="tag-badge tag-green" id="matchedCountBadge">0 records</span>
         </div>
+      
         <div class="ptable-wrap" id="matchedTableWrap">
           <div class="empty-preview">
             <span class="ep-icon">🔍</span>
@@ -597,11 +588,27 @@
           </div>
         </div>
 
+        <div class="card-title">
+          <span class="step-pill">STEP 3</span>
+          Execution
+        </div>
+
+          <div class="action-buttons">
+          <button class="btn btn-primary" id="startBtn" onclick="startUAT()" disabled>
+            <i class="bi bi-play-circle-fill"></i> Start Validation
+          </button>
+          <button class="btn btn-danger" id="stopBtn" onclick="stopUAT()" disabled>
+            <i class="bi bi-stop-circle-fill"></i> Stop Test
+          </button>
+        </div>
+
         <!-- Unmatched -->
-        <div class="sub-head" style="margin-top:28px;">
-          <h4>⚠️ Unmatched Test Cases</h4>
+          <div class="card-title">
+          <!-- <span class="step-pill">STEP 2</span> -->
+          Unmatched Test Cases
           <span class="tag-badge tag-orange" id="unmatchedCountBadge">0 records</span>
         </div>
+
         <div class="ptable-wrap" id="unmatchedTableWrap">
           <div class="empty-preview">
             <span class="ep-icon">📋</span>
@@ -613,7 +620,14 @@
 
     </div><!-- /previewSection -->
       <div class="card">
-        <div class="card-title">Execution Logs &amp; Screenshots</div>
+        <div class="card-title">
+          <span class="step-pill">STEP 4</span>
+          <div >Execution Logs &amp; Screenshots</div>
+          <button class="btn btn-muted btn-sm" onclick="clearLogs()">Clear Logs</button>
+        </div>
+        
+        
+        
 
         <div class="log-panel" id="logPanel">
           <div class="log-line log-info">
@@ -623,11 +637,22 @@
         </div>
 
         <div class="log-footer">
-          <button class="btn btn-muted btn-sm" onclick="clearLogs()">Clear Logs</button>
+          
           <button class="btn btn-success btn-sm" id="downloadReportBtn" style="display:none;" onclick="downloadReport()">
             ↓ Download Report
           </button>
         </div>
+
+        <div class="card-title" style="margin-bottom:16px;">Execution Status</div>
+        <div id="statusBox" class="status-box info">Ready to start — upload a file first.</div>
+
+         <div class="log-footer">
+          <!-- <button class="btn btn-muted btn-sm" onclick="clearLogs()">Clear Logs</button> -->
+          <button class="btn btn-success btn-sm" id="downloadReportBtn" style="display:none;" onclick="downloadReport()">
+            ↓ Download Report
+          </button>
+        </div>
+         </div>
 
         <hr class="divider" style="margin:16px 0;">
 
@@ -642,17 +667,7 @@
       </div>
   </main>
 
-  <!-- ═══ FOOTER ═══ -->
-  <footer class="footerMain">
-    <div class="footer-content">
-      <p>
-        Copyright &copy; 2026
-        <span>QDegrees Services Pvt. Ltd.</span>
-        &nbsp;|&nbsp; VI Sim Automation Platform
-      </p>
-      <img src="https://qdegrees.com/img/logo.svg" alt="QDegrees" class="footer-logo">
-    </div>
-  </footer>
+
 
   <!-- ═══ SCRIPTS ═══ -->
   <script>
@@ -728,109 +743,181 @@
     // ══════════════════════════════════════════════════════════
     //  PARSE EXCEL + SINGLE RENDER PASS
     // ══════════════════════════════════════════════════════════
-    async function parseExcelPreview(file) {
-      const reader = new FileReader();
-      reader.onload = async function(e) {
-        try {
-          const wb = XLSX.read(e.target.result, { type: 'array' });
+    // In sim-recharge.html, update the parseExcelPreview function
+async function parseExcelPreview(file) {
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
 
-          // Sheet 1: Input
-          const inputSheetName = wb.SheetNames.find(n => n.toLowerCase().includes('input')) || wb.SheetNames[0];
-          const inputRows = XLSX.utils.sheet_to_json(wb.Sheets[inputSheetName], { defval: '' });
+      // Sheet 1: Input
+      const inputSheetName = wb.SheetNames.find(n => n.toLowerCase().includes('input')) || wb.SheetNames[0];
+      const inputRows = XLSX.utils.sheet_to_json(wb.Sheets[inputSheetName], { defval: '' });
 
-          // Sheet 2: Plans
-          const planSheetName = wb.SheetNames.find(n =>
-            n.toLowerCase().includes('recharge') || n.toLowerCase().includes('plan')
-          ) || wb.SheetNames[1];
-          const planRows = XLSX.utils.sheet_to_json(wb.Sheets[planSheetName], { defval: '' });
+      // Sheet 2: Plans
+      const planSheetName = wb.SheetNames.find(n =>
+        n.toLowerCase().includes('recharge') || n.toLowerCase().includes('plan')
+      ) || wb.SheetNames[1];
+      const planRows = XLSX.utils.sheet_to_json(wb.Sheets[planSheetName], { defval: '' });
 
-          if (!inputRows.length) { addLog('⚠️ Input sheet is empty.', 'warning'); return; }
-          if (!planRows.length)  { addLog('⚠️ Plans sheet is empty.', 'warning'); return; }
+      if (!inputRows.length) { addLog('⚠️ Input sheet is empty.', 'warning'); return; }
+      if (!planRows.length)  { addLog('⚠️ Plans sheet is empty.', 'warning'); return; }
 
-          // Build MRP → plan row lookup
-          const planMRPMap = {};
-          planRows.forEach(row => {
-            const mrp = Number(row['New MRP']);
-            if (!isNaN(mrp) && mrp) planMRPMap[mrp] = row;
-          });
-
-          // Show total immediately
-          statTotal.textContent = inputRows.length;
-          document.getElementById('pvTotal').textContent = inputRows.length;
-
-          // Show preview section + loader skeleton; hide real tables
-          document.getElementById('previewSection').classList.add('visible');
-          document.getElementById('loaderMsg').textContent =
-            `Validating ${inputRows.length} number${inputRows.length !== 1 ? 's' : ''} via Vi network, please wait…`;
-          document.getElementById('validationLoader').style.display = 'block';
-          document.getElementById('tablesContainer').style.display  = 'none';
-
-          // ── SINGLE BULK API CALL ──
-          const bulkResult = await callBulkValidationAPI(inputRows);
-
-          // Build number → API result map
-          const validationMap = {};
-          if (bulkResult && Array.isArray(bulkResult.results)) {
-            bulkResult.results.forEach(r => {
-              validationMap[String(r.number).trim()] = r;
-            });
-          }
-
-          // ── CLASSIFY (one pass only) ──
-          const matched   = [];
-          const unmatched = [];
-
-          inputRows.forEach(row => {
-  const msisdn = String(row['MSISDN'] || '').trim();
-  const mrp    = Number(row['Recharge MRP']);
-  const apiRes = validationMap[msisdn];
-  const reasons = [];
-
-  // ── Vi Status comes ONLY from isValid in API response ──
-  const isViValid = apiRes ? apiRes.isValid : false;
-
-  if (apiRes && !apiRes.isValid) {
-    // API explicitly says invalid Vi number
-    reasons.push(apiRes.message || 'Invalid Vi number');
-  } else if (!apiRes) {
-    // Number not in API response at all (skipped / bad format)
-    reasons.push('Invalid MSISDN (must be 10 digits)');
-  }
-  // If apiRes.isValid === true → no MSISDN reason, Vi is fine
-
-  // MRP check is independent
-  if (!planMRPMap[mrp]) reasons.push('MRP not found in plan sheet');
-
-  if (reasons.length === 0) {
-    matched.push({ input: row, plan: planMRPMap[mrp], apiRes, isViValid });
-  } else {
-    unmatched.push({ ...row, _reason: reasons.join(' · '), _apiRes: apiRes, _isViValid: isViValid });
-  }
-});
-          // Update summary stats
-          document.getElementById('pvMatched').textContent   = matched.length;
-          document.getElementById('pvUnmatched').textContent = unmatched.length;
-          document.getElementById('matchedCountBadge').textContent   = `${matched.length} record${matched.length   !== 1 ? 's' : ''}`;
-          document.getElementById('unmatchedCountBadge').textContent = `${unmatched.length} record${unmatched.length !== 1 ? 's' : ''}`;
-
-          // ── RENDER ONCE ──
-          renderMatchedTable(matched);
-          renderUnmatchedTable(unmatched);
-
-          // Hide loader, show tables
-          document.getElementById('validationLoader').style.display = 'none';
-          document.getElementById('tablesContainer').style.display  = 'block';
-
-          addLog(`Preview ready — ${matched.length} matched, ${unmatched.length} unmatched.`, 'success');
-
-        } catch (err) {
-          document.getElementById('validationLoader').style.display = 'none';
-          addLog(`Excel parse error: ${err.message}`, 'error');
-          console.error(err);
+      // Build MRP → plan row lookup
+      const planMRPMap = {};
+      planRows.forEach(row => {
+        const mrp = Number(row['New MRP']);
+        if (!isNaN(mrp) && mrp) {
+          planMRPMap[mrp] = {
+            benefit: row['Benefit (Open)'] || '',
+            planName: row['Plan Name'] || '',
+            // Add any other fields you need
+          };
         }
-      };
-      reader.readAsArrayBuffer(file);
+      });
+
+      // Show total immediately
+      statTotal.textContent = inputRows.length;
+      document.getElementById('pvTotal').textContent = inputRows.length;
+
+      // Show preview section + loader skeleton; hide real tables
+      document.getElementById('previewSection').classList.add('visible');
+      document.getElementById('loaderMsg').textContent =
+        `Validating ${inputRows.length} number${inputRows.length !== 1 ? 's' : ''} via Vi network, please wait…`;
+      document.getElementById('validationLoader').style.display = 'block';
+      document.getElementById('tablesContainer').style.display  = 'none';
+
+      // ── SINGLE BULK API CALL ──
+      const bulkResult = await callBulkValidationAPI(inputRows);
+
+      // Build number → API result map
+      const validationMap = {};
+      if (bulkResult && Array.isArray(bulkResult.results)) {
+        bulkResult.results.forEach(r => {
+          const num = String(r.number).trim();
+          // Find the corresponding input row to get amount and benefit
+          const inputRow = inputRows.find(row => String(row['MSISDN'] || '').trim() === num);
+          const mrp = inputRow ? Number(inputRow['Recharge MRP']) : 0;
+          const planData = planMRPMap[mrp] || {};
+          
+          validationMap[num] = {
+            ...r,
+            amount: mrp,
+            benefit: planData.benefit || 'N/A',
+            planName: planData.planName || 'Recharge Plan',
+            circle: inputRow ? (inputRow['CIRCLE'] || 'Vi') : 'Vi'
+          };
+        });
+      }
+
+      // ── CLASSIFY (one pass only) ──
+      const matched   = [];
+      const unmatched = [];
+
+      inputRows.forEach(row => {
+        const msisdn = String(row['MSISDN'] || '').trim();
+        const mrp    = Number(row['Recharge MRP']);
+        const apiRes = validationMap[msisdn];
+        const reasons = [];
+
+        const isViValid = apiRes ? apiRes.isValid : false;
+
+        if (apiRes && !apiRes.isValid) {
+          reasons.push(apiRes.message || 'Invalid Vi number');
+        } else if (!apiRes) {
+          reasons.push('Invalid MSISDN (must be 10 digits)');
+        }
+
+        if (!planMRPMap[mrp]) reasons.push('MRP not found in plan sheet');
+
+        if (reasons.length === 0) {
+          matched.push({ 
+            input: row, 
+            plan: planMRPMap[mrp], 
+            apiRes: {
+              ...apiRes,
+              amount: mrp,
+              benefit: planMRPMap[mrp] ? planMRPMap[mrp].benefit : 'N/A',
+              circle: row['CIRCLE'] || 'Vi'
+            }, 
+            isViValid 
+          });
+        } else {
+          unmatched.push({ 
+            ...row, 
+            _reason: reasons.join(' · '), 
+            _apiRes: {
+              ...apiRes,
+              amount: mrp,
+              benefit: 'N/A',
+              circle: row['CIRCLE'] || 'N/A'
+            }, 
+            _isViValid: isViValid 
+          });
+        }
+      });
+
+      // Update summary stats
+      document.getElementById('pvMatched').textContent   = matched.length;
+      document.getElementById('pvUnmatched').textContent = unmatched.length;
+      document.getElementById('matchedCountBadge').textContent   = `${matched.length} record${matched.length   !== 1 ? 's' : ''}`;
+      document.getElementById('unmatchedCountBadge').textContent = `${unmatched.length} record${unmatched.length !== 1 ? 's' : ''}`;
+
+      // ── RENDER ONCE ──
+      renderMatchedTable(matched);
+      renderUnmatchedTable(unmatched);
+
+      // Hide loader, show tables
+      document.getElementById('validationLoader').style.display = 'none';
+      document.getElementById('tablesContainer').style.display  = 'block';
+
+      addLog(`Preview ready — ${matched.length} matched, ${unmatched.length} unmatched.`, 'success');
+
+      // ═══════════════════════════════════════════════════════
+      // ── SEND EMAILS AFTER VALIDATION ──
+      // ═══════════════════════════════════════════════════════
+      if (bulkResult && bulkResult.results && bulkResult.results.length > 0) {
+        // Update the results with amount and benefit from the validation map
+        const enrichedResults = bulkResult.results.map(r => {
+          const num = String(r.number).trim();
+          const enriched = validationMap[num] || {};
+          return {
+            ...r,
+            amount: enriched.amount || 0,
+            benefit: enriched.benefit || 'N/A',
+            circle: enriched.circle || 'N/A',
+            planName: enriched.planName || 'Recharge Plan'
+          };
+        });
+
+        const validResults = enrichedResults.filter(r => r.isValid === true);
+        const invalidResults = enrichedResults.filter(r => r.isValid === false);
+        
+        if (validResults.length > 0 || invalidResults.length > 0) {
+          addLog(`📧 Preparing emails: ${validResults.length} valid (dual emails), ${invalidResults.length} invalid (single email)...`, 'info');
+          
+          // Update progress
+          progressAction.textContent = 'Sending emails...';
+          progressStatus.textContent = `Processing ${validResults.length} valid, ${invalidResults.length} invalid numbers`;
+          progressSection.classList.add('active');
+          progressBar.style.width = '50%';
+          progressPercent.textContent = '50%';
+          
+          // Call the email sending function with enriched results
+          await sendEmailsAfterValidation(enrichedResults);
+        } else {
+          addLog('⚠️ No results to send emails.', 'warning');
+        }
+      }
+
+    } catch (err) {
+      document.getElementById('validationLoader').style.display = 'none';
+      addLog(`Excel parse error: ${err.message}`, 'error');
+      console.error(err);
     }
+  };
+  reader.readAsArrayBuffer(file);
+}
 
     // ── BULK API (pure data fetch, no DOM side-effects) ──
     async function callBulkValidationAPI(inputRows) {
@@ -903,10 +990,10 @@
           <tr>
             <td>${i + 1}</td>
             <td><code style="font-size:12px;">${inp['MSISDN'] || '—'}</code></td>
-            <td><span class="match-chip yes" title="${escHtml(viMsg)}">✅ Valid Vi</span></td>
+            <td><span class="match-chip yes" title="${escHtml(viMsg)}">Valid Vi</span></td>
             <td>${inp['CIRCLE'] || '—'}</td>
             <td><span class="mrp-highlight-input">₹${inp['Recharge MRP']}</span></td>
-            <td><span class="benefit-tag">${plan['Benefit (Open)'] || '—'}</span></td>
+            <td><span class="benefit-tag">${(plan && (plan['Benefit (Open)'] ?? plan['Benefit'] ?? plan.benefit)) || '—'}</span></td>
             <td>${yesNoIcon(inp['Recharge'])}</td>
             <td>${yesNoIcon(inp['SWIFT'])}</td>
             <td>${yesNoIcon(inp['IN'])}</td>
@@ -917,7 +1004,8 @@
       html += `</tbody></table>`;
       wrap.innerHTML = html;
     }
-function renderUnmatchedTable(rows) {
+
+    function renderUnmatchedTable(rows) {
   const wrap = document.getElementById('unmatchedTableWrap');
   if (!rows.length) {
     wrap.innerHTML = `<div class="empty-preview"><span class="ep-icon">✅</span><p>All records matched — no unmatched entries!</p></div>`;
@@ -1039,7 +1127,7 @@ function renderUnmatchedTable(rows) {
       switch (data.type) {
         case 'log':         addLog(data.message, data.logType || 'info'); break;
         case 'progress':    updateProgress(data.progress); break;
-        case 'captcha':     if (data.action === 'show') showCaptcha(data.imageBase64); break;
+        case 'captcha':     if (data.action === 'show') showCaptcha(data.imageUrl, data.timestamp); break;
         case 'otp':         if (data.action === 'show') showOTP(data.message); break;
         case 'screenshots': updateScreenshots(data.screenshots); break;
         case 'complete':    handleComplete(data); break;
@@ -1067,19 +1155,35 @@ function renderUnmatchedTable(rows) {
     otpInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitOTP(); });
 
     // ── CAPTCHA ──
-    function showCaptcha(imageBase64) {
-      if (imageBase64) captchaImage.src = 'data:image/png;base64,' + imageBase64;
-      captchaOverlay.classList.add('visible');
-      captchaInput.value = ''; captchaInput.focus();
-    }
+   function showCaptcha(imageUrl) {
+  console.log(imageUrl, "imageUrlimageUrl");
+  debugger
+  if (imageUrl) {
+    // The imageUrl from the backend is "/captcha-images/captcha_xxx.png"
+    // Use it directly with cache-busting
+    captchaImage.src = imageUrl ;
+  } else {
+    // Fallback
+    captchaImage.src = '/captcha-images/latest.png?t=' + Date.now();
+  }
+  
+  captchaInput.value = '';
+  captchaOverlay.classList.add('visible');
+  captchaInput.focus();
+  addLog('📸 CAPTCHA image loaded — please enter the code', 'info');
+}
+
     function submitCaptcha() {
       const answer = captchaInput.value.trim();
-      if (!answer) return;
+      if (!answer) { addLog('⚠️ Please enter the CAPTCHA first', 'warning'); return; }
       if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'captcha', answer }));
       closeCaptcha();
-      addLog('CAPTCHA submitted.', 'success');
+      addLog(`✅ CAPTCHA submitted: "${answer}"`, 'success');
     }
-    function closeCaptcha() { captchaOverlay.classList.remove('visible'); }
+    function closeCaptcha() {
+      captchaOverlay.classList.remove('visible');
+      captchaInput.value = '';
+    }
     captchaInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitCaptcha(); });
 
     // ── LOG HELPERS ──
@@ -1153,6 +1257,76 @@ function renderUnmatchedTable(rows) {
       setStatus('Ready', 'info');
       progressSection.classList.remove('active');
     }
+// ── SEND EMAILS AFTER VALIDATION ──
+async function sendEmailsAfterValidation(validationResults) {
+  if (!validationResults || validationResults.length === 0) {
+    addLog('No validation results to process.', 'warning');
+    return;
+  }
+
+  const validCount = validationResults.filter(r => r.isValid === true).length;
+  const invalidCount = validationResults.filter(r => r.isValid === false).length;
+  
+  addLog(`📧 Processing ${validationResults.length} numbers (${validCount} valid, ${invalidCount} invalid) for email...`, 'info');
+  
+  // Show status in progress
+  progressAction.textContent = 'Sending emails...';
+  progressStatus.textContent = `Preparing ${validCount > 0 ? 'dual' : ''} ${invalidCount > 0 ? 'single' : ''} email notifications`;
+  progressBar.style.width = '60%';
+  progressPercent.textContent = '60%';
+
+  try {
+    const response = await fetch('/api/process-validation-and-send-emails', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        validationResults: validationResults,
+        recipients: ['kalidindi.chandra@qdegrees.org']
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      let message = `Emails sent: ${data.summary.emailsSuccessful}/${data.summary.emailsSent} successful. `;
+      message += `Valid: ${data.summary.validCount} (2 emails each), `;
+      message += `Invalid: ${data.summary.invalidCount} (1 email each)`;
+      
+      addLog(message, 'success');
+      
+      // Update stats
+      if (data.summary.validCount > 0) {
+        statPassed.textContent = data.summary.validCount;
+      }
+      if (data.summary.invalidCount > 0) {
+        statFailed.textContent = data.summary.invalidCount;
+      }
+      
+      // Show download report button if available
+      if (data.summary.emailsSuccessful > 0) {
+        downloadReportBtn.style.display = 'inline-block';
+      }
+      
+      // Update progress to complete
+      progressAction.textContent = 'Emails sent successfully';
+      progressStatus.textContent = `✅ ${data.summary.emailsSuccessful}/${data.summary.emailsSent}`;
+      progressBar.style.width = '100%';
+      progressPercent.textContent = '100%';
+      
+    } else {
+      addLog(`❌ Email sending failed: ${data.message || 'Unknown error'}`, 'error');
+      progressStatus.textContent = '❌ Failed to send emails';
+      progressBar.style.width = '80%';
+      progressPercent.textContent = '80%';
+    }
+  } catch (error) {
+    addLog(`❌ Email API error: ${error.message}`, 'error');
+    console.error('Email API error:', error);
+    progressStatus.textContent = '❌ Error sending emails';
+    progressBar.style.width = '80%';
+    progressPercent.textContent = '80%';
+  }
+}
 
     // ── DOWNLOAD REPORT ──
     function downloadReport() { window.location.href = '/api/swift/download-report'; }
@@ -1184,5 +1358,18 @@ function renderUnmatchedTable(rows) {
       });
     }
   </script>
+
+    <!-- ═══ FOOTER ═══ -->
+  <footer class="footerMain">
+    <div class="footer-content">
+      <p>
+        Copyright &copy; 2026
+        <span>QDegrees Services Pvt. Ltd.</span>
+        &nbsp;|&nbsp; VI Sim Automation Platform
+      </p>
+      <img src="https://qdegrees.com/img/logo.svg" alt="QDegrees" class="footer-logo">
+    </div>
+  </footer>
+
 </body>
 </html>

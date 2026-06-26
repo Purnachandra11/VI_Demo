@@ -10,6 +10,9 @@ class SwiftCrmOrchestrator {
     this.wsClients = wsClients;
     this.uploadDir = uploadDir;
     this.swiftDir = path.join(__dirname, '..', 'swift-crm-automation');
+    // Express must serve this dir as /captcha-images/
+    // app.use('/captcha-images', express.static(orchestrator.captchaScreenshotsDir));
+    this.captchaScreenshotsDir = path.join(this.swiftDir, 'captcha_screenshots');
     this.captchaAnswer = null;
     this.testData = null;
     this.screenshots = [];
@@ -350,34 +353,31 @@ class SwiftCrmOrchestrator {
 
   checkForCaptchaRequest() {
     try {
-      // If modal is already shown, don't do anything until response received
-      if (this.captchaModalShown) {
-        return;
-      }
+      if (this.captchaModalShown) return;
 
-      if (fs.existsSync(this.captchaRequestFile)) {
-        const requestContent = fs.readFileSync(this.captchaRequestFile, 'utf8');
-        const request = JSON.parse(requestContent);
-        
-        // Only show if it's a new CAPTCHA
-        if (request.timestamp !== this.lastCaptchaTimestamp) {
-          this.lastCaptchaTimestamp = request.timestamp;
-          this.captchaModalShown = true;
-          
-          this.log('CAPTCHA request detected!', 'info');
-          this.log('Showing CAPTCHA modal in frontend...', 'info');
-          
-          this.broadcast({
-            type: 'captcha',
-            action: 'show',
-            imageBase64: request.imageBase64,
-            timestamp: request.timestamp
-          });
-        }
-      }
-    } catch (error) {
-      // Don't log every polling error
-    }
+      if (!fs.existsSync(this.captchaRequestFile)) return;
+
+      const request = JSON.parse(fs.readFileSync(this.captchaRequestFile, 'utf8'));
+
+      // Skip duplicate — same timestamp we already sent
+      if (request.timestamp === this.lastCaptchaTimestamp) return;
+
+      this.lastCaptchaTimestamp = request.timestamp;
+      this.captchaModalShown    = true;
+
+      // request.imageUrl  = "/captcha-images/captcha_<timestamp>.png"
+       request.filename  = "captcha_<timestamp>.png"
+      this.log(`📸 CAPTCHA screenshot ready: ${request.filename}`, 'info');
+debugger
+console.log(this.captchaScreenshotsDir+request.imageUrl,"this.captchaScreenshotsDir+request.imageUrl")
+      this.broadcast({
+        type      : 'captcha',
+        action    : 'show',
+        imageUrl  : `http://localhost:5174${request.imageUrl}`,   // <-- frontend sets <img src> to this
+        timestamp : request.timestamp
+      });
+
+    } catch (_) { /* ignore transient read errors */ }
   }
 
   checkForOtpRequest() {
@@ -696,6 +696,25 @@ class SwiftCrmOrchestrator {
       this.log(`Failed to generate report: ${error.message}`, 'error');
       throw error;
     }
+  }
+
+  // ─── Static helper: call once in your Express server file ──────────────
+  //
+  //   const { SwiftCrmOrchestrator } = require('./swiftCrmOrchestrator');
+  //   SwiftCrmOrchestrator.registerRoutes(app);
+  //
+  // This serves  /captcha-images/<filename>  from  swift-crm-automation/captcha_screenshots/
+  static registerRoutes(app) {
+    const express = require('express');
+    const captchaDir = path.join(__dirname, '..', 'swift-crm-automation', 'captcha_screenshots');
+
+    // Ensure the folder exists before serving
+    if (!fs.existsSync(captchaDir)) {
+      fs.mkdirSync(captchaDir, { recursive: true });
+    }
+
+    app.use('/captcha-images', express.static(captchaDir));
+    console.log(`[SwiftCrmOrchestrator] /captcha-images → ${captchaDir}`);
   }
 }
 

@@ -118,7 +118,7 @@ export class SwiftLoginPage {
     const profileTab = await $(Selectors.myProfile);
     await profileTab.waitForExist({ timeout: timeoutMs });
     await profileTab.waitForDisplayed({ timeout: timeoutMs });
-    console.log('[SwiftLoginPage] ✅ My Profile tab is visible — login successful!');
+    console.log('[SwiftLoginPage]  My Profile tab is visible — login successful!');
   }
 
   async isProfilePageLoaded(): Promise<boolean> {
