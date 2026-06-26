@@ -120,6 +120,100 @@ app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// ===== In-memory store for pending recharge confirmations =====
+// Key: transactionId, Value: { mobileNumber, amount, benefit, confirmed }
+const pendingRecharges = new Map();
+
+// Expose this map so mailService can register transaction details
+// when it builds the confirm URL.
+global.pendingRecharges = pendingRecharges;
+
+const VI_RECHARGE_URL = 'https://www.myvi.in/prepaid/online-mobile-recharge';
+
+// ========== Recharge Confirm Page (popup -> redirect to Vi site) ==========
+// app.get('/recharge/confirm/:txnId', (req, res) => {
+//   const { txnId } = req.params;
+//   const record = pendingRecharges.get(txnId);
+
+//   const mobileNumber = record ? record.mobileNumber : (req.query.mobileNumber || '');
+//   const amount = record ? record.amount : '';
+
+//   // Build Vi URL with mobile number as query param (best-effort prefill).
+//   // If Vi's site reads a different param name, adjust 'mobileNumber' below.
+//   const viUrlWithNumber = mobileNumber
+//     ? `${VI_RECHARGE_URL}?mobileNumber=${encodeURIComponent(mobileNumber)}`
+//     : VI_RECHARGE_URL;
+
+//   let html = fs.readFileSync(path.join(__dirname, 'recharge-confirm.html'), 'utf8');
+
+//   // Inject values as inline script right before </head> so the page's own script can read them
+//   const injection = `
+//     <script>
+//       window.__TXN_ID__ = ${JSON.stringify(txnId)};
+//       window.__MOBILE_NUMBER__ = ${JSON.stringify(mobileNumber)};
+//       window.__AMOUNT__ = ${JSON.stringify(amount)};
+//       window.__VI_URL__ = ${JSON.stringify(viUrlWithNumber)};
+//       window.__CONFIRM_API_URL__ = ${JSON.stringify(`/api/recharge/confirm/${encodeURIComponent(txnId)}`)};
+//     </script>
+//   </head>`;
+
+//   html = html.replace('</head>', injection);
+
+//   res.setHeader('Content-Type', 'text/html');
+//   res.send(html);
+// });
+app.get('/recharge/confirm/:txnId', (req, res) => {
+  const txnId = req.params.txnId;
+  const detail = global.pendingRecharges.get(txnId) || {};
+
+  const mobileNumber = detail.mobileNumber || '';
+  const viUrlWithNumber = mobileNumber
+    ? `${VI_RECHARGE_URL}?mobileNumber=${encodeURIComponent(mobileNumber)}`
+    : VI_RECHARGE_URL;
+
+  const confirmApiUrl = `/api/recharge/confirm/${encodeURIComponent(txnId)}`;
+
+  let html = fs.readFileSync(path.join(__dirname, 'recharge-confirm.html'), 'utf8');
+
+  // Inject values as inline script right before </head>
+  const injection = `
+    <script>
+      window.__TXN_ID__ = ${JSON.stringify(txnId)};
+      window.__MOBILE_NUMBER__ = ${JSON.stringify(mobileNumber)};
+      window.__AMOUNT__ = ${JSON.stringify(detail.amount || '')};
+      window.__CIRCLE__ = ${JSON.stringify(detail.circle || '')};
+      window.__BENEFIT__ = ${JSON.stringify(detail.benefit || '')};
+      window.__VI_STATUS__ = ${JSON.stringify(detail.viStatus || '')};
+      window.__SR_NO__ = ${JSON.stringify(detail.srNo || '')};
+      window.__VI_URL__ = ${JSON.stringify(viUrlWithNumber)};
+      window.__CONFIRM_API_URL__ = ${JSON.stringify(confirmApiUrl)};
+    </script>
+  </head>`;
+
+  html = html.replace('</head>', injection);
+
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+});
+
+// Backend endpoint hit when user clicks "OK" on the confirm popup.
+// For now this just logs; later you can persist "completed" status here.
+app.post('/api/recharge/confirm/:txnId', (req, res) => {
+  const { txnId } = req.params;
+  const record = pendingRecharges.get(txnId);
+
+  if (record) {
+    record.confirmed = true;
+    record.confirmedAt = new Date().toISOString();
+    console.log(`✅ Recharge confirmed for txn ${txnId} (mobile: ${record.mobileNumber})`);
+  } else {
+    console.log(`⚠️ Recharge confirm called for unknown txn ${txnId}`);
+  }
+
+  // TODO: persist this to DB/file when you're ready to track completed status.
+  res.json({ success: true, txnId });
+});
+
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin.html'));
 });
@@ -994,7 +1088,7 @@ app.post('/api/process-validation-and-send-emails', async (req, res) => {
 
     const emailRecipients = recipients.length > 0 
       ? recipients 
-      : ['kalidindi.chandra@qdegrees.org', 'testingqdegrees@gmail.com'];
+      : ['kalidindi.chandra@qdegrees.org', 'amit.kumar1@qdegrees.org', 'testingqdegrees@gmail.com'];
 
     // Separate valid and invalid numbers
     const validNumbers = validationResults.filter(r => r.isValid === true);

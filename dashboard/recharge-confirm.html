@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confirm Recharge</title>
+<style>
+
+.detail-table { width: 100%; margin: 16px 0; font-size: 13px; border-collapse: collapse; }
+.detail-table td { padding: 6px 4px; text-align: left; border-bottom: 1px solid #eee; }
+.detail-table td:first-child { color: #888; font-weight: 600; width: 45%; }
+.detail-table td:last-child { color: #333; font-weight: 600; }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f4f4f4;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    padding: 30px 35px;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+  }
+  .card h2 { margin: 0 0 10px 0; color: #333; font-size: 20px; }
+  .card p { color: #555; font-size: 14px; margin: 8px 0; }
+  .number { font-size: 22px; font-weight: 700; color: #667eea; margin: 14px 0; }
+  .btn-row { display: flex; gap: 12px; margin-top: 22px; }
+  button {
+    flex: 1;
+    padding: 11px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-ok { background: #28a745; color: white; }
+  .btn-ok:hover { background: #218838; }
+  .btn-cancel { background: #e9ecef; color: #333; }
+  .btn-cancel:hover { background: #dee2e6; }
+  .status { margin-top: 16px; font-size: 13px; color: #888; }
+  .error { color: #dc3545; }
+</style>
+</head>
+<body>
+  <div class="card" id="card">
+    <h2>Confirm Recharge</h2>
+    <p>You are about to mark this number as completed and proceed to recharge it on the Vi website:</p>
+
+    <table class="detail-table" id="detailTable">
+      <tr><td>Sr. No.</td><td id="srNoDisplay">—</td></tr>
+      <tr><td>MSISDN</td><td id="mobileDisplay">Loading...</td></tr>
+      <tr><td>Vi Status</td><td id="statusDisplay">—</td></tr>
+      <tr><td>Circle</td><td id="circleDisplay">—</td></tr>
+      <tr><td>Recharge MRP (₹)</td><td id="amountDisplay">—</td></tr>
+      <tr><td>Benefit</td><td id="benefitDisplay">—</td></tr>
+    </table>
+
+    <div class="btn-row">
+      <button class="btn-cancel" id="cancelBtn">Cancel</button>
+      <button class="btn-ok" id="okBtn">OK, Proceed</button>
+    </div>
+    <div class="status" id="statusMsg"></div>
+  </div>
+
+<script>
+  const txnId = window.__TXN_ID__;
+  const mobileNumber = window.__MOBILE_NUMBER__;
+  const amount = window.__AMOUNT__;
+  const circle = window.__CIRCLE__;
+  const benefit = window.__BENEFIT__;
+  const viStatus = window.__VI_STATUS__;
+  const srNo = window.__SR_NO__;
+  const viUrl = window.__VI_URL__;
+  const confirmApiUrl = window.__CONFIRM_API_URL__;
+
+  document.getElementById('srNoDisplay').textContent = srNo || '—';
+  document.getElementById('mobileDisplay').textContent = mobileNumber || 'N/A';
+  document.getElementById('statusDisplay').textContent = viStatus || '—';
+  document.getElementById('circleDisplay').textContent = circle || '—';
+  document.getElementById('amountDisplay').textContent = amount ? ('₹' + amount) : '—';
+  document.getElementById('benefitDisplay').textContent = benefit || '—';
+
+  document.getElementById('cancelBtn').addEventListener('click', () => {
+    document.getElementById('statusMsg').textContent = 'Cancelled. You can close this tab.';
+    document.getElementById('okBtn').disabled = true;
+    document.getElementById('cancelBtn').disabled = true;
+  });
+
+  document.getElementById('okBtn').addEventListener('click', async () => {
+    const okBtn = document.getElementById('okBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const statusMsg = document.getElementById('statusMsg');
+
+    okBtn.disabled = true;
+    cancelBtn.disabled = true;
+    statusMsg.textContent = 'Confirming...';
+    statusMsg.classList.remove('error');
+
+    try {
+      await fetch(confirmApiUrl, { method: 'POST' }).catch(() => {});
+
+      try {
+        await navigator.clipboard.writeText(mobileNumber);
+        statusMsg.textContent = 'Number copied to clipboard. Redirecting to Vi recharge page...';
+      } catch (clipErr) {
+        statusMsg.textContent = 'Redirecting to Vi recharge page...';
+      }
+
+      setTimeout(() => {
+        window.location.href = viUrl;
+      }, 600);
+
+    } catch (err) {
+      statusMsg.textContent = 'Something went wrong. Please try again.';
+      statusMsg.classList.add('error');
+      okBtn.disabled = false;
+      cancelBtn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

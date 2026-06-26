@@ -51,12 +51,52 @@ class MailService {
   }
 
 
-  buildConfirmUrl(detail, signToken) {
-    const baseUrl = process.env.APP_BASE_URL || 'http://localhost:5174';
+  // buildConfirmUrl(detail, signToken) {
+  //   const baseUrl = process.env.APP_BASE_URL || 'http://localhost:5174';
+  //   const txnId = encodeURIComponent(detail.transactionId || '');
+  //   const token = signToken(detail.transactionId);
+  //   return `${baseUrl}/recharge/confirm/${txnId}?token=${token}`;
+  // }
+
+//   buildConfirmUrl(detail, signToken) {
+//     const baseUrl = 'http://localhost:5174';
+//     const txnId = encodeURIComponent(detail.transactionId || '');
+//     const token = signToken(detail.transactionId);
+
+//     // Register this transaction's details in the in-memory store so the
+//     // /recharge/confirm/:txnId page on server.js can show the right
+//     // mobile number/amount and pass it to the Vi recharge site.
+//     if (global.pendingRecharges && detail.transactionId) {
+//       global.pendingRecharges.set(detail.transactionId, {
+//         mobileNumber: detail.mobileNumber || '',
+//         amount: detail.amount || 0,
+//         benefit: detail.benefit || detail.planName || '',
+//         confirmed: false
+//       });
+//     }
+
+//     return `${baseUrl}/recharge/confirm/${txnId}?token=${token}`;
+// }
+
+buildConfirmUrl(detail, signToken) {
+    const baseUrl = 'http://localhost:5174';
     const txnId = encodeURIComponent(detail.transactionId || '');
     const token = signToken(detail.transactionId);
+
+    if (global.pendingRecharges && detail.transactionId) {
+      global.pendingRecharges.set(detail.transactionId, {
+        mobileNumber: detail.mobileNumber || '',
+        amount: detail.amount || 0,
+        benefit: detail.benefit || detail.planName || '',
+        circle: detail.circle || detail.operatorName || '',
+        srNo: detail.srNo || detail.index || '',
+        viStatus: detail.isValid === true ? 'Valid Vi' : 'Invalid',
+        confirmed: false
+      });
+    }
+
     return `${baseUrl}/recharge/confirm/${txnId}?token=${token}`;
-  }
+}
 
   isValidRechargeDetail(detail) {
     return detail && (detail.isValid === true || String(detail.status || '').toLowerCase() === 'success');
@@ -462,6 +502,8 @@ If you have any questions, please contact support at support@vi.com
         const benefit = this.hasValidBenefitValue(detail) ? (detail.benefit || detail.planName || 'N/A') : '';
 
         const confirmUrl = this.buildConfirmUrl(detail, signToken);
+
+
         const actionCell = includeActions && detail.isValid === true
           ? `<td style="padding: 10px; text-align: center;"><a href="${confirmUrl}" target="_blank" style="display:inline-block;background-color:#28a745;color:#ffffff;text-decoration:none;padding:6px 12px;border-radius:4px;font-size:12px;font-weight:600;">Mark as Completed</a></td>`
           : '';
