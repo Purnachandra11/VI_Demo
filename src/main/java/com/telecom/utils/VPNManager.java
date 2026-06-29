@@ -15,7 +15,7 @@ public class VPNManager {
      * @return true if VPN connection initiated successfully
      */
     public static boolean connectToFreeVPN(String deviceId) {
-        System.out.println("🔐 Connecting to Free VPN on device: " + deviceId);
+        System.out.println(" Connecting to Free VPN on device: " + deviceId);
         
         try {
             // Check if VPN app is installed
@@ -142,7 +142,7 @@ public class VPNManager {
      * @return true if VPN setup successful
      */
     public static boolean enableVPN(String deviceId, Map<String, String> vpnConfig) {
-        System.out.println("🔐 Enabling VPN with custom config...");
+        System.out.println(" Enabling VPN with custom config...");
         
         try {
             String vpnName = vpnConfig.getOrDefault("name", "TestVPN");
@@ -201,7 +201,7 @@ public class VPNManager {
      */
     public static void printVPNDiagnostics(String deviceId) {
         System.out.println("\n" + "=".repeat(80));
-        System.out.println("🔐 VPN DIAGNOSTICS - Device: " + deviceId);
+        System.out.println(" VPN DIAGNOSTICS - Device: " + deviceId);
         System.out.println("=".repeat(80));
         
         boolean connected = isVPNConnected(deviceId);

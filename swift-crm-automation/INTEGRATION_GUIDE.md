@@ -141,7 +141,7 @@ Your Excel file should have a sheet named "Input excel" with:
 | Recharge MRP | Plan amount to verify | Yes |
 | SWIFT | "Yes" to include in test | Yes |
 
-## 🔐 CAPTCHA Handling
+##  CAPTCHA Handling
 
 The automation supports multiple CAPTCHA modes:
 

@@ -8,61 +8,68 @@ const CAPTCHA_REQUEST_FILE = path.join(COMM_DIR, 'captcha_request.json');
 const CAPTCHA_RESPONSE_FILE= path.join(COMM_DIR, 'captcha_response.json');
 
 // ── Where timestamped CAPTCHA screenshots are saved ─────────────────────────
-// Served by Express as  /captcha-images/<filename>
 const CAPTCHA_SCREENSHOTS_DIR = path.resolve('./captcha_screenshots');
 
 export class CaptchaHelper {
 
-  // ─────────────────────────────────────────────────────────────────────────
-  //  PUBLIC: solve()
-  //  • Takes an element screenshot of  //*[@id="LoginCaptcha"]
-  //  • Saves it as  captcha_<timestamp>.png
-  //  • Writes { timestamp, filename, imageUrl } to captcha_request.json
-  //  • Polls for captcha_response.json  { answer }
-  // ─────────────────────────────────────────────────────────────────────────
-  static async solve(): Promise<string> {
-
+  static async solve(): Promise<{ captcha: string; username: string; password: string }> {
     // CI / pre-supplied override
     if (process.env.CAPTCHA_ANSWER) {
       console.log(`[CaptchaHelper] Using pre-supplied CAPTCHA: ${process.env.CAPTCHA_ANSWER}`);
-      return process.env.CAPTCHA_ANSWER;
+      return {
+        captcha: process.env.CAPTCHA_ANSWER,
+        username: process.env.SWIFT_USERNAME || '',
+        password: process.env.SWIFT_PASSWORD || ''
+      };
     }
 
-    // ── 1. Locate the CAPTCHA image element via XPath ────────────────────
+    // ── 1. Locate the CAPTCHA image element ──────────────────────────────
     const captchaEl = await $('//*[@id="LoginCaptcha"]');
     await captchaEl.waitForDisplayed({ timeout: 15000 });
 
-    // ── 2. Screenshot the element, save with timestamp ───────────────────
+    // ── 2. Screenshot the element ────────────────────────────────────────
     const filename = await CaptchaHelper.screenshotElement(captchaEl);
-    const imageUrl = `/captcha-images/${filename}`;   // Express static route
+    const imageUrl = `/captcha-images/${filename}`;
 
-    console.log(`[CaptchaHelper] ✅ Saved: ${filename}  →  ${imageUrl}`);
+    console.log(`[CaptchaHelper] Saved: ${filename}  →  ${imageUrl}`);
 
-    // ── 3. Write request file — filename only, NO base64 ─────────────────
+    // ── 3. Write request file with credentials request ───────────────────
     fs.mkdirSync(COMM_DIR, { recursive: true });
     fs.writeFileSync(CAPTCHA_REQUEST_FILE, JSON.stringify({
-      timestamp : Date.now(),
-      filename  : filename,
-      imageUrl  : imageUrl
+      timestamp: Date.now(),
+      filename: filename,
+      imageUrl: imageUrl,
+      requiresCredentials: true,  // Flag to show username/password fields
     }, null, 2));
 
     // Remove any stale response
     if (fs.existsSync(CAPTCHA_RESPONSE_FILE)) fs.unlinkSync(CAPTCHA_RESPONSE_FILE);
 
-    // ── 4. Poll for user's answer (max 5 min) ────────────────────────────
+    // ── 4. Poll for user's response (max 5 min) ──────────────────────────
     const maxWait  = 5 * 60 * 1000;
     const interval = 500;
     const start    = Date.now();
-    let   answer   = '';
+    let response   = null;
 
-    while (!answer && (Date.now() - start) < maxWait) {
+    while (!response && (Date.now() - start) < maxWait) {
       if (fs.existsSync(CAPTCHA_RESPONSE_FILE)) {
         try {
           const raw  = fs.readFileSync(CAPTCHA_RESPONSE_FILE, 'utf8');
           const data = JSON.parse(raw);
-          if (data.answer) {
-            answer = data.answer;
-            console.log(`[CaptchaHelper]  Got answer: "${answer}"`);
+          if (data.answer && data.username && data.password) {
+            response = {
+              captcha: data.answer,
+              username: data.username,
+              password: data.password
+            };
+            console.log(`[CaptchaHelper] Got credentials for user: ${data.username}`);
+          } else if (data.answer) {
+            // Fallback: only CAPTCHA provided
+            response = {
+              captcha: data.answer,
+              username: '',
+              password: ''
+            };
           }
         } catch (_) { /* file may be mid-write, retry */ }
       }
@@ -74,14 +81,14 @@ export class CaptchaHelper {
       if (fs.existsSync(f)) fs.unlinkSync(f);
     });
 
-    if (!answer) throw new Error('[CaptchaHelper] Timeout — no CAPTCHA response within 5 minutes');
+    if (!response) throw new Error('[CaptchaHelper] Timeout — no response within 5 minutes');
+    if (!response.captcha) throw new Error('[CaptchaHelper] No CAPTCHA answer provided');
 
-    return answer.trim();
+    return response;
   }
 
   // ─────────────────────────────────────────────────────────────────────────
   //  PRIVATE: screenshotElement()
-  //  WebdriverIO element.saveScreenshot() — no HTTP, no base64 in memory
   // ─────────────────────────────────────────────────────────────────────────
   private static async screenshotElement(el: WebdriverIO.Element): Promise<string> {
     fs.mkdirSync(CAPTCHA_SCREENSHOTS_DIR, { recursive: true });

@@ -1,0 +1,4 @@
+{
+  "using": "css selector",
+  "value": "span:contains(\"Customer IN Profile Screen\")"
+}

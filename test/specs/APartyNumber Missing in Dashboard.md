@@ -782,7 +782,7 @@ Show more
              console.log(`${'='.repeat(80)}\n`); 
  
              // Step 1-3: Login 
-             console.log('🔐 STEP 1-3: Siebel Login'); 
+             console.log(' STEP 1-3: Siebel Login'); 
              await loginPage.loginFull(plan.username, plan.password, cfg.otp, cfg.otpPauseMs); 
              console.log('✅ Login completed\n'); 
  
@@ -1009,396 +1009,786 @@ The TypeScript/SKIPPED problem is completely solved. The tests are now running a
  Add the already-logged-in check to loginFull in SiebelLoginPage.ts 
  Delete the duplicate row in input_data.xlsx 
  
- Then re-run. The first test should get past MSISDN entry and proceed into the account summary steps. actual complete steps by steps process - check each step Step 1: 
- URL Siebel Web Call Center Home  
- Need to verifiy the Welcome word, once the word is identified  
- User name: //*[@id="username"] 
- Password: //*[@id="password"] 
- Enter button: //*[@id="loginData"]/div[4]/span/input 
- Step 2 
- Case 2.1: Once clicks on the enter button, and is redirected to the OTP screen 
- To confirm your identity, enter the code sent to you in email. 
- Email Code 
- //*[@id="Bharosa_Challenge_PadDataField"] 
- Enter OTP field – manually enter OTP – 30 secs time  
- Case 2.2: Once clicks on the enter button, and is redirected to the Question 
- To confirm your identity, answer the following security question. 
- Like displayed - What was the name of your favorite teacher? 
- Answer  
- //*[@id="Bharosa_Challenge_PadDataField"] 
- Enter Answer field – manually enter Answer – 30 secs time  
- Once enters the input and then click on enter Button 
- Clicks on the button Xpath: //*[@id="loginForm"]/div[4]/input 
- Step 3 
- Once clicks on the button and is redirect to the home page, and clicks on the  
- Home tab – Xpath: Home tab //*[@id="ui-id-126"] 
- In this home tab Element:   
- <a data-tabindex="tabScreen0" href="#s_sctrl_tabScreen_noop" class="ui-tabs-anchor" role="presentation" tabindex="-1" id="ui-id-209"><span class="siebui-icon-home_icon siebui-icon-screentab_icon"><img src=" `https://sumeru-south.vodafoneidea.in:6100/ecommunications_enu/images/home_icon.gif` "></span>Home</a> 
- Step 4:  
- Enter mobile number MSISDN 
- MSISDN: need to verify  
- Enter mobile number 
- Xpath:  //*[@id="a_7"]/div/table/tbody/tr[3]/td[4]/div/input 
- After enter the mobile number and clicks on the button  
- Icon - Xpath: //*[@id="s_7_1_1_0_Ctrl"] 
-  
- Step 5: 
- Directly Case 5.1: If the enters the mobile number and is redirected to the Account Summary: 
- Account Summary: Need to verify  
- Validation Points 
- ✅ Verify breadcrumb text: 
- <span class="siebui-crumb">Account Summary:</span> 
- ✅ Verify the page is actually Account Summary. 
- ✅ Verify the Asset/Mobile Number field is displayed. 
- ✅ Verify the value matches the selected MSISDN. 
- ✅ Verify the account type is Postpaid (if available on the page). 
- ________________________________________ 
- Page Object Method 
- async verifyAccountSummaryPage(expectedMsisdn: string): Promise<void> { 
-  
-     // Verify breadcrumb 
-     const breadcrumb = await $('//span[@class="siebui-crumb"]'); 
-  
-     await breadcrumb.waitForDisplayed({ timeout: 15000 }); 
-  
-     const breadcrumbText = (await breadcrumb.getText()).trim(); 
-  
-     await expect(breadcrumbText).toContain('Account Summary'); 
-  
-     console.log(`Navigated to: ${breadcrumbText}`); 
-  
-     // Verify Asset/Mobile field exists 
-     const assetField = await $('//*[@id="a_3"]/table/tbody/tr/td/span/div/table[1]/tbody/tr/td[1]/input'); 
-  
-     await assetField.waitForDisplayed({ timeout: 10000 }); 
-  
-     const assetValue = await assetField.getValue(); 
-  
-     console.log(`Asset/Mobile Number: ${assetValue}`); 
-  
-     await expect(assetValue).toContain(expectedMsisdn); 
-  
-     console.log(`MSISDN verified: ${expectedMsisdn}`); 
- } 
- ________________________________________ 
- More Stable Locator 
- Instead of the full XPath: 
- //*[@id="a_3"]/table/tbody/tr/td/span/div/table[1]/tbody/tr/td[1]/input 
- use: 
- const assetField = await $('input[aria-label="Asset"]'); 
- or 
- const assetField = await $('input[aria-labelledby="AssetNumTitle_Label"]'); 
- These are less likely to break if the UI layout changes. 
-  
- Below Need to verify  
-   
- Case 5.2:  
- If Case 5.1 is not matched and then need to run the Case 5.2 
- Active or suspended 
- Your current approach: 
- 1.	getRowByMSISDN() returns the first matching MSISDN, but the same MSISDN can have multiple records (Active, Suspended, Inactive).  
- 2.	You need to scan all rows for the given MSISDN.  
- 3.	Click the Asset # only when:  
- o	Status = Active OR Suspended  
- o	Activation Date is present/valid  
- 4.	Ignore rows with Inactive.  
- Better Approach 
- async findAndOpenValidSubscription(msisdn: string): Promise<boolean> { 
-  
-     const rows = await $$('#s_7_l tbody tr'); 
-  
-     for (const row of rows) { 
-  
-         const rowClass = await row.getAttribute('class'); 
-  
-         // Skip dummy row 
-         if (rowClass?.includes('jqgfirstrow')) { 
-             continue; 
-         } 
-  
-         const rowMsisdn = await row.$('td[id*="_MSISDN"]').getText(); 
-  
-         if (rowMsisdn.trim() !== msisdn) { 
-             continue; 
-         } 
-  
-         const status = ( 
-             await row.$('td[id*="_Status"]').getText() 
-         ).trim(); 
-  
-         const activationDate = ( 
-             await row.$('td[id*="_TM_Install_Date"]').getText() 
-         ).trim(); 
-  
-         console.log( 
-             `MSISDN=${rowMsisdn}, Status=${status}, ActivationDate=${activationDate}` 
-         ); 
-  
-         // Valid statuses 
-         const validStatus = 
-             status.toLowerCase() === 'active' || 
-             status.toLowerCase() === 'suspended'; 
-  
-         if (!validStatus) { 
-             console.log(`Skipping row. Status = ${status}`); 
-             continue; 
-         } 
-  
-         if (!activationDate) { 
-             console.log('Skipping row. Activation Date missing'); 
-             continue; 
-         } 
-  
-         // Click Asset # 
-         const assetLink = await row.$( 
-             'td[id*="_Asset_Number"] a' 
-         ); 
-  
-         const assetNumber = await assetLink.getText(); 
-  
-         console.log( 
-             `Valid record found. Clicking Asset # ${assetNumber}` 
-         ); 
-  
-         await assetLink.click(); 
-  
-         return true; 
-     } 
-  
-     console.log( 
-         `No Active/Suspended subscription found for ${msisdn}` 
-     ); 
-  
-     return false; 
- } 
- Usage 
- await subscriptionsPage.enterMSISDN("9737275744"); 
- await subscriptionsPage.clickGoButton(); 
-  
- const found = 
-     await subscriptionsPage.findAndOpenValidSubscription( 
-         "9737275744" 
-     ); 
-  
- if (!found) { 
-     console.log("No eligible subscription found."); 
- } 
- For your sample data 
- MSISDN	Status	Asset #	Action 
- 9737275744	Active	4-125901405289	✅ Click 
- 9737275744	Inactive	4-186135265815	❌ Ignore 
- If tomorrow the table contains: 
- MSISDN	Status	Asset # 
- 9737275744	Inactive	4-111 
- 9737275744	Suspended	4-222 
- then it will automatically skip the Inactive row and click Asset # 4-222. 
- After Case 5.2  
- Validation Points 
- ✅ Verify breadcrumb text: 
- <span class="siebui-crumb">Account Summary:</span> 
- ✅ Verify the page is actually Account Summary. 
- ✅ Verify the Asset/Mobile Number field is displayed. 
- ✅ Verify the value matches the selected MSISDN. 
- ✅ Verify the account type is Postpaid (if available on the page). 
- ________________________________________ 
- Page Object Method 
- async verifyAccountSummaryPage(expectedMsisdn: string): Promise<void> { 
-  
-     // Verify breadcrumb 
-     const breadcrumb = await $('//span[@class="siebui-crumb"]'); 
-  
-     await breadcrumb.waitForDisplayed({ timeout: 15000 }); 
-  
-     const breadcrumbText = (await breadcrumb.getText()).trim(); 
-  
-     await expect(breadcrumbText).toContain('Account Summary'); 
-  
-     console.log(`Navigated to: ${breadcrumbText}`); 
-  
-     // Verify Asset/Mobile field exists 
-     const assetField = await $('//*[@id="a_3"]/table/tbody/tr/td/span/div/table[1]/tbody/tr/td[1]/input'); 
-  
-     await assetField.waitForDisplayed({ timeout: 10000 }); 
-  
-     const assetValue = await assetField.getValue(); 
-  
-     console.log(`Asset/Mobile Number: ${assetValue}`); 
-  
-     await expect(assetValue).toContain(expectedMsisdn); 
-  
-     console.log(`MSISDN verified: ${expectedMsisdn}`); 
- } 
- ________________________________________ 
- More Stable Locator 
- Instead of the full XPath: 
- //*[@id="a_3"]/table/tbody/tr/td/span/div/table[1]/tbody/tr/td[1]/input 
- use: 
- const assetField = await $('input[aria-label="Asset"]'); 
- or 
- const assetField = await $('input[aria-labelledby="AssetNumTitle_Label"]'); 
- These are less likely to break if the UI layout changes. 
-  
-  
- Step 6 - Click Billing/Account Tab 
-  
- Once Case 5.1 Expected Result passed and then clicks on the billing and account tab 
-  
- Avoid the absolute XPath. 
- Use: 
- private get billingAccountTab() { 
-     return $('//a[contains(text(),"Billing/Account")]'); 
- } 
-  
- async clickBillingAccountTab(): Promise<void> { 
-  
-     await this.billingAccountTab.waitForClickable({ 
-         timeout: 15000 
-     }); 
-  
-     await this.billingAccountTab.click(); 
-  
-     console.log('Billing/Account tab clicked'); 
- } 
- ________________________________________ 
- Step 7 - Verify Invoice Details 
- Verify applet title: 
- private get invoiceDetailsTitle() { 
-     return $('//div[text()="Invoice Details"]'); 
- } 
-  
- async verifyInvoiceDetailsSection(): Promise<void> { 
-  
-     await this.invoiceDetailsTitle.waitForDisplayed({ 
-         timeout: 15000 
-     }); 
-  
-     const title = await this.invoiceDetailsTitle.getText(); 
-  
-     expect(title).toEqual('Invoice Details'); 
-  
-     console.log('Invoice Details section displayed'); 
- } 
- ________________________________________ 
- Read Invoice Table 
- Example: 
- Invoice Date	Invoice Number 
- 01-Jun-2026	INV001 
- 01-May-2026	INV002 
- Get all rows: 
- async getInvoiceRows() { 
-  
-     return await $$( 
-         '//div[text()="Invoice Details"]/ancestor::div[contains(@class,"siebui-applet")]//table[contains(@class,"ui-jqgrid-btable")]/tbody/tr' 
-     ); 
- } 
- ________________________________________ 
- Select Latest Invoice Date 
- async selectLatestInvoice(): Promise<void> { 
-  
-     const rows = await this.getInvoiceRows(); 
-  
-     let latestDate: Date | null = null; 
-     let latestRow; 
-  
-     for (const row of rows) { 
-  
-         const dateCell = await row.$( 
-             'td[aria-describedby*="Invoice_Date"]' 
-         ); 
-  
-         const dateText = await dateCell.getText(); 
-  
-         const invoiceDate = new Date(dateText); 
-  
-         if ( 
-             !latestDate || 
-             invoiceDate > latestDate 
-         ) { 
-             latestDate = invoiceDate; 
-             latestRow = row; 
-         } 
-     } 
-  
-     if (!latestRow) { 
-         throw new Error('No invoice records found'); 
-     } 
-  
-     await latestRow.click(); 
-  
-     console.log(`Latest Invoice Selected: ${latestDate}`); 
- } 
- ________________________________________ 
- Click Detailed Button 
- private get detailedButton() { 
-     return $('#s_5_1_0_0_Ctrl'); 
- } 
-  
- async clickDetailed(): Promise<void> { 
-  
-     await this.detailedButton.waitForClickable({ 
-         timeout: 15000 
-     }); 
-  
-     await this.detailedButton.click(); 
-  
-     console.log('Detailed button clicked'); 
- } 
- ________________________________________ 
- Handle New Tab 
- async switchToInvoiceTab(): Promise<void> { 
-  
-     const handles = await browser.getWindowHandles(); 
-  
-     await browser.switchToWindow( 
-         handles[handles.length - 1] 
-     ); 
-  
-     console.log('Switched to invoice tab'); 
- } 
- ________________________________________ 
- Handle Certificate Warning 
- Since the PDF opens on a different server and shows: 
- Your connection isn't private 
- NET::ERR_CERT_AUTHORITY_INVALID 
- Handle it like: 
- async bypassCertificateWarning(): Promise<void> { 
-  
-     const advancedButton = 
-         await $('//button[contains(text(),"Advanced")]'); 
-  
-     if (await advancedButton.isExisting()) { 
-  
-         await advancedButton.click(); 
-  
-         const proceedLink = 
-             await $('//a[contains(text(),"unsafe")]'); 
-  
-         await proceedLink.waitForClickable(); 
-  
-         await proceedLink.click(); 
-  
-         console.log( 
-             'Certificate warning bypassed' 
-         ); 
-     } 
- } 
- ________________________________________ 
- Read PDF Content readPDFWithAI() extracts all visible text from the invoice 
-  
-   
- In this PDF invoice – read the complete PDF details using AI read the complete invoice pdf 
- Scope of Validation 
- This document covers the below validations: 
- 1.	Process to download the bill through SCRM 
- 2.	Validation of plan/pack details on the bill 
- 3.	Country-wise and usage date-wise bill validation (IR) 
- 4.	Time zone validation for India and other countries 
- 5.	Data, Calling, and SMS usage validation 
- 6.	Mobile number validation on the bill 
- 7.	Charges summary validation (One-time charges/Monthly charges/Usage charges etc.) 
- 8.	Tariff plan name validation/One-time charges/monthly charges/usage charges/discounts/other credit charges etc. 
- 9.	Tariff plan benefits validation (Voice/SMS/Data) 
- 10.	Tariff plan standard rates validation (call. SMS, Data) 
+ Then re-run. The first test should get past MSISDN entry and proceed into the account summary steps. actual complete steps by steps process - check each step Step 1:
+ 
+ URL Siebel Web Call Center Home 
+ 
+ Need to verifiy the Welcome word, once the word is identified 
+ 
+ User name: //*[@id="username"]
+ 
+ Password: //*[@id="password"]
+ 
+ Enter button: //*[@id="loginData"]/div[4]/span/input
+ 
+ Step 2
+ 
+ Case 2.1: Once clicks on the enter button, and is redirected to the OTP screen
+ 
+ To confirm your identity, enter the code sent to you in email.
+ 
+ Email Code
+ 
+ //*[@id="Bharosa_Challenge_PadDataField"]
+ 
+ Enter OTP field – manually enter OTP – 30 secs time 
+ 
+ Case 2.2: Once clicks on the enter button, and is redirected to the Question
+ 
+ To confirm your identity, answer the following security question.
+ 
+ Like displayed - What was the name of your favorite teacher?
+ 
+ Answer 
+ 
+ //*[@id="Bharosa_Challenge_PadDataField"]
+ 
+ Enter Answer field – manually enter Answer – 30 secs time 
+ 
+ Once enters the input and then click on enter Button
+ 
+ Clicks on the button Xpath: //*[@id="loginForm"]/div[4]/input
+ 
+ Step 3
+ 
+ Once clicks on the button and is redirect to the home page, and clicks on the 
+ 
+ Home tab – Xpath: Home tab //*[@id="ui-id-126"]
+ 
+ In this home tab Element:  
+ 
+ <a data-tabindex="tabScreen0" href="#s_sctrl_tabScreen_noop" class="ui-tabs-anchor" role="presentation" tabindex="-1" id="ui-id-209"><span class="siebui-icon-home_icon siebui-icon-screentab_icon"><img src=" `https://sumeru-south.vodafoneidea.in:6100/ecommunications_enu/images/home_icon.gif` "></span>Home</a>
+ 
+ Step 4: 
+ 
+ Enter mobile number MSISDN
+ 
+ MSISDN: need to verify 
+ 
+ Enter mobile number
+ 
+ Xpath:  //*[@id="a_7"]/div/table/tbody/tr[3]/td[4]/div/input
+ 
+ After enter the mobile number and clicks on the button 
+ 
+ Icon - Xpath: //*[@id="s_7_1_1_0_Ctrl"]
+ 
+ 
+ 
+ Step 5:
+ 
+ Directly Case 5.1: If the enters the mobile number and is redirected to the Account Summary:
+ 
+ Account Summary: Need to verify 
+ 
+ Validation Points
+ 
+ ✅ Verify breadcrumb text:
+ 
+ <span class="siebui-crumb">Account Summary:</span>
+ 
+ ✅ Verify the page is actually Account Summary.
+ 
+ ✅ Verify the Asset/Mobile Number field is displayed.
+ 
+ ✅ Verify the value matches the selected MSISDN.
+ 
+ ✅ Verify the account type is Postpaid (if available on the page).
+ 
+ ________________________________________
+ 
+ Page Object Method
+ 
+ async verifyAccountSummaryPage(expectedMsisdn: string): Promise<void> {
+ 
+ 
+ 
+     // Verify breadcrumb
+ 
+     const breadcrumb = await $('//span[@class="siebui-crumb"]');
+ 
+ 
+ 
+     await breadcrumb.waitForDisplayed({ timeout: 15000 });
+ 
+ 
+ 
+     const breadcrumbText = (await breadcrumb.getText()).trim();
+ 
+ 
+ 
+     await expect(breadcrumbText).toContain('Account Summary');
+ 
+ 
+ 
+     console.log(`Navigated to: ${breadcrumbText}`);
+ 
+ 
+ 
+     // Verify Asset/Mobile field exists
+ 
+     const assetField = await $('//*[@id="a_3"]/table/tbody/tr/td/span/div/table[1]/tbody/tr/td[1]/input');
+ 
+ 
+ 
+     await assetField.waitForDisplayed({ timeout: 10000 });
+ 
+ 
+ 
+     const assetValue = await assetField.getValue();
+ 
+ 
+ 
+     console.log(`Asset/Mobile Number: ${assetValue}`);
+ 
+ 
+ 
+     await expect(assetValue).toContain(expectedMsisdn);
+ 
+ 
+ 
+     console.log(`MSISDN verified: ${expectedMsisdn}`);
+ 
+ }
+ 
+ ________________________________________
+ 
+ More Stable Locator
+ 
+ Instead of the full XPath:
+ 
+ //*[@id="a_3"]/table/tbody/tr/td/span/div/table[1]/tbody/tr/td[1]/input
+ 
+ use:
+ 
+ const assetField = await $('input[aria-label="Asset"]');
+ 
+ or
+ 
+ const assetField = await $('input[aria-labelledby="AssetNumTitle_Label"]');
+ 
+ These are less likely to break if the UI layout changes.
+ 
+ 
+ 
+ Below Need to verify 
+ 
+  
+ 
+ Case 5.2: 
+ 
+ If Case 5.1 is not matched and then need to run the Case 5.2
+ 
+ Active or suspended
+ 
+ Your current approach:
+ 
+ 1.	getRowByMSISDN() returns the first matching MSISDN, but the same MSISDN can have multiple records (Active, Suspended, Inactive). 
+ 
+ 2.	You need to scan all rows for the given MSISDN. 
+ 
+ 3.	Click the Asset # only when: 
+ 
+ o	Status = Active OR Suspended 
+ 
+ o	Activation Date is present/valid 
+ 
+ 4.	Ignore rows with Inactive. 
+ 
+ Better Approach
+ 
+ async findAndOpenValidSubscription(msisdn: string): Promise<boolean> {
+ 
+ 
+ 
+     const rows = await $$('#s_7_l tbody tr');
+ 
+ 
+ 
+     for (const row of rows) {
+ 
+ 
+ 
+         const rowClass = await row.getAttribute('class');
+ 
+ 
+ 
+         // Skip dummy row
+ 
+         if (rowClass?.includes('jqgfirstrow')) {
+ 
+             continue;
+ 
+         }
+ 
+ 
+ 
+         const rowMsisdn = await row.$('td[id*="_MSISDN"]').getText();
+ 
+ 
+ 
+         if (rowMsisdn.trim() !== msisdn) {
+ 
+             continue;
+ 
+         }
+ 
+ 
+ 
+         const status = (
+ 
+             await row.$('td[id*="_Status"]').getText()
+ 
+         ).trim();
+ 
+ 
+ 
+         const activationDate = (
+ 
+             await row.$('td[id*="_TM_Install_Date"]').getText()
+ 
+         ).trim();
+ 
+ 
+ 
+         console.log(
+ 
+             `MSISDN=${rowMsisdn}, Status=${status}, ActivationDate=${activationDate}`
+ 
+         );
+ 
+ 
+ 
+         // Valid statuses
+ 
+         const validStatus =
+ 
+             status.toLowerCase() === 'active' ||
+ 
+             status.toLowerCase() === 'suspended';
+ 
+ 
+ 
+         if (!validStatus) {
+ 
+             console.log(`Skipping row. Status = ${status}`);
+ 
+             continue;
+ 
+         }
+ 
+ 
+ 
+         if (!activationDate) {
+ 
+             console.log('Skipping row. Activation Date missing');
+ 
+             continue;
+ 
+         }
+ 
+ 
+ 
+         // Click Asset #
+ 
+         const assetLink = await row.$(
+ 
+             'td[id*="_Asset_Number"] a'
+ 
+         );
+ 
+ 
+ 
+         const assetNumber = await assetLink.getText();
+ 
+ 
+ 
+         console.log(
+ 
+             `Valid record found. Clicking Asset # ${assetNumber}`
+ 
+         );
+ 
+ 
+ 
+         await assetLink.click();
+ 
+ 
+ 
+         return true;
+ 
+     }
+ 
+ 
+ 
+     console.log(
+ 
+         `No Active/Suspended subscription found for ${msisdn}`
+ 
+     );
+ 
+ 
+ 
+     return false;
+ 
+ }
+ 
+ Usage
+ 
+ await subscriptionsPage.enterMSISDN("9737275744");
+ 
+ await subscriptionsPage.clickGoButton();
+ 
+ 
+ 
+ const found =
+ 
+     await subscriptionsPage.findAndOpenValidSubscription(
+ 
+         "9737275744"
+ 
+     );
+ 
+ 
+ 
+ if (!found) {
+ 
+     console.log("No eligible subscription found.");
+ 
+ }
+ 
+ For your sample data
+ 
+ MSISDN	Status	Asset #	Action
+ 
+ 9737275744	Active	4-125901405289	✅ Click
+ 
+ 9737275744	Inactive	4-186135265815	❌ Ignore
+ 
+ If tomorrow the table contains:
+ 
+ MSISDN	Status	Asset #
+ 
+ 9737275744	Inactive	4-111
+ 
+ 9737275744	Suspended	4-222
+ 
+ then it will automatically skip the Inactive row and click Asset # 4-222.
+ 
+ After Case 5.2 
+ 
+ Validation Points
+ 
+ ✅ Verify breadcrumb text:
+ 
+ <span class="siebui-crumb">Account Summary:</span>
+ 
+ ✅ Verify the page is actually Account Summary.
+ 
+ ✅ Verify the Asset/Mobile Number field is displayed.
+ 
+ ✅ Verify the value matches the selected MSISDN.
+ 
+ ✅ Verify the account type is Postpaid (if available on the page).
+ 
+ ________________________________________
+ 
+ Page Object Method
+ 
+ async verifyAccountSummaryPage(expectedMsisdn: string): Promise<void> {
+ 
+ 
+ 
+     // Verify breadcrumb
+ 
+     const breadcrumb = await $('//span[@class="siebui-crumb"]');
+ 
+ 
+ 
+     await breadcrumb.waitForDisplayed({ timeout: 15000 });
+ 
+ 
+ 
+     const breadcrumbText = (await breadcrumb.getText()).trim();
+ 
+ 
+ 
+     await expect(breadcrumbText).toContain('Account Summary');
+ 
+ 
+ 
+     console.log(`Navigated to: ${breadcrumbText}`);
+ 
+ 
+ 
+     // Verify Asset/Mobile field exists
+ 
+     const assetField = await $('//*[@id="a_3"]/table/tbody/tr/td/span/div/table[1]/tbody/tr/td[1]/input');
+ 
+ 
+ 
+     await assetField.waitForDisplayed({ timeout: 10000 });
+ 
+ 
+ 
+     const assetValue = await assetField.getValue();
+ 
+ 
+ 
+     console.log(`Asset/Mobile Number: ${assetValue}`);
+ 
+ 
+ 
+     await expect(assetValue).toContain(expectedMsisdn);
+ 
+ 
+ 
+     console.log(`MSISDN verified: ${expectedMsisdn}`);
+ 
+ }
+ 
+ ________________________________________
+ 
+ More Stable Locator
+ 
+ Instead of the full XPath:
+ 
+ //*[@id="a_3"]/table/tbody/tr/td/span/div/table[1]/tbody/tr/td[1]/input
+ 
+ use:
+ 
+ const assetField = await $('input[aria-label="Asset"]');
+ 
+ or
+ 
+ const assetField = await $('input[aria-labelledby="AssetNumTitle_Label"]');
+ 
+ These are less likely to break if the UI layout changes.
+ 
+ 
+ 
+ 
+ 
+ Step 6 - Click Billing/Account Tab
+ 
+ 
+ 
+ Once Case 5.1 Expected Result passed and then clicks on the billing and account tab
+ 
+ 
+ 
+ Avoid the absolute XPath.
+ 
+ Use:
+ 
+ private get billingAccountTab() {
+ 
+     return $('//a[contains(text(),"Billing/Account")]');
+ 
+ }
+ 
+ 
+ 
+ async clickBillingAccountTab(): Promise<void> {
+ 
+ 
+ 
+     await this.billingAccountTab.waitForClickable({
+ 
+         timeout: 15000
+ 
+     });
+ 
+ 
+ 
+     await this.billingAccountTab.click();
+ 
+ 
+ 
+     console.log('Billing/Account tab clicked');
+ 
+ }
+ 
+ ________________________________________
+ 
+ Step 7 - Verify Invoice Details
+ 
+ Verify applet title:
+ 
+ private get invoiceDetailsTitle() {
+ 
+     return $('//div[text()="Invoice Details"]');
+ 
+ }
+ 
+ 
+ 
+ async verifyInvoiceDetailsSection(): Promise<void> {
+ 
+ 
+ 
+     await this.invoiceDetailsTitle.waitForDisplayed({
+ 
+         timeout: 15000
+ 
+     });
+ 
+ 
+ 
+     const title = await this.invoiceDetailsTitle.getText();
+ 
+ 
+ 
+     expect(title).toEqual('Invoice Details');
+ 
+ 
+ 
+     console.log('Invoice Details section displayed');
+ 
+ }
+ 
+ ________________________________________
+ 
+ Read Invoice Table
+ 
+ Example:
+ 
+ Invoice Date	Invoice Number
+ 
+ 01-Jun-2026	INV001
+ 
+ 01-May-2026	INV002
+ 
+ Get all rows:
+ 
+ async getInvoiceRows() {
+ 
+ 
+ 
+     return await $$(
+ 
+         '//div[text()="Invoice Details"]/ancestor::div[contains(@class,"siebui-applet")]//table[contains(@class,"ui-jqgrid-btable")]/tbody/tr'
+ 
+     );
+ 
+ }
+ 
+ ________________________________________
+ 
+ Select Latest Invoice Date
+ 
+ async selectLatestInvoice(): Promise<void> {
+ 
+ 
+ 
+     const rows = await this.getInvoiceRows();
+ 
+ 
+ 
+     let latestDate: Date | null = null;
+ 
+     let latestRow;
+ 
+ 
+ 
+     for (const row of rows) {
+ 
+ 
+ 
+         const dateCell = await row.$(
+ 
+             'td[aria-describedby*="Invoice_Date"]'
+ 
+         );
+ 
+ 
+ 
+         const dateText = await dateCell.getText();
+ 
+ 
+ 
+         const invoiceDate = new Date(dateText);
+ 
+ 
+ 
+         if (
+ 
+             !latestDate ||
+ 
+             invoiceDate > latestDate
+ 
+         ) {
+ 
+             latestDate = invoiceDate;
+ 
+             latestRow = row;
+ 
+         }
+ 
+     }
+ 
+ 
+ 
+     if (!latestRow) {
+ 
+         throw new Error('No invoice records found');
+ 
+     }
+ 
+ 
+ 
+     await latestRow.click();
+ 
+ 
+ 
+     console.log(`Latest Invoice Selected: ${latestDate}`);
+ 
+ }
+ 
+ ________________________________________
+ 
+ Click Detailed Button
+ 
+ private get detailedButton() {
+ 
+     return $('#s_5_1_0_0_Ctrl');
+ 
+ }
+ 
+ 
+ 
+ async clickDetailed(): Promise<void> {
+ 
+ 
+ 
+     await this.detailedButton.waitForClickable({
+ 
+         timeout: 15000
+ 
+     });
+ 
+ 
+ 
+     await this.detailedButton.click();
+ 
+ 
+ 
+     console.log('Detailed button clicked');
+ 
+ }
+ 
+ ________________________________________
+ 
+ Handle New Tab
+ 
+ async switchToInvoiceTab(): Promise<void> {
+ 
+ 
+ 
+     const handles = await browser.getWindowHandles();
+ 
+ 
+ 
+     await browser.switchToWindow(
+ 
+         handles[handles.length - 1]
+ 
+     );
+ 
+ 
+ 
+     console.log('Switched to invoice tab');
+ 
+ }
+ 
+ ________________________________________
+ 
+ Handle Certificate Warning
+ 
+ Since the PDF opens on a different server and shows:
+ 
+ Your connection isn't private
+ 
+ NET::ERR_CERT_AUTHORITY_INVALID
+ 
+ Handle it like:
+ 
+ async bypassCertificateWarning(): Promise<void> {
+ 
+ 
+ 
+     const advancedButton =
+ 
+         await $('//button[contains(text(),"Advanced")]');
+ 
+ 
+ 
+     if (await advancedButton.isExisting()) {
+ 
+ 
+ 
+         await advancedButton.click();
+ 
+ 
+ 
+         const proceedLink =
+ 
+             await $('//a[contains(text(),"unsafe")]');
+ 
+ 
+ 
+         await proceedLink.waitForClickable();
+ 
+ 
+ 
+         await proceedLink.click();
+ 
+ 
+ 
+         console.log(
+ 
+             'Certificate warning bypassed'
+ 
+         );
+ 
+     }
+ 
+ }
+ 
+ ________________________________________
+ 
+ Read PDF Content readPDFWithAI() extracts all visible text from the invoice
+ 
+ 
+ 
+  
+ 
+ In this PDF invoice – read the complete PDF details using AI read the complete invoice pdf
+ 
+ Scope of Validation
+ 
+ This document covers the below validations:
+ 
+ 1.	Process to download the bill through SCRM
+ 
+ 2.	Validation of plan/pack details on the bill
+ 
+ 3.	Country-wise and usage date-wise bill validation (IR)
+ 
+ 4.	Time zone validation for India and other countries
+ 
+ 5.	Data, Calling, and SMS usage validation
+ 
+ 6.	Mobile number validation on the bill
+ 
+ 7.	Charges summary validation (One-time charges/Monthly charges/Usage charges etc.)
+ 
+ 8.	Tariff plan name validation/One-time charges/monthly charges/usage charges/discounts/other credit charges etc.
+ 
+ 9.	Tariff plan benefits validation (Voice/SMS/Data)
+ 
+ 10.	Tariff plan standard rates validation (call. SMS, Data)
+ 
  11.	Tariff plan rental period and charges validation
 
 **Assistant**
@@ -1530,395 +1920,785 @@ The TypeScript/SKIPPED problem is completely solved. The tests are now running a
  Add the already-logged-in check to loginFull in SiebelLoginPage.ts 
  Delete the duplicate row in input_data.xlsx 
  
- Then re-run. The first test should get past MSISDN entry and proceed into the account summary steps. actual complete steps by steps process - check each step Step 1: 
- URL Siebel Web Call Center Home  
- Need to verifiy the Welcome word, once the word is identified  
- User name: //*[@id="username"] 
- Password: //*[@id="password"] 
- Enter button: //*[@id="loginData"]/div[4]/span/input 
- Step 2 
- Case 2.1: Once clicks on the enter button, and is redirected to the OTP screen 
- To confirm your identity, enter the code sent to you in email. 
- Email Code 
- //*[@id="Bharosa_Challenge_PadDataField"] 
- Enter OTP field – manually enter OTP – 30 secs time  
- Case 2.2: Once clicks on the enter button, and is redirected to the Question 
- To confirm your identity, answer the following security question. 
- Like displayed - What was the name of your favorite teacher? 
- Answer  
- //*[@id="Bharosa_Challenge_PadDataField"] 
- Enter Answer field – manually enter Answer – 30 secs time  
- Once enters the input and then click on enter Button 
- Clicks on the button Xpath: //*[@id="loginForm"]/div[4]/input 
- Step 3 
- Once clicks on the button and is redirect to the home page, and clicks on the  
- Home tab – Xpath: Home tab //*[@id="ui-id-126"] 
- In this home tab Element:   
- <a data-tabindex="tabScreen0" href="#s_sctrl_tabScreen_noop" class="ui-tabs-anchor" role="presentation" tabindex="-1" id="ui-id-209"><span class="siebui-icon-home_icon siebui-icon-screentab_icon"><img src=" `https://sumeru-south.vodafoneidea.in:6100/ecommunications_enu/images/home_icon.gif` "></span>Home</a> 
- Step 4:  
- Enter mobile number MSISDN 
- MSISDN: need to verify  
- Enter mobile number 
- Xpath:  //*[@id="a_7"]/div/table/tbody/tr[3]/td[4]/div/input 
- After enter the mobile number and clicks on the button  
- Icon - Xpath: //*[@id="s_7_1_1_0_Ctrl"] 
-  
- Step 5: 
- Directly Case 5.1: If the enters the mobile number and is redirected to the Account Summary: 
- Account Summary: Need to verify  
- Validation Points 
- ✅ Verify breadcrumb text: 
- <span class="siebui-crumb">Account Summary:</span> 
- ✅ Verify the page is actually Account Summary. 
- ✅ Verify the Asset/Mobile Number field is displayed. 
- ✅ Verify the value matches the selected MSISDN. 
- ✅ Verify the account type is Postpaid (if available on the page). 
- ________________________________________ 
- Page Object Method 
- async verifyAccountSummaryPage(expectedMsisdn: string): Promise<void> { 
-  
-     // Verify breadcrumb 
-     const breadcrumb = await $('//span[@class="siebui-crumb"]'); 
-  
-     await breadcrumb.waitForDisplayed({ timeout: 15000 }); 
-  
-     const breadcrumbText = (await breadcrumb.getText()).trim(); 
-  
-     await expect(breadcrumbText).toContain('Account Summary'); 
-  
-     console.log(`Navigated to: ${breadcrumbText}`); 
-  
-     // Verify Asset/Mobile field exists 
-     const assetField = await $('//*[@id="a_3"]/table/tbody/tr/td/span/div/table[1]/tbody/tr/td[1]/input'); 
-  
-     await assetField.waitForDisplayed({ timeout: 10000 }); 
-  
-     const assetValue = await assetField.getValue(); 
-  
-     console.log(`Asset/Mobile Number: ${assetValue}`); 
-  
-     await expect(assetValue).toContain(expectedMsisdn); 
-  
-     console.log(`MSISDN verified: ${expectedMsisdn}`); 
- } 
- ________________________________________ 
- More Stable Locator 
- Instead of the full XPath: 
- //*[@id="a_3"]/table/tbody/tr/td/span/div/table[1]/tbody/tr/td[1]/input 
- use: 
- const assetField = await $('input[aria-label="Asset"]'); 
- or 
- const assetField = await $('input[aria-labelledby="AssetNumTitle_Label"]'); 
- These are less likely to break if the UI layout changes. 
-  
- Below Need to verify  
-   
- Case 5.2:  
- If Case 5.1 is not matched and then need to run the Case 5.2 
- Active or suspended 
- Your current approach: 
- 1.	getRowByMSISDN() returns the first matching MSISDN, but the same MSISDN can have multiple records (Active, Suspended, Inactive).  
- 2.	You need to scan all rows for the given MSISDN.  
- 3.	Click the Asset # only when:  
- o	Status = Active OR Suspended  
- o	Activation Date is present/valid  
- 4.	Ignore rows with Inactive.  
- Better Approach 
- async findAndOpenValidSubscription(msisdn: string): Promise<boolean> { 
-  
-     const rows = await $$('#s_7_l tbody tr'); 
-  
-     for (const row of rows) { 
-  
-         const rowClass = await row.getAttribute('class'); 
-  
-         // Skip dummy row 
-         if (rowClass?.includes('jqgfirstrow')) { 
-             continue; 
-         } 
-  
-         const rowMsisdn = await row.$('td[id*="_MSISDN"]').getText(); 
-  
-         if (rowMsisdn.trim() !== msisdn) { 
-             continue; 
-         } 
-  
-         const status = ( 
-             await row.$('td[id*="_Status"]').getText() 
-         ).trim(); 
-  
-         const activationDate = ( 
-             await row.$('td[id*="_TM_Install_Date"]').getText() 
-         ).trim(); 
-  
-         console.log( 
-             `MSISDN=${rowMsisdn}, Status=${status}, ActivationDate=${activationDate}` 
-         ); 
-  
-         // Valid statuses 
-         const validStatus = 
-             status.toLowerCase() === 'active' || 
-             status.toLowerCase() === 'suspended'; 
-  
-         if (!validStatus) { 
-             console.log(`Skipping row. Status = ${status}`); 
-             continue; 
-         } 
-  
-         if (!activationDate) { 
-             console.log('Skipping row. Activation Date missing'); 
-             continue; 
-         } 
-  
-         // Click Asset # 
-         const assetLink = await row.$( 
-             'td[id*="_Asset_Number"] a' 
-         ); 
-  
-         const assetNumber = await assetLink.getText(); 
-  
-         console.log( 
-             `Valid record found. Clicking Asset # ${assetNumber}` 
-         ); 
-  
-         await assetLink.click(); 
-  
-         return true; 
-     } 
-  
-     console.log( 
-         `No Active/Suspended subscription found for ${msisdn}` 
-     ); 
-  
-     return false; 
- } 
- Usage 
- await subscriptionsPage.enterMSISDN("9737275744"); 
- await subscriptionsPage.clickGoButton(); 
-  
- const found = 
-     await subscriptionsPage.findAndOpenValidSubscription( 
-         "9737275744" 
-     ); 
-  
- if (!found) { 
-     console.log("No eligible subscription found."); 
- } 
- For your sample data 
- MSISDN	Status	Asset #	Action 
- 9737275744	Active	4-125901405289	✅ Click 
- 9737275744	Inactive	4-186135265815	❌ Ignore 
- If tomorrow the table contains: 
- MSISDN	Status	Asset # 
- 9737275744	Inactive	4-111 
- 9737275744	Suspended	4-222 
- then it will automatically skip the Inactive row and click Asset # 4-222. 
- After Case 5.2  
- Validation Points 
- ✅ Verify breadcrumb text: 
- <span class="siebui-crumb">Account Summary:</span> 
- ✅ Verify the page is actually Account Summary. 
- ✅ Verify the Asset/Mobile Number field is displayed. 
- ✅ Verify the value matches the selected MSISDN. 
- ✅ Verify the account type is Postpaid (if available on the page). 
- ________________________________________ 
- Page Object Method 
- async verifyAccountSummaryPage(expectedMsisdn: string): Promise<void> { 
-  
-     // Verify breadcrumb 
-     const breadcrumb = await $('//span[@class="siebui-crumb"]'); 
-  
-     await breadcrumb.waitForDisplayed({ timeout: 15000 }); 
-  
-     const breadcrumbText = (await breadcrumb.getText()).trim(); 
-  
-     await expect(breadcrumbText).toContain('Account Summary'); 
-  
-     console.log(`Navigated to: ${breadcrumbText}`); 
-  
-     // Verify Asset/Mobile field exists 
-     const assetField = await $('//*[@id="a_3"]/table/tbody/tr/td/span/div/table[1]/tbody/tr/td[1]/input'); 
-  
-     await assetField.waitForDisplayed({ timeout: 10000 }); 
-  
-     const assetValue = await assetField.getValue(); 
-  
-     console.log(`Asset/Mobile Number: ${assetValue}`); 
-  
-     await expect(assetValue).toContain(expectedMsisdn); 
-  
-     console.log(`MSISDN verified: ${expectedMsisdn}`); 
- } 
- ________________________________________ 
- More Stable Locator 
- Instead of the full XPath: 
- //*[@id="a_3"]/table/tbody/tr/td/span/div/table[1]/tbody/tr/td[1]/input 
- use: 
- const assetField = await $('input[aria-label="Asset"]'); 
- or 
- const assetField = await $('input[aria-labelledby="AssetNumTitle_Label"]'); 
- These are less likely to break if the UI layout changes. 
-  
-  
- Step 6 - Click Billing/Account Tab 
-  
- Once Case 5.1 Expected Result passed and then clicks on the billing and account tab 
-  
- Avoid the absolute XPath. 
- Use: 
- private get billingAccountTab() { 
-     return $('//a[contains(text(),"Billing/Account")]'); 
- } 
-  
- async clickBillingAccountTab(): Promise<void> { 
-  
-     await this.billingAccountTab.waitForClickable({ 
-         timeout: 15000 
-     }); 
-  
-     await this.billingAccountTab.click(); 
-  
-     console.log('Billing/Account tab clicked'); 
- } 
- ________________________________________ 
- Step 7 - Verify Invoice Details 
- Verify applet title: 
- private get invoiceDetailsTitle() { 
-     return $('//div[text()="Invoice Details"]'); 
- } 
-  
- async verifyInvoiceDetailsSection(): Promise<void> { 
-  
-     await this.invoiceDetailsTitle.waitForDisplayed({ 
-         timeout: 15000 
-     }); 
-  
-     const title = await this.invoiceDetailsTitle.getText(); 
-  
-     expect(title).toEqual('Invoice Details'); 
-  
-     console.log('Invoice Details section displayed'); 
- } 
- ________________________________________ 
- Read Invoice Table 
- Example: 
- Invoice Date	Invoice Number 
- 01-Jun-2026	INV001 
- 01-May-2026	INV002 
- Get all rows: 
- async getInvoiceRows() { 
-  
-     return await $$( 
-         '//div[text()="Invoice Details"]/ancestor::div[contains(@class,"siebui-applet")]//table[contains(@class,"ui-jqgrid-btable")]/tbody/tr' 
-     ); 
- } 
- ________________________________________ 
- Select Latest Invoice Date 
- async selectLatestInvoice(): Promise<void> { 
-  
-     const rows = await this.getInvoiceRows(); 
-  
-     let latestDate: Date | null = null; 
-     let latestRow; 
-  
-     for (const row of rows) { 
-  
-         const dateCell = await row.$( 
-             'td[aria-describedby*="Invoice_Date"]' 
-         ); 
-  
-         const dateText = await dateCell.getText(); 
-  
-         const invoiceDate = new Date(dateText); 
-  
-         if ( 
-             !latestDate || 
-             invoiceDate > latestDate 
-         ) { 
-             latestDate = invoiceDate; 
-             latestRow = row; 
-         } 
-     } 
-  
-     if (!latestRow) { 
-         throw new Error('No invoice records found'); 
-     } 
-  
-     await latestRow.click(); 
-  
-     console.log(`Latest Invoice Selected: ${latestDate}`); 
- } 
- ________________________________________ 
- Click Detailed Button 
- private get detailedButton() { 
-     return $('#s_5_1_0_0_Ctrl'); 
- } 
-  
- async clickDetailed(): Promise<void> { 
-  
-     await this.detailedButton.waitForClickable({ 
-         timeout: 15000 
-     }); 
-  
-     await this.detailedButton.click(); 
-  
-     console.log('Detailed button clicked'); 
- } 
- ________________________________________ 
- Handle New Tab 
- async switchToInvoiceTab(): Promise<void> { 
-  
-     const handles = await browser.getWindowHandles(); 
-  
-     await browser.switchToWindow( 
-         handles[handles.length - 1] 
-     ); 
-  
-     console.log('Switched to invoice tab'); 
- } 
- ________________________________________ 
- Handle Certificate Warning 
- Since the PDF opens on a different server and shows: 
- Your connection isn't private 
- NET::ERR_CERT_AUTHORITY_INVALID 
- Handle it like: 
- async bypassCertificateWarning(): Promise<void> { 
-  
-     const advancedButton = 
-         await $('//button[contains(text(),"Advanced")]'); 
-  
-     if (await advancedButton.isExisting()) { 
-  
-         await advancedButton.click(); 
-  
-         const proceedLink = 
-             await $('//a[contains(text(),"unsafe")]'); 
-  
-         await proceedLink.waitForClickable(); 
-  
-         await proceedLink.click(); 
-  
-         console.log( 
-             'Certificate warning bypassed' 
-         ); 
-     } 
- } 
- ________________________________________ 
- Read PDF Content readPDFWithAI() extracts all visible text from the invoice 
-  
-   
- In this PDF invoice – read the complete PDF details using AI read the complete invoice pdf 
- Scope of Validation 
- This document covers the below validations: 
- 1.	Process to download the bill through SCRM 
- 2.	Validation of plan/pack details on the bill 
- 3.	Country-wise and usage date-wise bill validation (IR) 
- 4.	Time zone validation for India and other countries 
- 5.	Data, Calling, and SMS usage validation 
- 6.	Mobile number validation on the bill 
- 7.	Charges summary validation (One-time charges/Monthly charges/Usage charges etc.) 
- 8.	Tariff plan name validation/One-time charges/monthly charges/usage charges/discounts/other credit charges etc. 
- 9.	Tariff plan benefits validation (Voice/SMS/Data) 
- 10.	Tariff plan standard rates validation (call. SMS, Data) 
+ Then re-run. The first test should get past MSISDN entry and proceed into the account summary steps. actual complete steps by steps process - check each step Step 1:
+ 
+ URL Siebel Web Call Center Home 
+ 
+ Need to verifiy the Welcome word, once the word is identified 
+ 
+ User name: //*[@id="username"]
+ 
+ Password: //*[@id="password"]
+ 
+ Enter button: //*[@id="loginData"]/div[4]/span/input
+ 
+ Step 2
+ 
+ Case 2.1: Once clicks on the enter button, and is redirected to the OTP screen
+ 
+ To confirm your identity, enter the code sent to you in email.
+ 
+ Email Code
+ 
+ //*[@id="Bharosa_Challenge_PadDataField"]
+ 
+ Enter OTP field – manually enter OTP – 30 secs time 
+ 
+ Case 2.2: Once clicks on the enter button, and is redirected to the Question
+ 
+ To confirm your identity, answer the following security question.
+ 
+ Like displayed - What was the name of your favorite teacher?
+ 
+ Answer 
+ 
+ //*[@id="Bharosa_Challenge_PadDataField"]
+ 
+ Enter Answer field – manually enter Answer – 30 secs time 
+ 
+ Once enters the input and then click on enter Button
+ 
+ Clicks on the button Xpath: //*[@id="loginForm"]/div[4]/input
+ 
+ Step 3
+ 
+ Once clicks on the button and is redirect to the home page, and clicks on the 
+ 
+ Home tab – Xpath: Home tab //*[@id="ui-id-126"]
+ 
+ In this home tab Element:  
+ 
+ <a data-tabindex="tabScreen0" href="#s_sctrl_tabScreen_noop" class="ui-tabs-anchor" role="presentation" tabindex="-1" id="ui-id-209"><span class="siebui-icon-home_icon siebui-icon-screentab_icon"><img src=" `https://sumeru-south.vodafoneidea.in:6100/ecommunications_enu/images/home_icon.gif` "></span>Home</a>
+ 
+ Step 4: 
+ 
+ Enter mobile number MSISDN
+ 
+ MSISDN: need to verify 
+ 
+ Enter mobile number
+ 
+ Xpath:  //*[@id="a_7"]/div/table/tbody/tr[3]/td[4]/div/input
+ 
+ After enter the mobile number and clicks on the button 
+ 
+ Icon - Xpath: //*[@id="s_7_1_1_0_Ctrl"]
+ 
+ 
+ 
+ Step 5:
+ 
+ Directly Case 5.1: If the enters the mobile number and is redirected to the Account Summary:
+ 
+ Account Summary: Need to verify 
+ 
+ Validation Points
+ 
+ ✅ Verify breadcrumb text:
+ 
+ <span class="siebui-crumb">Account Summary:</span>
+ 
+ ✅ Verify the page is actually Account Summary.
+ 
+ ✅ Verify the Asset/Mobile Number field is displayed.
+ 
+ ✅ Verify the value matches the selected MSISDN.
+ 
+ ✅ Verify the account type is Postpaid (if available on the page).
+ 
+ ________________________________________
+ 
+ Page Object Method
+ 
+ async verifyAccountSummaryPage(expectedMsisdn: string): Promise<void> {
+ 
+ 
+ 
+     // Verify breadcrumb
+ 
+     const breadcrumb = await $('//span[@class="siebui-crumb"]');
+ 
+ 
+ 
+     await breadcrumb.waitForDisplayed({ timeout: 15000 });
+ 
+ 
+ 
+     const breadcrumbText = (await breadcrumb.getText()).trim();
+ 
+ 
+ 
+     await expect(breadcrumbText).toContain('Account Summary');
+ 
+ 
+ 
+     console.log(`Navigated to: ${breadcrumbText}`);
+ 
+ 
+ 
+     // Verify Asset/Mobile field exists
+ 
+     const assetField = await $('//*[@id="a_3"]/table/tbody/tr/td/span/div/table[1]/tbody/tr/td[1]/input');
+ 
+ 
+ 
+     await assetField.waitForDisplayed({ timeout: 10000 });
+ 
+ 
+ 
+     const assetValue = await assetField.getValue();
+ 
+ 
+ 
+     console.log(`Asset/Mobile Number: ${assetValue}`);
+ 
+ 
+ 
+     await expect(assetValue).toContain(expectedMsisdn);
+ 
+ 
+ 
+     console.log(`MSISDN verified: ${expectedMsisdn}`);
+ 
+ }
+ 
+ ________________________________________
+ 
+ More Stable Locator
+ 
+ Instead of the full XPath:
+ 
+ //*[@id="a_3"]/table/tbody/tr/td/span/div/table[1]/tbody/tr/td[1]/input
+ 
+ use:
+ 
+ const assetField = await $('input[aria-label="Asset"]');
+ 
+ or
+ 
+ const assetField = await $('input[aria-labelledby="AssetNumTitle_Label"]');
+ 
+ These are less likely to break if the UI layout changes.
+ 
+ 
+ 
+ Below Need to verify 
+ 
+  
+ 
+ Case 5.2: 
+ 
+ If Case 5.1 is not matched and then need to run the Case 5.2
+ 
+ Active or suspended
+ 
+ Your current approach:
+ 
+ 1.	getRowByMSISDN() returns the first matching MSISDN, but the same MSISDN can have multiple records (Active, Suspended, Inactive). 
+ 
+ 2.	You need to scan all rows for the given MSISDN. 
+ 
+ 3.	Click the Asset # only when: 
+ 
+ o	Status = Active OR Suspended 
+ 
+ o	Activation Date is present/valid 
+ 
+ 4.	Ignore rows with Inactive. 
+ 
+ Better Approach
+ 
+ async findAndOpenValidSubscription(msisdn: string): Promise<boolean> {
+ 
+ 
+ 
+     const rows = await $$('#s_7_l tbody tr');
+ 
+ 
+ 
+     for (const row of rows) {
+ 
+ 
+ 
+         const rowClass = await row.getAttribute('class');
+ 
+ 
+ 
+         // Skip dummy row
+ 
+         if (rowClass?.includes('jqgfirstrow')) {
+ 
+             continue;
+ 
+         }
+ 
+ 
+ 
+         const rowMsisdn = await row.$('td[id*="_MSISDN"]').getText();
+ 
+ 
+ 
+         if (rowMsisdn.trim() !== msisdn) {
+ 
+             continue;
+ 
+         }
+ 
+ 
+ 
+         const status = (
+ 
+             await row.$('td[id*="_Status"]').getText()
+ 
+         ).trim();
+ 
+ 
+ 
+         const activationDate = (
+ 
+             await row.$('td[id*="_TM_Install_Date"]').getText()
+ 
+         ).trim();
+ 
+ 
+ 
+         console.log(
+ 
+             `MSISDN=${rowMsisdn}, Status=${status}, ActivationDate=${activationDate}`
+ 
+         );
+ 
+ 
+ 
+         // Valid statuses
+ 
+         const validStatus =
+ 
+             status.toLowerCase() === 'active' ||
+ 
+             status.toLowerCase() === 'suspended';
+ 
+ 
+ 
+         if (!validStatus) {
+ 
+             console.log(`Skipping row. Status = ${status}`);
+ 
+             continue;
+ 
+         }
+ 
+ 
+ 
+         if (!activationDate) {
+ 
+             console.log('Skipping row. Activation Date missing');
+ 
+             continue;
+ 
+         }
+ 
+ 
+ 
+         // Click Asset #
+ 
+         const assetLink = await row.$(
+ 
+             'td[id*="_Asset_Number"] a'
+ 
+         );
+ 
+ 
+ 
+         const assetNumber = await assetLink.getText();
+ 
+ 
+ 
+         console.log(
+ 
+             `Valid record found. Clicking Asset # ${assetNumber}`
+ 
+         );
+ 
+ 
+ 
+         await assetLink.click();
+ 
+ 
+ 
+         return true;
+ 
+     }
+ 
+ 
+ 
+     console.log(
+ 
+         `No Active/Suspended subscription found for ${msisdn}`
+ 
+     );
+ 
+ 
+ 
+     return false;
+ 
+ }
+ 
+ Usage
+ 
+ await subscriptionsPage.enterMSISDN("9737275744");
+ 
+ await subscriptionsPage.clickGoButton();
+ 
+ 
+ 
+ const found =
+ 
+     await subscriptionsPage.findAndOpenValidSubscription(
+ 
+         "9737275744"
+ 
+     );
+ 
+ 
+ 
+ if (!found) {
+ 
+     console.log("No eligible subscription found.");
+ 
+ }
+ 
+ For your sample data
+ 
+ MSISDN	Status	Asset #	Action
+ 
+ 9737275744	Active	4-125901405289	✅ Click
+ 
+ 9737275744	Inactive	4-186135265815	❌ Ignore
+ 
+ If tomorrow the table contains:
+ 
+ MSISDN	Status	Asset #
+ 
+ 9737275744	Inactive	4-111
+ 
+ 9737275744	Suspended	4-222
+ 
+ then it will automatically skip the Inactive row and click Asset # 4-222.
+ 
+ After Case 5.2 
+ 
+ Validation Points
+ 
+ ✅ Verify breadcrumb text:
+ 
+ <span class="siebui-crumb">Account Summary:</span>
+ 
+ ✅ Verify the page is actually Account Summary.
+ 
+ ✅ Verify the Asset/Mobile Number field is displayed.
+ 
+ ✅ Verify the value matches the selected MSISDN.
+ 
+ ✅ Verify the account type is Postpaid (if available on the page).
+ 
+ ________________________________________
+ 
+ Page Object Method
+ 
+ async verifyAccountSummaryPage(expectedMsisdn: string): Promise<void> {
+ 
+ 
+ 
+     // Verify breadcrumb
+ 
+     const breadcrumb = await $('//span[@class="siebui-crumb"]');
+ 
+ 
+ 
+     await breadcrumb.waitForDisplayed({ timeout: 15000 });
+ 
+ 
+ 
+     const breadcrumbText = (await breadcrumb.getText()).trim();
+ 
+ 
+ 
+     await expect(breadcrumbText).toContain('Account Summary');
+ 
+ 
+ 
+     console.log(`Navigated to: ${breadcrumbText}`);
+ 
+ 
+ 
+     // Verify Asset/Mobile field exists
+ 
+     const assetField = await $('//*[@id="a_3"]/table/tbody/tr/td/span/div/table[1]/tbody/tr/td[1]/input');
+ 
+ 
+ 
+     await assetField.waitForDisplayed({ timeout: 10000 });
+ 
+ 
+ 
+     const assetValue = await assetField.getValue();
+ 
+ 
+ 
+     console.log(`Asset/Mobile Number: ${assetValue}`);
+ 
+ 
+ 
+     await expect(assetValue).toContain(expectedMsisdn);
+ 
+ 
+ 
+     console.log(`MSISDN verified: ${expectedMsisdn}`);
+ 
+ }
+ 
+ ________________________________________
+ 
+ More Stable Locator
+ 
+ Instead of the full XPath:
+ 
+ //*[@id="a_3"]/table/tbody/tr/td/span/div/table[1]/tbody/tr/td[1]/input
+ 
+ use:
+ 
+ const assetField = await $('input[aria-label="Asset"]');
+ 
+ or
+ 
+ const assetField = await $('input[aria-labelledby="AssetNumTitle_Label"]');
+ 
+ These are less likely to break if the UI layout changes.
+ 
+ 
+ 
+ 
+ 
+ Step 6 - Click Billing/Account Tab
+ 
+ 
+ 
+ Once Case 5.1 Expected Result passed and then clicks on the billing and account tab
+ 
+ 
+ 
+ Avoid the absolute XPath.
+ 
+ Use:
+ 
+ private get billingAccountTab() {
+ 
+     return $('//a[contains(text(),"Billing/Account")]');
+ 
+ }
+ 
+ 
+ 
+ async clickBillingAccountTab(): Promise<void> {
+ 
+ 
+ 
+     await this.billingAccountTab.waitForClickable({
+ 
+         timeout: 15000
+ 
+     });
+ 
+ 
+ 
+     await this.billingAccountTab.click();
+ 
+ 
+ 
+     console.log('Billing/Account tab clicked');
+ 
+ }
+ 
+ ________________________________________
+ 
+ Step 7 - Verify Invoice Details
+ 
+ Verify applet title:
+ 
+ private get invoiceDetailsTitle() {
+ 
+     return $('//div[text()="Invoice Details"]');
+ 
+ }
+ 
+ 
+ 
+ async verifyInvoiceDetailsSection(): Promise<void> {
+ 
+ 
+ 
+     await this.invoiceDetailsTitle.waitForDisplayed({
+ 
+         timeout: 15000
+ 
+     });
+ 
+ 
+ 
+     const title = await this.invoiceDetailsTitle.getText();
+ 
+ 
+ 
+     expect(title).toEqual('Invoice Details');
+ 
+ 
+ 
+     console.log('Invoice Details section displayed');
+ 
+ }
+ 
+ ________________________________________
+ 
+ Read Invoice Table
+ 
+ Example:
+ 
+ Invoice Date	Invoice Number
+ 
+ 01-Jun-2026	INV001
+ 
+ 01-May-2026	INV002
+ 
+ Get all rows:
+ 
+ async getInvoiceRows() {
+ 
+ 
+ 
+     return await $$(
+ 
+         '//div[text()="Invoice Details"]/ancestor::div[contains(@class,"siebui-applet")]//table[contains(@class,"ui-jqgrid-btable")]/tbody/tr'
+ 
+     );
+ 
+ }
+ 
+ ________________________________________
+ 
+ Select Latest Invoice Date
+ 
+ async selectLatestInvoice(): Promise<void> {
+ 
+ 
+ 
+     const rows = await this.getInvoiceRows();
+ 
+ 
+ 
+     let latestDate: Date | null = null;
+ 
+     let latestRow;
+ 
+ 
+ 
+     for (const row of rows) {
+ 
+ 
+ 
+         const dateCell = await row.$(
+ 
+             'td[aria-describedby*="Invoice_Date"]'
+ 
+         );
+ 
+ 
+ 
+         const dateText = await dateCell.getText();
+ 
+ 
+ 
+         const invoiceDate = new Date(dateText);
+ 
+ 
+ 
+         if (
+ 
+             !latestDate ||
+ 
+             invoiceDate > latestDate
+ 
+         ) {
+ 
+             latestDate = invoiceDate;
+ 
+             latestRow = row;
+ 
+         }
+ 
+     }
+ 
+ 
+ 
+     if (!latestRow) {
+ 
+         throw new Error('No invoice records found');
+ 
+     }
+ 
+ 
+ 
+     await latestRow.click();
+ 
+ 
+ 
+     console.log(`Latest Invoice Selected: ${latestDate}`);
+ 
+ }
+ 
+ ________________________________________
+ 
+ Click Detailed Button
+ 
+ private get detailedButton() {
+ 
+     return $('#s_5_1_0_0_Ctrl');
+ 
+ }
+ 
+ 
+ 
+ async clickDetailed(): Promise<void> {
+ 
+ 
+ 
+     await this.detailedButton.waitForClickable({
+ 
+         timeout: 15000
+ 
+     });
+ 
+ 
+ 
+     await this.detailedButton.click();
+ 
+ 
+ 
+     console.log('Detailed button clicked');
+ 
+ }
+ 
+ ________________________________________
+ 
+ Handle New Tab
+ 
+ async switchToInvoiceTab(): Promise<void> {
+ 
+ 
+ 
+     const handles = await browser.getWindowHandles();
+ 
+ 
+ 
+     await browser.switchToWindow(
+ 
+         handles[handles.length - 1]
+ 
+     );
+ 
+ 
+ 
+     console.log('Switched to invoice tab');
+ 
+ }
+ 
+ ________________________________________
+ 
+ Handle Certificate Warning
+ 
+ Since the PDF opens on a different server and shows:
+ 
+ Your connection isn't private
+ 
+ NET::ERR_CERT_AUTHORITY_INVALID
+ 
+ Handle it like:
+ 
+ async bypassCertificateWarning(): Promise<void> {
+ 
+ 
+ 
+     const advancedButton =
+ 
+         await $('//button[contains(text(),"Advanced")]');
+ 
+ 
+ 
+     if (await advancedButton.isExisting()) {
+ 
+ 
+ 
+         await advancedButton.click();
+ 
+ 
+ 
+         const proceedLink =
+ 
+             await $('//a[contains(text(),"unsafe")]');
+ 
+ 
+ 
+         await proceedLink.waitForClickable();
+ 
+ 
+ 
+         await proceedLink.click();
+ 
+ 
+ 
+         console.log(
+ 
+             'Certificate warning bypassed'
+ 
+         );
+ 
+     }
+ 
+ }
+ 
+ ________________________________________
+ 
+ Read PDF Content readPDFWithAI() extracts all visible text from the invoice
+ 
+ 
+ 
+  
+ 
+ In this PDF invoice – read the complete PDF details using AI read the complete invoice pdf
+ 
+ Scope of Validation
+ 
+ This document covers the below validations:
+ 
+ 1.	Process to download the bill through SCRM
+ 
+ 2.	Validation of plan/pack details on the bill
+ 
+ 3.	Country-wise and usage date-wise bill validation (IR)
+ 
+ 4.	Time zone validation for India and other countries
+ 
+ 5.	Data, Calling, and SMS usage validation
+ 
+ 6.	Mobile number validation on the bill
+ 
+ 7.	Charges summary validation (One-time charges/Monthly charges/Usage charges etc.)
+ 
+ 8.	Tariff plan name validation/One-time charges/monthly charges/usage charges/discounts/other credit charges etc.
+ 
+ 9.	Tariff plan benefits validation (Voice/SMS/Data)
+ 
+ 10.	Tariff plan standard rates validation (call. SMS, Data)
+ 
  11.	Tariff plan rental period and charges validation
 

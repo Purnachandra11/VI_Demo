@@ -123,7 +123,7 @@ describe('Siebel Invoice Validation - Complete 6-Point Validation', function () 
             console.log(`${'='.repeat(80)}\n`);
 
             // Step 1-3: Login
-            console.log('🔐 STEP 1-3: Siebel Login');
+            console.log(' STEP 1-3: Siebel Login');
             await loginPage.loginFull(plan.username, plan.password, cfg.otp, cfg.otpPauseMs);
             console.log('✅ Login completed\n');
 

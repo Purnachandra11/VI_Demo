@@ -2,8 +2,6 @@ import * as xlsx from 'xlsx';
 import * as path from 'path';
 
 export interface InputData {
-  username: string;
-  password: string;
   msisdn: string;
   circle: string;
   rechargeMRP: string;
@@ -11,7 +9,6 @@ export interface InputData {
   swift: string;
   inFlag: string;
   viApp: string;
-
 }
 
 export interface RechargePlan {
@@ -38,12 +35,10 @@ export class ExcelDataService {
 
     const rows = xlsx.utils.sheet_to_json<any>(sheet, { defval: '' });
     return rows.map((row: any) => ({
-      username: String(row['Username'] ?? '').trim(),
-      password: String(row['Password'] ?? '').trim(),
       msisdn: String(row['MSISDN'] ?? '').trim(),
       circle: String(row['CIRCLE'] ?? '').trim(),
       rechargeMRP: String(row['Recharge MRP'] ?? '').trim(),
-      recharge: String(row['recharge'] ?? '').trim(),
+      recharge: String(row['Recharge'] ?? '').trim(),
       swift: String(row['SWIFT'] ?? '').trim(),
       inFlag: String(row['IN'] ?? '').trim(),
       viApp: String(row['Vi App'] ?? '').trim(),

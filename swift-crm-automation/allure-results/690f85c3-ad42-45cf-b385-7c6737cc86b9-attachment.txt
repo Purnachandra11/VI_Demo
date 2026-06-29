@@ -1,0 +1,3 @@
+invalid selector: WebDriverError: invalid selector: Unable to locate an element with the xpath expression //*[@id="span:contains("Customer IN Profile Screen")"] because of the following error:
+SyntaxError: Failed to execute 'evaluate' on 'Document': The string '//*[@id="span:contains("Customer IN Profile Screen")"]' is not a valid XPath expression.
+  (Session info: chrome=149.0.7827.197) when running "element" with method "POST"

@@ -6,6 +6,7 @@
   "scripts": {
     "test:swift": "wdio run ./wdio.swift.conf.ts",
     "test:recharge": "wdio run ./wdio.recharge.conf.ts",
+    "test:recharge:session": "SWIFT_REUSE_SESSION=true WDIO_SKIP_BROWSER_CLOSE=true wdio run ./wdio.recharge.conf.ts",
     "test:viapp": "wdio run ./Wdio.viapp.conf.ts"
   },
   "dependencies": {

@@ -1,721 +1,454 @@
-import { $, browser } from '@wdio/globals';
-import { execSync } from 'child_process';
+/**
+ * ViAppPage.ts
+ *
+ * Drives the Vi App (Android) recharge-verification flow described in
+ * "Vi Application launch steps with cmds":
+ *
+ *   Point 1 — Open pack details, read last-recharge amount / pack-end date /
+ *             main balance / service validity, and numerically verify the
+ *             last-recharge amount against Sheet1 "Recharge MRP".
+ *
+ *   Point 2 — Tap "repeat recharge", read the dynamic pack MRP title and the
+ *             Benefit (Open) text, and verify it against the matching row in
+ *             Sheet2 "Recharge Plans" (matched by New MRP + Circle).
+ *
+ * This flow only runs when Sheet1's "Vi App" column = "Yes" for that row.
+ * If "No", the spec should skip calling runViAppFlow() entirely.
+ *
+ * Locator strategy: every step tries the literal XPath given in the spec
+ * doc first, then falls back to the raw Appium elementId (resource id /
+ * accessibility id captured during recording) if the XPath does not
+ * resolve. This keeps the page object resilient to minor UI tree changes
+ * while still matching the exact ids you captured.
+ */
+
+import { browser, $ } from '@wdio/globals';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as readline from 'readline';
 
-/** Drop-in replacement for browser.pause() */
-const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
+// ─────────────────────────────────────────────────────────────────────────
+//  Types
+// ─────────────────────────────────────────────────────────────────────────
 
-// ─── ADB / app constants ─────────────────────────────────────────────────────
-function getConnectedDevices(): string[] {
-    try {
-        const output = execSync('adb devices', { encoding: 'utf8' });
-        const lines = output.split('\n').filter(line => line.trim() !== '');
-        const deviceLines = lines.slice(1);
-        const devices = deviceLines
-            .filter(line => line.includes('\tdevice'))
-            .map(line => line.split('\t')[0].trim())
-            .filter(serial => serial !== '');
-
-        if (devices.length === 0) {
-            throw new Error('No Android devices connected. Please connect a device and try again.');
-        }
-
-        return devices;
-    } catch (error: any) {
-        throw new Error(`Failed to get connected devices: ${error.message}`);
-    }
+export interface ViAppPackDetails {
+  lastRechargeLabel: string;
+  lastRechargeAmount: string;     // raw text, e.g. "₹149"
+  lastRechargeAmountNumeric: string; // stripped numeric, e.g. "149"
+  packEndsOnDate: string;
+  mainBalance: string;
+  serviceValidity: string;
 }
 
-let DEVICE_SERIAL: string;
-let detectedDevices: string[] = [];
-
-try {
-    detectedDevices = getConnectedDevices();
-
-    if (process.env.DEVICE_SERIAL) {
-        const envDevice = process.env.DEVICE_SERIAL.trim();
-        if (detectedDevices.includes(envDevice)) {
-            DEVICE_SERIAL = envDevice;
-            console.log(`[ViAppPage] Using device from env: ${DEVICE_SERIAL}`);
-        } else {
-            console.warn(`[ViAppPage] Device ${envDevice} from env not found in connected devices. Using first available device.`);
-            DEVICE_SERIAL = detectedDevices[0];
-            console.log(`[ViAppPage] Using device: ${DEVICE_SERIAL}`);
-        }
-    } else {
-        DEVICE_SERIAL = detectedDevices[0];
-        console.log(`[ViAppPage] Using first connected device: ${DEVICE_SERIAL}`);
-    }
-} catch (error: any) {
-    console.error(`[ViAppPage] Device detection error: ${error.message}`);
-    DEVICE_SERIAL = process.env.DEVICE_SERIAL || 'LFMVIBEMW8HUR4XK';
-    console.log(`[ViAppPage] Using fallback device: ${DEVICE_SERIAL}`);
+export interface ViAppRepeatRechargeDetails {
+  packTitle: string;              // e.g. "₹209 pack details"
+  packTitleMrp: string;           // numeric portion extracted from title
+  benefitText: string;            // raw benefit text read from the screen
 }
 
-const ALL_DEVICES = detectedDevices;
+export interface ViAppRunResult {
+  msisdn: string;
+  viAppFlag: string;
+  ran: boolean;                          // false if flow was skipped (Vi App = No)
+  pack?: ViAppPackDetails;
+  repeatRecharge?: ViAppRepeatRechargeDetails;
+  mrpExpected?: string;                  // Sheet1 Recharge MRP
+  mrpActualNumeric?: string;
+  mrpMatched?: boolean;
+  expectedBenefit?: string;              // Sheet2 Benefit (Open) for matched plan
+  benefitMatched?: boolean;
+  screenshots: string[];                 // filenames, in step order
+  error?: string;
+}
 
-const VI_APP_PACKAGE = 'com.mventus.selfcare.activity';
+// ─────────────────────────────────────────────────────────────────────────
+//  Selectors (XPath primary; elementId fallback noted alongside)
+// ─────────────────────────────────────────────────────────────────────────
 
-// ─── File-based OTP comm ─────────────────────────────────────────────────────
-const COMM_DIR          = path.resolve('./comm');
-const OTP_REQUEST_FILE  = path.join(COMM_DIR, 'otp_request.json');
-const OTP_RESPONSE_FILE = path.join(COMM_DIR, 'otp_response.json');
-
-// ─── Shared keypad selector map (used by both MSISDN and OTP entry) ──────────
-const KEYPAD_SELECTOR: Record<string, string> = {
-  '0': '//android.widget.Button[@content-desc="0"]',
-  '1': '//android.widget.Button[@content-desc="1"]',
-  '2': '//android.widget.Button[@content-desc="2"]',
-  '3': '//android.widget.Button[@content-desc="3"]',
-  '4': '//android.widget.Button[@content-desc="4"]',
-  '5': '//android.widget.Button[@content-desc="5"]',
-  '6': '//android.widget.Button[@content-desc="6"]',
-  '7': '//android.widget.Button[@content-desc="7"]',
-  '8': '//android.widget.Button[@content-desc="8"]',
-  '9': '//android.widget.Button[@content-desc="9"]',
-};
-
-// ─── Selectors ───────────────────────────────────────────────────────────────
 const Selectors = {
-  mobileNumberField:    '//android.widget.TextView[@text="enter mobile number"]',
-  mobileNumberFieldAlt: '//android.view.View[@content-desc="-, enter mobile number"]',
+  // Step 3 trigger -> tap into "active pack details & benefits"
+  activePackEntryPoint: {
+    elementId: '00000000-0000-01c4-ffff-ffff000018c2',
+  },
+  activePackDetailsHeader: {
+    xpath: '//android.view.View[@text="active pack details & benefits"]',
+  },
 
-  googleCancelBtn: '//android.widget.Button[@resource-id="com.google.android.gms:id/cancel"]',
+  // Point 1 — pack details screen
+  lastRechargeLabel: {
+    xpath: '//android.widget.ScrollView/android.view.ViewGroup/android.view.ViewGroup[2]',
+    elementId: '00000000-0000-01c4-ffff-ffff0000273c',
+  },
+  lastRechargeAmount: {
+    elementId: '00000000-0000-01c4-ffff-ffff0000273f',
+  },
+  packEndsOnDate: {
+    elementId: '00000000-0000-01c4-ffff-ffff00002743',
+  },
+  mainBalance: {
+    xpath: '//android.widget.ScrollView/android.view.ViewGroup/android.view.ViewGroup[4]/android.view.ViewGroup[1]',
+    elementId: '00000000-0000-01c4-ffff-ffff00002754',
+  },
+  serviceValidity: {
+    xpath: '//android.widget.ScrollView/android.view.ViewGroup/android.view.ViewGroup[4]/android.view.ViewGroup[2]',
+    elementId: '00000000-0000-01c4-ffff-ffff00002759',
+  },
 
-  sendOtpBtn:      '//android.widget.Button[@content-desc="send OTP"]',
-  loginWithOtpBtn: '//android.widget.Button[@content-desc="login with OTP"]',
+  // Point 2 — repeat recharge / benefit verification
+  repeatRechargeButton: {
+    xpath: '//android.widget.Button[@content-desc="repeat recharge"]',
+    elementId: '00000000-0000-01c4-ffff-ffff00003ebf',
+  },
+  rechargeMrpTitle: {
+    elementId: '00000000-0000-01e1-ffff-ffff00003f51',
+  },
+  // Title text is dynamic, e.g. //android.view.View[@text="₹209 pack details"]
+  // built at runtime in getPackDetailsTitleByMrp().
+  benefitOpenText: {
+    xpath:
+      '//android.widget.FrameLayout[@resource-id="android:id/content"]/android.widget.FrameLayout/' +
+      'android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup/' +
+      'android.view.ViewGroup/android.view.ViewGroup[1]/android.widget.FrameLayout/android.view.ViewGroup/' +
+      'android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup/' +
+      'android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup[1]/android.widget.FrameLayout/' +
+      'android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup[2]/android.view.ViewGroup/' +
+      'android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup[1]/' +
+      'android.widget.FrameLayout/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup/' +
+      'android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup[2]/android.widget.ScrollView/' +
+      'android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup',
+  },
 
-  otpDigitBoxes: '(//android.view.ViewGroup[count(android.view.ViewGroup)=4])[last()]/android.view.ViewGroup',
-
-  hamburgerIcon: '//android.widget.FrameLayout[@resource-id="android:id/content"]/android.widget.FrameLayout/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup[1]/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup[2]',
-  logoutBtn:     '//android.view.View[@content-desc="logout"]',
-
-  viMTVBanner:         '//android.widget.Button[@content-desc="ViMTV FIFA"]/android.widget.ImageView',
-  orderNow:            '//android.widget.ImageView[@content-desc="order now"]',
-  popularActions:      '//android.widget.TextView[@text="popular actions"]',
-  logoutConfirm:       '//android.widget.Button[@text="yes, logout"]',
-  logoutConfirmAlt:    '//android.widget.Button[@content-desc="yes, logout"]',
-  logoutConfirmXPath:  '//*[@id="screenshotContainer"]/div[2]/div/div/div/div/div[199]/div',
+  // Navigation
+  viewHistoryLink: {
+    xpath: '//android.widget.TextView[@text="view history"]',
+  },
 } as const;
 
+const SCREENSHOTS_DIR = path.resolve('./screenshots');
+const ANDROID_BACK_KEYCODE = 4;
+
+// ─────────────────────────────────────────────────────────────────────────
+//  Page object
+// ─────────────────────────────────────────────────────────────────────────
+
 export class ViAppPage {
+  private screenshots: string[] = [];
 
-  // ══════════════════════════════════════════════════════════════════════════
-  // PRIVATE HELPERS
-  // ══════════════════════════════════════════════════════════════════════════
+  // ── Public entry point ─────────────────────────────────────────────────
 
-  /** Dismiss Google Play / "none of the above" popups */
-  private async dismissAllPopups(): Promise<void> {
-    const popupSelectors = [
-      '//android.widget.Button[@resource-id="com.google.android.gms:id/cancel"]',
-      '//android.widget.Button[contains(@text, "none of the above")]',
-      '//android.widget.Button[contains(@text, "NONE OF THE ABOVE")]',
-    ];
+  /**
+   * Runs the full Vi App verification flow for one MSISDN row.
+   *
+   * @param msisdn        Subscriber MSISDN (for logging / screenshot naming only —
+   *                       the app is assumed to already be on the correct
+   *                       account context when this is called).
+   * @param rechargeMRP   Sheet1 "Recharge MRP" value for this row, e.g. "149".
+   * @param circle        Sheet1 "CIRCLE" value, used to pick the matching
+   *                       Sheet2 plan row.
+   * @param matchedPlan   The Sheet2 RechargePlan row already matched by the
+   *                       caller (by New MRP + Circle applicability). Pass
+   *                       undefined if no match was found upstream — the
+   *                       flow will still read app data but skip the
+   *                       benefit comparison.
+   * @param manualOtp     Optional manual OTP override (kept for parity with
+   *                       existing call sites that pass VI_APP_OTP; not
+   *                       required by this verification flow itself).
+   */
+  async runViAppFlow(
+    msisdn: string,
+    rechargeMRP: string,
+    circle: string,
+    matchedPlan?: { newMRP: string; benefit: string; rechargeNotification: string },
+    manualOtp?: string
+  ): Promise<ViAppRunResult> {
+    this.screenshots = [];
 
-    let dismissed = 0;
-    const deadline = Date.now() + 5000;
+    const result: ViAppRunResult = {
+      msisdn,
+      viAppFlag: 'Yes',
+      ran: true,
+      mrpExpected: rechargeMRP,
+      expectedBenefit: matchedPlan?.benefit,
+      screenshots: [],
+    };
 
-    while (Date.now() < deadline) {
-      let found = false;
-      for (const sel of popupSelectors) {
-        try {
-          const els = await $$(sel);
-          for (const el of els) {
-            if (await el.isDisplayed()) {
-              const txt = await el.getText();
-              console.log(`[ViAppPage] Dismissing popup: "${txt}"`);
-              await el.click();
-              dismissed++;
-              found = true;
-              await sleep(500);
-              break;
-            }
-          }
-        } catch (_e) { /* not found */ }
-      }
-      if (!found) break;
-    }
-
-    console.log(dismissed > 0
-      ? `[ViAppPage] Dismissed ${dismissed} popup(s)`
-      : '[ViAppPage] No popups to dismiss');
-  }
-
-  /** Poll until any meaningful element is visible */
-  private async waitForAppReady(timeoutMs = 30000): Promise<void> {
-    console.log('[ViAppPage] Waiting for app to be ready...');
-    const deadline = Date.now() + timeoutMs;
-
-    while (Date.now() < deadline) {
-      try {
-        const els = await $$('//android.widget.TextView | //android.widget.EditText | //android.view.View');
-        for (const el of els) {
-          try {
-            if (await el.isDisplayed()) {
-              const text = await el.getText();
-              if (text && text.length > 0) {
-                console.log(`[ViAppPage] App ready — found: "${text.substring(0, 40)}"`);
-                return;
-              }
-            }
-          } catch (_e) { /* inaccessible yet */ }
-        }
-      } catch (_e) { /* no elements yet */ }
-      await sleep(500);
-    }
-    console.log('[ViAppPage] App-ready timeout — continuing anyway');
-  }
-
-  /** Find the mobile-number input field with multiple fallback strategies */
-  private async findMobileNumberField(): Promise<WebdriverIO.Element> {
-    console.log('[ViAppPage] Looking for mobile number field...');
-    await this.waitForAppReady();
-
-    // 1. Primary selector (retry × 5)
-    for (let i = 0; i < 5; i++) {
-      try {
-        const el = await $(Selectors.mobileNumberField);
-        if (await el.isDisplayed()) {
-          console.log('[ViAppPage] Found via primary selector');
-          return el;
-        }
-      } catch (_e) { await sleep(500); }
-    }
-
-    // 2. Alt selector
     try {
-      const el = await $(Selectors.mobileNumberFieldAlt);
-      if (await el.isDisplayed()) {
-        console.log('[ViAppPage] Found via alt selector');
+      console.log(`[ViAppPage] ▶ Starting Vi App flow for MSISDN: ${msisdn}`);
+
+      // ── Step 3: open the active pack details & benefits screen ─────────
+      await this.openActivePackDetails();
+      await this.takeScreenshot(msisdn, 'Screenshot_3_pack_entry');
+
+      // ── Step 4: confirm header, then read Point 1 data ──────────────────
+      await this.waitForActivePackDetailsHeader();
+      const pack = await this.readPackDetails();
+      result.pack = pack;
+      await this.takeScreenshot(msisdn, 'Screenshot_4_pack_details');
+
+      // ── Point 1: numeric MRP match vs Sheet1 Recharge MRP ──────────────
+      const expectedNumeric = this.toNumeric(rechargeMRP);
+      const actualNumeric = pack.lastRechargeAmountNumeric;
+      result.mrpActualNumeric = actualNumeric;
+      result.mrpMatched = expectedNumeric !== '' && expectedNumeric === actualNumeric;
+
+      console.log(
+        result.mrpMatched
+          ? `[ViAppPage] ✓ MATCH — Last recharge ₹${actualNumeric} == Sheet1 Recharge MRP ₹${expectedNumeric}`
+          : `[ViAppPage] ✗ MISMATCH — Last recharge ₹${actualNumeric} != Sheet1 Recharge MRP ₹${expectedNumeric}`
+      );
+
+      // ── Point 2: repeat recharge → benefit verification ────────────────
+      await this.tapRepeatRecharge();
+
+      const repeatRecharge = await this.readRepeatRechargeDetails();
+      result.repeatRecharge = repeatRecharge;
+      await this.takeScreenshot(msisdn, 'Screenshot_4.1_repeat_recharge');
+
+      if (matchedPlan?.benefit) {
+        result.benefitMatched = this.benefitsRoughlyMatch(
+          repeatRecharge.benefitText,
+          matchedPlan.benefit
+        );
+        console.log(
+          result.benefitMatched
+            ? `[ViAppPage] ✓ MATCH — Benefit text matches Sheet2 plan (New MRP ${matchedPlan.newMRP})`
+            : `[ViAppPage] ✗ MISMATCH — Benefit text differs from Sheet2 plan (New MRP ${matchedPlan.newMRP})`
+        );
+      } else {
+        console.warn('[ViAppPage] ⚠️ No matched Sheet2 plan supplied — skipping benefit comparison');
+      }
+
+      // ── Back once, then Screenshot 5 ────────────────────────────────────
+      await this.tapBackOnce();
+      await this.takeScreenshot(msisdn, 'Screenshot_5_after_back');
+
+      // ── Navigate to recharge history ────────────────────────────────────
+      await this.openViewHistory();
+
+      result.screenshots = this.screenshots;
+      console.log(`[ViAppPage] ✅ Vi App flow completed for MSISDN: ${msisdn}`);
+      return result;
+    } catch (err: any) {
+      result.error = err?.message ?? String(err);
+      result.screenshots = this.screenshots;
+      console.error(`[ViAppPage] ❌ Vi App flow failed for MSISDN: ${msisdn} — ${result.error}`);
+      return result;
+    }
+  }
+
+  // ── Step 3 ───────────────────────────────────────────────────────────────
+
+  private async openActivePackDetails(): Promise<void> {
+    console.log('[ViAppPage] Tapping active pack entry point (000018c2)…');
+    const el = await this.findByIdThenXpath(Selectors.activePackEntryPoint);
+    await el.waitForDisplayed({ timeout: 20000 });
+    await el.click();
+  }
+
+  private async waitForActivePackDetailsHeader(): Promise<void> {
+    const header = await $(Selectors.activePackDetailsHeader.xpath);
+    await header.waitForDisplayed({ timeout: 20000 });
+    console.log('[ViAppPage] ✅ Redirected to "active pack details & benefits" screen');
+  }
+
+  // ── Point 1 ──────────────────────────────────────────────────────────────
+
+  private async readPackDetails(): Promise<ViAppPackDetails> {
+    console.log('[ViAppPage] Reading pack details (last recharge / pack end / balance / validity)…');
+
+    const lastRechargeLabelEl = await this.findByXpathThenId(Selectors.lastRechargeLabel);
+    const lastRechargeLabel = await this.safeGetText(lastRechargeLabelEl);
+
+    const lastRechargeAmountEl = await this.findById(Selectors.lastRechargeAmount);
+    const lastRechargeAmount = await this.safeGetText(lastRechargeAmountEl);
+
+    const packEndsOnDateEl = await this.findById(Selectors.packEndsOnDate);
+    const packEndsOnDate = await this.safeGetText(packEndsOnDateEl);
+
+    const mainBalanceEl = await this.findByXpathThenId(Selectors.mainBalance);
+    const mainBalance = await this.safeGetText(mainBalanceEl);
+
+    const serviceValidityEl = await this.findByXpathThenId(Selectors.serviceValidity);
+    const serviceValidity = await this.safeGetText(serviceValidityEl);
+
+    const details: ViAppPackDetails = {
+      lastRechargeLabel,
+      lastRechargeAmount,
+      lastRechargeAmountNumeric: this.toNumeric(lastRechargeAmount),
+      packEndsOnDate,
+      mainBalance,
+      serviceValidity,
+    };
+
+    console.log('[ViAppPage] Pack details read:', JSON.stringify(details, null, 2));
+    return details;
+  }
+
+  // ── Point 2 ──────────────────────────────────────────────────────────────
+
+  private async tapRepeatRecharge(): Promise<void> {
+    console.log('[ViAppPage] Tapping "repeat recharge" button (00003ebf)…');
+    const el = await this.findByXpathThenId(Selectors.repeatRechargeButton);
+    await el.waitForDisplayed({ timeout: 20000 });
+    await el.click();
+    console.log('[ViAppPage] ✅ Redirected to pack details / repeat recharge screen');
+  }
+
+  private async readRepeatRechargeDetails(): Promise<ViAppRepeatRechargeDetails> {
+    console.log('[ViAppPage] Reading repeat-recharge pack title and benefit text…');
+
+    const titleEl = await this.findById(Selectors.rechargeMrpTitle);
+    const packTitle = await this.safeGetText(titleEl);
+    const packTitleMrp = this.toNumeric(packTitle);
+
+    const benefitEl = await this.findByXpathThenId(Selectors.benefitOpenText);
+    const benefitText = await this.safeGetText(benefitEl);
+
+    const details: ViAppRepeatRechargeDetails = { packTitle, packTitleMrp, benefitText };
+    console.log('[ViAppPage] Repeat recharge details read:', JSON.stringify(details, null, 2));
+    return details;
+  }
+
+  /**
+   * Convenience helper if you need to assert against the dynamic title
+   * directly, e.g. //android.view.View[@text="₹209 pack details"]
+   */
+  async getPackDetailsTitleByMrp(mrp: string): Promise<WebdriverIO.Element> {
+    const xpath = `//android.view.View[@text="₹${mrp} pack details"]`;
+    return $(xpath);
+  }
+
+  // ── Navigation helpers ───────────────────────────────────────────────────
+
+  private async tapBackOnce(): Promise<void> {
+    console.log('[ViAppPage] Tapping device back button once…');
+    try {
+      await browser.back();
+    } catch (_e) {
+      // Fallback to raw Android keyevent if browser.back() isn't supported
+      try {
+        await browser.pressKeyCode(ANDROID_BACK_KEYCODE);
+      } catch (e2) {
+        console.warn('[ViAppPage] ⚠️ Could not send back action:', e2);
+      }
+    }
+    await browser.pause(1500);
+  }
+
+  private async openViewHistory(): Promise<void> {
+    console.log('[ViAppPage] Tapping "view history"…');
+    const el = await $(Selectors.viewHistoryLink.xpath);
+    await el.waitForDisplayed({ timeout: 15000 });
+    await el.click();
+    console.log('[ViAppPage] ✅ Redirected to recharge history screen');
+    await browser.pause(1500);
+  }
+
+  // ── Locator helpers ──────────────────────────────────────────────────────
+
+  /** XPath first, elementId as fallback. */
+  private async findByXpathThenId(sel: { xpath?: string; elementId?: string }): Promise<WebdriverIO.Element> {
+    if (sel.xpath) {
+      const el = await $(sel.xpath);
+      if (await el.isExisting().catch(() => false)) return el;
+    }
+    if (sel.elementId) {
+      return this.findById(sel.elementId);
+    }
+    throw new Error('[ViAppPage] No selector available (xpath/elementId both missing or unresolved)');
+  }
+
+  /** elementId first, xpath as fallback. */
+  private async findByIdThenXpath(sel: { xpath?: string; elementId?: string }): Promise<WebdriverIO.Element> {
+    if (sel.elementId) {
+      const el = await this.tryFindById(sel.elementId);
+      if (el) return el;
+    }
+    if (sel.xpath) {
+      return $(sel.xpath);
+    }
+    throw new Error('[ViAppPage] No selector available (elementId/xpath both missing or unresolved)');
+  }
+
+  private async findById(sel: { elementId: string } | string): Promise<WebdriverIO.Element> {
+    const elementId = typeof sel === 'string' ? sel : sel.elementId;
+    const el = await this.tryFindById(elementId);
+    if (!el) {
+      throw new Error(`[ViAppPage] Element not found for elementId: ${elementId}`);
+    }
+    return el;
+  }
+
+  /**
+   * Attempts to resolve a captured Appium elementId directly into a
+   * WebdriverIO element handle. Recorded elementIds (UUID-style, as seen in
+   * Appium Inspector) cannot always be re-attached across sessions, so this
+   * wraps the lookup defensively and returns null on failure rather than
+   * throwing, allowing callers to fall back to XPath.
+   */
+  private async tryFindById(elementId: string): Promise<WebdriverIO.Element | null> {
+    try {
+      // @ts-ignore - direct element re-attach via known element id (Appium/W3C)
+      const el = await browser.$(`#${elementId}` as any).catch(() => null);
+      if (el && (await el.isExisting().catch(() => false))) {
         return el;
       }
-    } catch (_e) { /* continue */ }
-
-    // 3. Generic text/hint search
-    try {
-      const els = await $$('//android.widget.TextView | //android.widget.EditText');
-      for (const el of els) {
-        if (await el.isDisplayed()) {
-          const combined = ((await el.getText()) + (await el.getAttribute('hint') || '')).toLowerCase();
-          if (combined.includes('mobile') || combined.includes('enter') || combined.includes('number')) {
-            console.log(`[ViAppPage] Found via text/hint search`);
-            return el;
-          }
-        }
-      }
-    } catch (_e) { /* continue */ }
-
-    // 4. content-desc search
-    try {
-      const els = await $$('//android.view.View');
-      for (const el of els) {
-        const desc = (await el.getAttribute('content-desc') || '').toLowerCase();
-        if (desc.includes('enter') || desc.includes('mobile')) {
-          console.log(`[ViAppPage] Found via content-desc: "${desc}"`);
-          return el;
-        }
-      }
-    } catch (_e) { /* continue */ }
-
-    throw new Error('[ViAppPage] Could not find mobile number input field');
-  }
-
-  /** Check if the OTP screen is currently showing */
-  private async isOTPScreenVisible(): Promise<boolean> {
-    try {
-      const btn = await $(Selectors.loginWithOtpBtn);
-      return await btn.isDisplayed();
     } catch (_e) {
-      return false;
+      /* ignore — fall through to null */
+    }
+    return null;
+  }
+
+  private async safeGetText(el: WebdriverIO.Element): Promise<string> {
+    try {
+      await el.waitForDisplayed({ timeout: 10000 });
+      const text = await el.getText();
+      return (text ?? '').trim();
+    } catch (e) {
+      console.warn('[ViAppPage] ⚠️ Could not read text from element:', e instanceof Error ? e.message : e);
+      return '';
     }
   }
 
-  /** Read the current value of each OTP digit box */
-  private async readOTPDigitBoxes(): Promise<{ filledCount: number; otpValue: string }> {
-    let filledCount = 0;
-    let otpValue    = '';
+  // ── Value normalization ──────────────────────────────────────────────────
+
+  /** Strips currency symbols / non-digits, returns the plain numeric string ("₹149" -> "149"). */
+  private toNumeric(value: string): string {
+    if (!value) return '';
+    const match = value.replace(/,/g, '').match(/\d+(\.\d+)?/);
+    return match ? match[0] : '';
+  }
+
+  /** Loose benefit comparison: case-insensitive, whitespace-normalized substring/equality check. */
+  private benefitsRoughlyMatch(actual: string, expected: string): boolean {
+    const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
+    const a = normalize(actual);
+    const e = normalize(expected);
+    if (!a || !e) return false;
+    return a.includes(e) || e.includes(a) || a === e;
+  }
+
+  // ── Screenshot helper ─────────────────────────────────────────────────────
+
+  private async takeScreenshot(msisdn: string, stepName: string): Promise<string> {
+    if (!fs.existsSync(SCREENSHOTS_DIR)) {
+      fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
+    }
+    const timestamp = Date.now();
+    const filename = `ViApp_${msisdn}_${stepName}_${timestamp}.png`;
+    const filepath = path.join(SCREENSHOTS_DIR, filename);
 
     try {
-      const boxes = await $$(Selectors.otpDigitBoxes);
-      console.log(`[ViAppPage] Found ${boxes.length} OTP digit box(es)`);
-
-      for (let i = 0; i < Math.min(4, boxes.length); i++) {
-        const box = boxes[i];
-        let value = '';
-
-        try { value = await box.getText(); }                               catch (_e) {}
-        if (!value) { try { value = await box.getValue(); }               catch (_e) {} }
-        if (!value) { try { value = await box.getAttribute('text'); }     catch (_e) {} }
-        if (!value) { try { value = await box.getAttribute('content-desc'); } catch (_e) {} }
-
-        const digit   = (value || '').trim();
-        const isEmpty = !digit || digit === '' || digit === ' ' || digit === 'null' || digit === 'undefined';
-
-        console.log(`[ViAppPage] Box ${i + 1}: "${digit}" (filled: ${!isEmpty})`);
-
-        if (!isEmpty) {
-          filledCount++;
-          otpValue += digit;
-        }
-      }
-    } catch (_e) {
-      console.warn('[ViAppPage] Could not read OTP boxes:', _e);
+      await browser.saveScreenshot(filepath);
+      console.log(`[ViAppPage] 📸 ${stepName} saved → ${filename}`);
+    } catch (e) {
+      console.warn(`[ViAppPage] ⚠️ Could not save screenshot for ${stepName}:`, e);
     }
 
-    return { filledCount, otpValue };
+    this.screenshots.push(filename);
+    return filename;
   }
 
-  /** Wait for SIM auto-fill to complete */
-  private async waitForAutoFill(waitMs = 8000): Promise<string> {
-    console.log(`[ViAppPage] Waiting up to ${waitMs / 1000}s for SIM auto-fill...`);
-    const deadline = Date.now() + waitMs;
-
-    while (Date.now() < deadline) {
-      const { filledCount, otpValue } = await this.readOTPDigitBoxes();
-      if (filledCount >= 4) {
-        console.log(`[ViAppPage] ✅ All 4 digits auto-filled: ${otpValue}`);
-        return otpValue;
-      }
-      if (filledCount > 0) {
-        console.log(`[ViAppPage] Auto-fill in progress (${filledCount}/4)...`);
-      }
-      await sleep(500);
-    }
-
-    const { filledCount, otpValue } = await this.readOTPDigitBoxes();
-    if (filledCount >= 4) return otpValue;
-
-    console.log(`[ViAppPage] Auto-fill ended with ${filledCount}/4 digits — not fully filled`);
-    return '';
-  }
-
-  /**
-   * Enter OTP digits using the same in-app numeric keypad used for MSISDN.
-   * Clicks the first OTP box to activate the keypad, then taps each digit button.
-   */
-  private async enterOTPIntoBoxes(otp: string): Promise<void> {
-    console.log(`[ViAppPage] Entering OTP manually via keypad: ${otp}`);
-    const digits = otp.replace(/\D/g, '').split('');
-
-    // Click the first OTP box to ensure the keypad is active
-    try {
-      const boxes = await $$(Selectors.otpDigitBoxes);
-      if (boxes.length > 0) {
-        await boxes[0].waitForDisplayed({ timeout: 5000 });
-        await boxes[0].click();
-        await sleep(500);
-        console.log('[ViAppPage] OTP box 1 clicked — keypad should be active');
-      }
-    } catch (_e) {
-      console.warn('[ViAppPage] Could not click first OTP box, trying keypad anyway');
-    }
-
-    // Tap each digit on the same keypad buttons used for MSISDN entry
-    for (let i = 0; i < Math.min(4, digits.length); i++) {
-      const digit = digits[i];
-      let tapped = false;
-
-      try {
-        const btn = await $(KEYPAD_SELECTOR[digit]);
-        await btn.waitForDisplayed({ timeout: 3000 });
-        if (await btn.isDisplayed()) {
-          await btn.click();
-          tapped = true;
-          console.log(`[ViAppPage] ✅ OTP digit ${i + 1} tapped on keypad: ${digit}`);
-          await sleep(200);
-        }
-      } catch (_e) {
-        console.warn(`[ViAppPage] Keypad button "${digit}" not found — trying browser.keys fallback`);
-      }
-
-      if (!tapped) {
-        try {
-          await browser.keys([digit]);
-          console.log(`[ViAppPage] ✅ OTP digit ${i + 1} entered via browser.keys: ${digit}`);
-          await sleep(200);
-        } catch (_e) {
-          console.warn(`[ViAppPage] browser.keys also failed for digit "${digit}"`);
-        }
-      }
-    }
-
-    console.log(`[ViAppPage] OTP entry complete: ${otp}`);
-  }
-
-  /**
-   * Write otp_request.json and poll for otp_response.json written by the orchestrator.
-   * Times out after 60 seconds.
-   */
-  private async waitForFrontendOTP(): Promise<string> {
-    if (!fs.existsSync(COMM_DIR)) fs.mkdirSync(COMM_DIR, { recursive: true });
-    if (fs.existsSync(OTP_RESPONSE_FILE)) fs.unlinkSync(OTP_RESPONSE_FILE);
-
-    const requestTimestamp = Date.now();
-    fs.writeFileSync(OTP_REQUEST_FILE, JSON.stringify({
-      timestamp: requestTimestamp,
-      type: 'otp',
-      message: 'Please enter the 4-digit OTP received on your mobile.',
-    }, null, 2));
-
-    console.log('[ViAppPage] 📱 OTP request written to frontend (timestamp: ' + requestTimestamp + ')');
-    console.log('[ViAppPage] ⏳ Waiting for OTP pop-up to appear in frontend...');
-
-    const maxWaitTime  = 60000;
-    const pollInterval = 200;
-    const deadline     = Date.now() + maxWaitTime;
-    let lastCheckTime  = Date.now();
-
-    while (Date.now() < deadline) {
-      if (fs.existsSync(OTP_RESPONSE_FILE)) {
-        try {
-          const raw  = fs.readFileSync(OTP_RESPONSE_FILE, 'utf8');
-          const data = JSON.parse(raw);
-          const otp  = (data.otp || '').trim();
-
-          if (/^\d{4,6}$/.test(otp)) {
-            fs.unlinkSync(OTP_RESPONSE_FILE);
-            if (fs.existsSync(OTP_REQUEST_FILE)) fs.unlinkSync(OTP_REQUEST_FILE);
-            console.log(`[ViAppPage] ✅ OTP received from frontend: ${otp} (took ${Date.now() - requestTimestamp}ms)`);
-            return otp;
-          }
-        } catch (_e) {
-          // File not ready yet or invalid JSON — keep polling
-        }
-      }
-
-      if (Date.now() - lastCheckTime >= 5000) {
-        const elapsed = Math.round((Date.now() - requestTimestamp) / 1000);
-        console.log(`[ViAppPage] ⏳ Still waiting for OTP... (${elapsed}s elapsed)`);
-        lastCheckTime = Date.now();
-      }
-
-      await sleep(pollInterval);
-    }
-
-    console.error('[ViAppPage] ❌ OTP timeout: No response received within 60 seconds');
-    throw new Error('[ViAppPage] ❌ OTP input timeout — user did not enter OTP within 60 seconds');
-  }
-
-  /** Check hamburger is visible → confirms home screen loaded after login */
-  private async verifyLoggedInState(): Promise<boolean> {
-    console.log('[ViAppPage] Verifying logged-in state...');
-    try {
-      const hamburger = await $(Selectors.hamburgerIcon);
-      if (await hamburger.isDisplayed()) {
-        console.log('[ViAppPage] ✅ Hamburger visible — user is logged in');
-        return true;
-      }
-    } catch (_e) { /* continue */ }
-
-    try {
-      const els = await $$('//android.widget.TextView');
-      for (const el of els) {
-        const text = await el.getText().catch(() => '');
-        if (['hi', 'welcome', 'dashboard', 'my account'].some(k => text.toLowerCase().includes(k))) {
-          console.log(`[ViAppPage] ✅ Logged-in text found: "${text}"`);
-          return true;
-        }
-      }
-    } catch (_e) { /* continue */ }
-
-    console.log('[ViAppPage] ❌ No logged-in indicators found');
-    return false;
-  }
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // PUBLIC STEPS
-  // ══════════════════════════════════════════════════════════════════════════
-
-  static getDeviceSerial(): string { return DEVICE_SERIAL; }
-  static getAllDevices(): string[]  { return ALL_DEVICES; }
-
-  /** Step 1 — Launch Vi App via ADB monkey */
-  async launchApp(): Promise<void> {
-    console.log(`[ViAppPage] Step 1: Launching Vi App on device ${DEVICE_SERIAL}...`);
-    const cmd = `adb -s ${DEVICE_SERIAL} shell monkey -p ${VI_APP_PACKAGE} -c android.intent.category.LAUNCHER 1`;
-    try {
-      const out = execSync(cmd, { encoding: 'utf8' });
-      console.log(`[ViAppPage] ADB output:\n${out}`);
-    } catch (err: any) {
-      throw new Error(`[ViAppPage] Launch failed on device ${DEVICE_SERIAL}: ${err.message}`);
-    }
-    await sleep(5000);
-    console.log('[ViAppPage] Vi App launched successfully');
-  }
-
-  /** Step 2 — Enter MSISDN using the on-screen numeric keypad */
-  async enterMSISDN(msisdn: string): Promise<void> {
-    console.log(`[ViAppPage] Step 2: Entering MSISDN ${msisdn}...`);
-
-    const mobileField = await this.findMobileNumberField();
-    await mobileField.waitForDisplayed({ timeout: 15000 });
-    console.log('[ViAppPage] Mobile number field visible');
-
-    await mobileField.click();
-    await sleep(1000);
-    await this.dismissAllPopups();
-
-    // Clear any pre-filled digits
-    try {
-      for (let i = 0; i < 15; i++) { await browser.keys(['Backspace']); await sleep(30); }
-    } catch (_e) { /* ignore */ }
-
-    // Tap each digit on the in-app numeric keypad
-    for (const digit of msisdn) {
-      let tapped = false;
-      try {
-        const btn = await $(KEYPAD_SELECTOR[digit]);
-        if (await btn.isDisplayed()) { await btn.click(); tapped = true; await sleep(100); }
-      } catch (_e) { /* try keyboard */ }
-      if (!tapped) { await browser.keys([digit]); await sleep(100); }
-    }
-
-    console.log(`[ViAppPage] MSISDN entered: ${msisdn}`);
-    try { await browser.hideKeyboard(); } catch (_e) { /* already hidden */ }
-  }
-
-  /** Step 3 — Click "send OTP", handle OTP screen, click "login with OTP" */
-  async submitAndLogin(otp?: string): Promise<void> {
-    console.log('[ViAppPage] Step 3: Clicking "send OTP"...');
-
-    await this.dismissAllPopups();
-
-    const sendOtp = await $(Selectors.sendOtpBtn);
-    await sendOtp.waitForDisplayed({ timeout: 15000 });
-    await sendOtp.click();
-    console.log('[ViAppPage] "send OTP" clicked — waiting for OTP screen or auto-login...');
-
-    await sleep(5000);
-
-    const otpScreenVisible = await this.isOTPScreenVisible();
-
-    if (otpScreenVisible) {
-      console.log('[ViAppPage] ✅ OTP screen detected');
-
-      // Try SIM auto-fill first (wait up to 8 s)
-      const autoFilledOtp = await this.waitForAutoFill(8000);
-
-      if (autoFilledOtp) {
-        console.log(`[ViAppPage] ✅ SIM auto-filled OTP: ${autoFilledOtp} — proceeding to login`);
-      } else {
-        // Boxes empty — request OTP from frontend pop-up, then enter via keypad
-        console.log('[ViAppPage] 📵 OTP boxes are empty — requesting manual OTP via frontend pop-up');
-        const manualOtp = otp || await this.waitForFrontendOTP();
-        await this.enterOTPIntoBoxes(manualOtp);
-      }
-
-      // Click "login with OTP"
-      console.log('[ViAppPage] Clicking "login with OTP"...');
-      const loginBtn = await $(Selectors.loginWithOtpBtn);
-      await loginBtn.waitForDisplayed({ timeout: 20000 });
-      await loginBtn.click();
-      await sleep(5000);
-
-      const isLoggedIn = await this.verifyLoggedInState();
-      if (!isLoggedIn) throw new Error('[ViAppPage] ❌ Login failed after OTP submission');
-      console.log('[ViAppPage] ✅ Login successful via OTP');
-
-    } else {
-      console.log('[ViAppPage] OTP screen not shown — checking for auto-login...');
-      const isLoggedIn = await this.verifyLoggedInState();
-      if (!isLoggedIn) throw new Error('[ViAppPage] ❌ Auto-login failed — home screen not detected');
-      console.log('[ViAppPage] ✅ Auto-login successful (no OTP screen needed)');
-    }
-  }
-
-  /** Post-login — click hamburger → My Account → verify MSISDN */
-  async verifyAccountMSISDN(msisdn: string): Promise<boolean> {
-    console.log('[ViAppPage] Clicking hamburger (3-lines) → My Account...');
-    await this.dismissAllPopups();
-
-    const hamburger = await $(Selectors.hamburgerIcon);
-    await hamburger.waitForDisplayed({ timeout: 15000 });
-    await hamburger.click();
-    console.log('[ViAppPage] Hamburger clicked — waiting for My Account screen...');
-
-    let verified = false;
-    try {
-      const el = await $(`//android.widget.TextView[@text="${msisdn}"]`);
-      await el.waitForDisplayed({ timeout: 15000 });
-      verified = await el.isDisplayed();
-      console.log(verified
-        ? `[ViAppPage] ✅ MSISDN ${msisdn} verified on My Account screen`
-        : `[ViAppPage] ⚠️  MSISDN element found but not displayed`);
-    } catch (_e) {
-      console.warn(`[ViAppPage] ⚠️  MSISDN ${msisdn} not found on My Account screen`);
-    }
-
-    return verified;
-  }
-
-  /** Tap on ViMTV FIFA banner or Order Now button */
-  async tapOnViMTVOrOrderNow(): Promise<void> {
-    console.log('[ViAppPage] Tapping on ViMTV FIFA / Order Now...');
-    await this.dismissAllPopups();
-
-    try {
-      const viMTVElement = await $(Selectors.viMTVBanner);
-      if (await viMTVElement.isDisplayed()) {
-        await viMTVElement.click();
-        console.log('[ViAppPage] ✅ ViMTV FIFA tapped successfully');
-        await sleep(2000);
-        return;
-      }
-    } catch (_e) {
-      console.log('[ViAppPage] ViMTV FIFA not found, trying Order Now...');
-    }
-
-    try {
-      const orderNowElement = await $(Selectors.orderNow);
-      if (await orderNowElement.isDisplayed()) {
-        await orderNowElement.click();
-        console.log('[ViAppPage] ✅ Order Now tapped successfully');
-        await sleep(2000);
-        return;
-      }
-    } catch (_e) {
-      console.warn('[ViAppPage] ⚠️ Neither ViMTV FIFA nor Order Now found');
-      throw new Error('[ViAppPage] Could not find ViMTV FIFA or Order Now button');
-    }
-  }
-
-  /** Click hamburger menu icon (3 lines) */
-  async clickHamburgerMenu(): Promise<void> {
-    console.log('[ViAppPage] Clicking hamburger menu (3 lines)...');
-    await this.dismissAllPopups();
-
-    const hamburger = await $(Selectors.hamburgerIcon);
-    await hamburger.waitForDisplayed({ timeout: 15000 });
-    await hamburger.click();
-    console.log('[ViAppPage] Hamburger menu clicked');
-    await sleep(2000);
-  }
-
-  /** Verify Popular Actions section is visible */
-  async verifyPopularActions(): Promise<boolean> {
-    console.log('[ViAppPage] Verifying Popular Actions section...');
-    try {
-      const element = await $(Selectors.popularActions);
-      await element.waitForDisplayed({ timeout: 10000 });
-      const isDisplayed = await element.isDisplayed();
-      if (isDisplayed) {
-        console.log('[ViAppPage] ✅ Popular Actions section verified');
-        return true;
-      }
-    } catch (_e) {
-      console.warn('[ViAppPage] ⚠️ Popular Actions section not found');
-    }
-    return false;
-  }
-
-  /** Click logout button and confirm */
-  async clickLogoutWithConfirmation(): Promise<void> {
-    console.log('[ViAppPage] Looking for logout button...');
-    await this.dismissAllPopups();
-
-    try {
-      await browser.execute('mobile: scroll', { direction: 'down' });
-      await sleep(1000);
-    } catch (_e) {
-      console.log('[ViAppPage] Scroll not supported, continuing...');
-    }
-
-    try {
-      const logoutBtn = await $(Selectors.logoutBtn);
-      await logoutBtn.waitForDisplayed({ timeout: 15000 });
-      await logoutBtn.click();
-      console.log('[ViAppPage] Logout clicked, waiting for confirmation popup...');
-      await sleep(2000);
-    } catch (_e) {
-      console.warn('[ViAppPage] ⚠️ Logout button not found');
-      throw new Error('[ViAppPage] Could not find logout button');
-    }
-
-    try {
-      const confirmSelectors = [
-        Selectors.logoutConfirmXPath,
-        Selectors.logoutConfirm,
-        Selectors.logoutConfirmAlt,
-        '//android.widget.Button[contains(@text, "logout")]',
-        '//android.widget.Button[contains(@text, "Yes")]',
-      ];
-
-      let confirmed = false;
-      for (const selector of confirmSelectors) {
-        try {
-          const confirmBtn = await $(selector);
-          if (await confirmBtn.isDisplayed()) {
-            await confirmBtn.click();
-            console.log('[ViAppPage] ✅ Logout confirmed');
-            confirmed = true;
-            await sleep(2000);
-            break;
-          }
-        } catch (_e) { /* try next */ }
-      }
-
-      if (!confirmed) {
-        console.warn('[ViAppPage] ⚠️ Confirmation popup not found or already dismissed');
-      }
-    } catch (_e) {
-      console.warn('[ViAppPage] ⚠️ Error handling logout confirmation');
-    }
-  }
-
-  /** Logout via button; falls back to ADB force-stop */
-  async logout(): Promise<void> {
-    console.log('[ViAppPage] Looking for logout button...');
-    await this.dismissAllPopups();
-
-    try {
-      const btn = await $(Selectors.logoutBtn);
-      await btn.waitForDisplayed({ timeout: 15000 });
-      await btn.click();
-      await sleep(2000);
-      console.log('[ViAppPage] ✅ Logged out of Vi App');
-    } catch (_e) {
-      console.warn('[ViAppPage] ⚠️  Logout button not found — force-stopping via ADB');
-      try {
-        execSync(`adb -s ${DEVICE_SERIAL} shell am force-stop ${VI_APP_PACKAGE}`, { encoding: 'utf8' });
-        await sleep(1000);
-        console.log('[ViAppPage] App force-stopped (effective logout)');
-      } catch (adbErr: any) {
-        console.warn(`[ViAppPage] ADB force-stop failed: ${adbErr.message}`);
-      }
-    }
-  }
-
-  /** Uninstall the app via ADB */
-  uninstallApp(): void {
-    console.log(`[ViAppPage] Uninstalling Vi App from device ${DEVICE_SERIAL}...`);
-    try {
-      const out = execSync(`adb -s ${DEVICE_SERIAL} uninstall ${VI_APP_PACKAGE}`, { encoding: 'utf8' });
-      console.log(`[ViAppPage] Uninstall: ${out.trim()}`);
-    } catch (err: any) {
-      console.warn(`[ViAppPage] Uninstall warning: ${err.message}`);
-    }
-  }
-
-  /** Full Vi App flow: launch → MSISDN → OTP → verify → ViMTV → hamburger → popular actions → logout */
-  async runViAppFlow(msisdn: string, otp?: string): Promise<void> {
-    console.log(`[ViAppPage] 🚀 Starting complete Vi App flow on device: ${DEVICE_SERIAL}...`);
-
-    await this.launchApp();
-    await this.enterMSISDN(msisdn);
-    await this.submitAndLogin(otp);
-    await this.verifyAccountMSISDN(msisdn);
-    await this.tapOnViMTVOrOrderNow();
-    await this.clickHamburgerMenu();
-
-    const popularActionsVisible = await this.verifyPopularActions();
-    if (!popularActionsVisible) {
-      console.warn('[ViAppPage] ⚠️ Popular Actions not visible, but continuing...');
-    }
-
-    await this.clickLogoutWithConfirmation();
-
-    console.log(`[ViAppPage] ✅ Complete Vi App flow executed successfully on device ${DEVICE_SERIAL}`);
+  getScreenshots(): string[] {
+    return this.screenshots;
   }
 }

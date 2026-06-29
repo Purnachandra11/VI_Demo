@@ -1,0 +1,299 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>UAT Recharge Report</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { color: #f38328; border-bottom: 3px solid #f38328; padding-bottom: 10px; margin-bottom: 20px; }
+    h2 { color: #333; margin: 20px 0 10px 0; padding: 8px 0; border-bottom: 2px solid #eee; }
+    h3 { color: #555; margin: 15px 0 10px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0 20px 0; font-size: 13px; }
+    th { background: #f38328; color: white; padding: 10px 12px; text-align: left; font-weight: 600; }
+    td { padding: 8px 12px; border-bottom: 1px solid #eee; }
+    tr:nth-child(even) { background: #f9f9f9; }
+    tr:hover { background: #fff5ef; }
+    .status-pass { color: #2e7d32; font-weight: 600; }
+    .status-fail { color: #c0392b; font-weight: 600; }
+    .status-skip { color: #888; font-weight: 600; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .badge-pass { background: #e8f5e9; color: #2e7d32; }
+    .badge-fail { background: #fdecea; color: #c0392b; }
+    .badge-skip { background: #f5f5f5; color: #888; }
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 15px 0 25px 0; }
+    .summary-item { background: #f8f5f0; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #f38328; }
+    .summary-item .number { font-size: 28px; font-weight: 700; color: #f38328; }
+    .summary-item .label { font-size: 12px; color: #888; margin-top: 4px; }
+    .screenshot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin: 10px 0; }
+    .screenshot-item { border: 1px solid #ddd; border-radius: 6px; overflow: hidden; }
+    .screenshot-item img { width: 100%; height: 100px; object-fit: cover; }
+    .screenshot-item .caption { padding: 5px 8px; font-size: 11px; text-align: center; background: #f5f5f5; }
+    .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #888; }
+    .step-detail { background: #faf8f5; padding: 10px 15px; border-radius: 6px; margin: 5px 0; border-left: 3px solid #f38328; }
+    .step-detail strong { color: #f38328; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>📊 UAT Recharge Automation Report</h1>
+  <p style="color: #888; margin-bottom: 20px;">Generated: 29/6/2026, 5:12:11 am</p>
+
+  <!-- Summary -->
+  <div class="summary-grid">
+    <div class="summary-item">
+      <div class="number">1</div>
+      <div class="label">Total Test Cases</div>
+    </div>
+    <div class="summary-item">
+      <div class="number">1</div>
+      <div class="label">Executed</div>
+    </div>
+    <div class="summary-item">
+      <div class="number">1</div>
+      <div class="label">Passed</div>
+    </div>
+    <div class="summary-item">
+      <div class="number">0</div>
+      <div class="label">Failed</div>
+    </div>
+    <div class="summary-item">
+      <div class="number">29</div>
+      <div class="label">Screenshots</div>
+    </div>
+  </div>
+
+  <h2>📋 Input Test Data</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>MSISDN</th>
+        <th>Circle</th>
+        <th>Recharge MRP</th>
+        <th>Recharge</th>
+        <th>SWIFT</th>
+        <th>IN</th>
+        <th>Vi App</th>
+      </tr>
+    </thead>
+    <tbody>
+
+        <tr>
+          <td>1</td>
+          <td><strong>8399930232</strong></td>
+          <td>ODI</td>
+          <td>₹149</td>
+          <td>✅ Yes</td>
+          <td>❌ No</td>
+          <td>❌ No</td>
+          <td>❌ No</td>
+        </tr>
+      
+    </tbody>
+  </table>
+
+  <h2>📱 UAT Execution Results</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>MSISDN</th>
+        <th>Circle</th>
+        <th>MRP</th>
+        <th>Plan Name</th>
+        <th>IN Status</th>
+        <th>SWIFT Status</th>
+        <th>Vi App</th>
+        <th>Screenshots</th>
+      </tr>
+    </thead>
+    <tbody>
+
+        <tr>
+          <td>1</td>
+          <td><strong>8399930232</strong></td>
+          <td>ODI</td>
+          <td>₹149</td>
+          <td>UL+1.5GB/Day+HERO+100SMS/Day||56D</td>
+          <td><span class="badge badge-pass">Pass</span></td>
+          <td><span class="badge badge-pass">Pass</span></td>
+          <td>Skip</td>
+          <td>45</td>
+        </tr>
+      
+    </tbody>
+  </table>
+
+  <h2>📸 Screenshots</h2>
+  <div class="screenshot-grid">
+
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_1_8399930232_2026-06-28T23-33-21-811Z.png" alt="screenshot_1_8399930232_2026-06-28T23-33-21-811Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">Row1_Step1_Enter_MSISDN - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_2_8399930232_2026-06-28T23-33-28-391Z.png" alt="screenshot_2_8399930232_2026-06-28T23-33-28-391Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">Row1_Step2_Click_Search - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\subscriber_8399930232_2026-06-28T23-33-28-585Z.png" alt="subscriber_8399930232_2026-06-28T23-33-28-585Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">Subscriber Info - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\alertbar_8399930232_2026-06-28T23-33-28-585Z.png" alt="alertbar_8399930232_2026-06-28T23-33-28-585Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">Alert Bar - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\fullpage_8399930232_2026-06-28T23-33-28-585Z.png" alt="fullpage_8399930232_2026-06-28T23-33-28-585Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">Full Page - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_3_8399930232_2026-06-28T23-33-33-581Z.png" alt="screenshot_3_8399930232_2026-06-28T23-33-33-581Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">Row1_Step3_Subscriber_Info - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_4_8399930232_2026-06-28T23-33-53-663Z.png" alt="screenshot_4_8399930232_2026-06-28T23-33-53-663Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">IN_Step1_Search_MSISDN - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_5_8399930232_2026-06-28T23-34-16-707Z.png" alt="screenshot_5_8399930232_2026-06-28T23-34-16-707Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">IN_Step2_Click_Search - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\subscriber_8399930232_2026-06-28T23-34-16-939Z.png" alt="subscriber_8399930232_2026-06-28T23-34-16-939Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">Subscriber Info - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\fullpage_8399930232_2026-06-28T23-34-16-939Z.png" alt="fullpage_8399930232_2026-06-28T23-34-16-939Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">Full Page - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_6_8399930232_2026-06-28T23-34-30-615Z.png" alt="screenshot_6_8399930232_2026-06-28T23-34-30-615Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">IN_Step3_Subscriber_Info - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_7_8399930232_2026-06-28T23-34-30-945Z.png" alt="screenshot_7_8399930232_2026-06-28T23-34-30-945Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">IN_Step4_Recharges_Benefits - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_8_8399930232_2026-06-28T23-36-00-506Z.png" alt="screenshot_8_8399930232_2026-06-28T23-36-00-506Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">IN_Step5_Customer_IN_Profile - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_9_8399930232_2026-06-28T23-36-00-778Z.png" alt="screenshot_9_8399930232_2026-06-28T23-36-00-778Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">IN_Step6_Product_Overview - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_10_8399930232_2026-06-28T23-37-09-797Z.png" alt="screenshot_10_8399930232_2026-06-28T23-37-09-797Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">IN_Step7_Dedicated_Account - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_11_8399930232_2026-06-28T23-37-56-561Z.png" alt="screenshot_11_8399930232_2026-06-28T23-37-56-561Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">IN_Step8_Offers - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_12_8399930232_2026-06-28T23-38-26-191Z.png" alt="screenshot_12_8399930232_2026-06-28T23-38-26-191Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">SWIFT_Step1_Search_MSISDN - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_13_8399930232_2026-06-28T23-38-48-913Z.png" alt="screenshot_13_8399930232_2026-06-28T23-38-48-913Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">SWIFT_Step2_Click_Search - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\subscriber_8399930232_2026-06-28T23-38-49-148Z.png" alt="subscriber_8399930232_2026-06-28T23-38-49-148Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">Subscriber Info - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\fullpage_8399930232_2026-06-28T23-38-49-148Z.png" alt="fullpage_8399930232_2026-06-28T23-38-49-148Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">Full Page - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_14_8399930232_2026-06-28T23-39-02-862Z.png" alt="screenshot_14_8399930232_2026-06-28T23-39-02-862Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">SWIFT_Step3_Subscriber_Info - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_15_8399930232_2026-06-28T23-40-09-280Z.png" alt="screenshot_15_8399930232_2026-06-28T23-40-09-280Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">SWIFT_Step4_Click_Icon - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_16_8399930232_2026-06-28T23-41-15-740Z.png" alt="screenshot_16_8399930232_2026-06-28T23-41-15-740Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">SWIFT_Step6_Recharges_Benefits - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_17_8399930232_2026-06-28T23-41-16-007Z.png" alt="screenshot_17_8399930232_2026-06-28T23-41-16-007Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">SWIFT_Step7_Total_Usage - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_18_8399930232_2026-06-28T23-41-16-157Z.png" alt="screenshot_18_8399930232_2026-06-28T23-41-16-157Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">SWIFT_Step8_Unlimited - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_19_8399930232_2026-06-28T23-41-16-320Z.png" alt="screenshot_19_8399930232_2026-06-28T23-41-16-320Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">SWIFT_Step9_VAS - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_20_8399930232_2026-06-28T23-41-16-479Z.png" alt="screenshot_20_8399930232_2026-06-28T23-41-16-479Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">SWIFT_Step10_UPSS_Promotional - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_21_8399930232_2026-06-28T23-42-00-432Z.png" alt="screenshot_21_8399930232_2026-06-28T23-42-00-432Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">SWIFT_Step11_Offer_History - 8399930232</div>
+        </div>
+      
+        <div class="screenshot-item">
+          <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_22_8399930232_2026-06-28T23-42-10-704Z.png" alt="screenshot_22_8399930232_2026-06-28T23-42-10-704Z.png" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22150%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2250%22 font-size=%2212%22 fill=%22%23999%22%3ENo image%3C/text%3E%3C/svg%3E'">
+          <div class="caption">SWIFT_Step12_Offer_History_Details - 8399930232</div>
+        </div>
+      
+  </div>
+
+  <h2>📋 Detailed Steps</h2>
+
+    <h3>MSISDN: 8399930232</h3>
+    <div class="step-detail">
+      <strong>Transaction ID:</strong> SWIFT-8399930232-1782690130928<br>
+      <strong>Activation:</strong> 6/29/2026, 5:07:56 AM<br>
+      <strong>Validity:</strong> 10 Aug '26<br>
+      <strong>Benefits:</strong> UL+1.5GB/Day+HERO+100SMS/Day||56D<br>
+      <strong>Recharge Notification:</strong> Rs 479 recharged! Enjoy 1.5GB/Day + Unlimited Calls + 100SMS/Day. Valid for 56 Days. Click bit.ly/GetViApp to check balance, expiry, best offers & more.<br>
+      <strong>IN Status:</strong> Pass<br>
+      <strong>SWIFT Status:</strong> Pass
+    </div>
+  
+  <div class="footer">
+    <p>Report generated by VI Sim Automation Platform</p>
+    <p>© 2026 QDegrees Services Pvt. Ltd.</p>
+  </div>
+</div>
+</body>
+</html>

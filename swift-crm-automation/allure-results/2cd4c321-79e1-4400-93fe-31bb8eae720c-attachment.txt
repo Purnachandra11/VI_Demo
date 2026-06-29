@@ -1,0 +1,2 @@
+element click intercepted: WebDriverError: element click intercepted: Element <a>...</a> is not clickable at point (968, 334). Other element would receive the click: <div role="dialog" aria-modal="true" class="fade modal show" tabindex="-1" style="display: block;">...</div>
+  (Session info: chrome=149.0.7827.197) when running "element/f.C05E3EABFCB405932F197838B1A692B6.d.DEA0B07752CD5C84C6F8835E2174B309.e.315/click" with method "POST"
