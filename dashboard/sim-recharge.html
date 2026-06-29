@@ -1,461 +1,1558 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SWIFT CRM - Recharge UAT Automation</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SWIFT CRM - Recharge UAT Automation</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <!-- FIXED: Uncommented XLSX library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-    :root {
-      --accent:      #f38328;
-      --accent-dark: #d96f1a;
-      --bg:          #faf8f5;
-      --card-bg:     #ffffff;
-      --text-dark:   #2e2a27;
-      --text-muted:  #6f6b67;
-      --orange:      #f38328;
-      --orange-dk:   #d96b10;
-      --brown:       #865940;
-      --brown-lt:    #c2966e;
-      --cream:       #fdf8f3;
-      --cream-dk:    #f5ede2;
-      --text:        #2e2319;
-      --muted:       #6f5c4a;
-      --border:      #e8ddd2;
-      --white:       #ffffff;
-      --success:     #2e7d32;
-      --success-bg:  #e8f5e9;
-      --danger:      #c0392b;
-      --danger-bg:   #fdecea;
-      --info:        #1565c0;
-      --info-bg:     #e3f2fd;
-      --warn:        #7a5c1e;
-      --warn-bg:     #fff7e6;
-      --radius:      12px;
-      --radius-sm:   8px;
-      --shadow:      0 4px 20px rgba(100,60,20,.10);
-      --shadow-lg:   0 12px 40px rgba(0,0,0,0.12);
-    }
+      :root {
+        --accent: #f38328;
+        --accent-dark: #d96f1a;
+        --bg: #faf8f5;
+        --card-bg: #ffffff;
+        --text-dark: #2e2a27;
+        --text-muted: #6f6b67;
+        --orange: #f38328;
+        --orange-dk: #d96b10;
+        --brown: #865940;
+        --brown-lt: #c2966e;
+        --cream: #fdf8f3;
+        --cream-dk: #f5ede2;
+        --text: #2e2319;
+        --muted: #6f5c4a;
+        --border: #e8ddd2;
+        --white: #ffffff;
+        --success: #2e7d32;
+        --success-bg: #e8f5e9;
+        --danger: #c0392b;
+        --danger-bg: #fdecea;
+        --info: #1565c0;
+        --info-bg: #e3f2fd;
+        --warn: #7a5c1e;
+        --warn-bg: #fff7e6;
+        --radius: 12px;
+        --radius-sm: 8px;
+        --shadow: 0 4px 20px rgba(100, 60, 20, 0.1);
+        --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12);
+      }
 
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
+      body {
+        font-family: "Poppins", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
 
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background:
-        radial-gradient(ellipse 700px 500px at 10% 20%, rgba(243,131,40,0.07) 0%, transparent 70%),
-        radial-gradient(ellipse 600px 400px at 90% 80%, rgba(134,89,64,0.06) 0%, transparent 70%),
-        radial-gradient(ellipse 400px 300px at 50% 50%, rgba(243,131,40,0.04) 0%, transparent 60%);
-      pointer-events: none; z-index: 0;
-    }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background:
+          radial-gradient(
+            ellipse 700px 500px at 10% 20%,
+            rgba(243, 131, 40, 0.07) 0%,
+            transparent 70%
+          ),
+          radial-gradient(
+            ellipse 600px 400px at 90% 80%,
+            rgba(134, 89, 64, 0.06) 0%,
+            transparent 70%
+          ),
+          radial-gradient(
+            ellipse 400px 300px at 50% 50%,
+            rgba(243, 131, 40, 0.04) 0%,
+            transparent 60%
+          );
+        pointer-events: none;
+        z-index: 0;
+      }
 
-    .deco-chips { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
-    .deco-chip  { position:absolute; border-radius:50%; opacity:0.06; background:var(--accent); }
-    .deco-chip:nth-child(1) { width:280px; height:280px; top:-80px;  left:-60px;  animation:drift1 12s ease-in-out infinite; }
-    .deco-chip:nth-child(2) { width:180px; height:180px; bottom:-40px; right:-50px; animation:drift2 10s ease-in-out infinite; background:var(--brown); }
-    .deco-chip:nth-child(3) { width:120px; height:120px; top:40%; right:8%; animation:drift1 8s ease-in-out infinite 2s; opacity:0.04; }
-    @keyframes drift1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(20px,15px)} }
-    @keyframes drift2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-15px,20px)} }
+      .deco-chips {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        overflow: hidden;
+      }
+      .deco-chip {
+        position: absolute;
+        border-radius: 50%;
+        opacity: 0.06;
+        background: var(--accent);
+      }
+      .deco-chip:nth-child(1) {
+        width: 280px;
+        height: 280px;
+        top: -80px;
+        left: -60px;
+        animation: drift1 12s ease-in-out infinite;
+      }
+      .deco-chip:nth-child(2) {
+        width: 180px;
+        height: 180px;
+        bottom: -40px;
+        right: -50px;
+        animation: drift2 10s ease-in-out infinite;
+        background: var(--brown);
+      }
+      .deco-chip:nth-child(3) {
+        width: 120px;
+        height: 120px;
+        top: 40%;
+        right: 8%;
+        animation: drift1 8s ease-in-out infinite 2s;
+        opacity: 0.04;
+      }
+      @keyframes drift1 {
+        0%, 100% { transform: translate(0, 0); }
+        50% { transform: translate(20px, 15px); }
+      }
+      @keyframes drift2 {
+        0%, 100% { transform: translate(0, 0); }
+        50% { transform: translate(-15px, 20px); }
+      }
 
-    /* ── HEADER ── */
-    .mainHeader {
-      background: var(--white);
-      border-bottom: 1px solid var(--border);
-      box-shadow: 0 2px 12px rgba(100,60,20,.08);
-      position: sticky; top: 0; z-index: 100;
-    }
-    .navbar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 30px; gap: 24px;
-    }
-    .brandWrap { text-decoration: none; display: flex; flex-direction: column; }
-    .brandLogo { height: 30px; object-fit: contain; }
-    .logoTagline { font-size: 11px; font-weight: 500; color: var(--brown); margin-top: 2px; letter-spacing: .2px; }
-    .navbar-nav {
-      list-style: none; padding: 0; margin: 0;
-      display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 20px;
-    }
-    .nav-link {
-      font-size: 13px; font-weight: 500; color: var(--text); text-decoration: none;
-      padding: 7px 16px; border-radius: 20px; border: 1.5px solid transparent; transition: all .2s;
-    }
-    .nav-link:hover { color: var(--orange); border-color: var(--orange); background: #fff5ef; }
-    .nav-link.active { background: #f28c28; color: #fff; font-weight: 600; }
-    .nav-right { display: flex; align-items: center; gap: 12px; }
-    .btn-back {
-      font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600;
-      color: var(--orange); background: transparent;
-      border: 1.5px solid var(--orange); border-radius: 20px;
-      padding: 6px 18px; cursor: pointer; text-decoration: none; transition: all .2s;
-    }
-    .btn-back:hover { background: var(--orange); color: var(--white); }
+      /* ── HEADER ── */
+      .mainHeader {
+        background: var(--white);
+        border-bottom: 1px solid var(--border);
+        box-shadow: 0 2px 12px rgba(100, 60, 20, 0.08);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .navbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 30px;
+        gap: 24px;
+      }
+      .brandWrap {
+        text-decoration: none;
+        display: flex;
+        flex-direction: column;
+      }
+      .brandLogo {
+        height: 30px;
+        object-fit: contain;
+      }
+      .logoTagline {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--brown);
+        margin-top: 2px;
+        letter-spacing: 0.2px;
+      }
+      .navbar-nav {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+      }
+      .nav-link {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text);
+        text-decoration: none;
+        padding: 7px 16px;
+        border-radius: 20px;
+        border: 1.5px solid transparent;
+        transition: all 0.2s;
+      }
+      .nav-link:hover {
+        color: var(--orange);
+        border-color: var(--orange);
+        background: #fff5ef;
+      }
+      .nav-link.active {
+        background: #f28c28;
+        color: #fff;
+        font-weight: 600;
+      }
+      .nav-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .btn-back {
+        font-family: "Poppins", sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--orange);
+        background: transparent;
+        border: 1.5px solid var(--orange);
+        border-radius: 20px;
+        padding: 6px 18px;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s;
+      }
+      .btn-back:hover {
+        background: var(--orange);
+        color: var(--white);
+      }
 
-    /* ── PAGE WRAP ── */
-    .page-wrap {
-      flex: 1; padding: 30px 40px 60px;
-      max-width: 1340px; width: 100%;
-      margin: 0 auto; position: relative; z-index: 1;
-    }
+      /* ── LOGIN STATUS BADGE ── */
+      .login-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        border: 1.5px solid var(--border);
+        background: var(--cream-dk);
+        color: var(--muted);
+        transition: all 0.3s;
+        white-space: nowrap;
+      }
+      .login-badge .badge-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--muted);
+        flex-shrink: 0;
+        transition: background 0.3s;
+      }
+      .login-badge.logged-in {
+        border-color: #43a047;
+        background: var(--success-bg);
+        color: var(--success);
+      }
+      .login-badge.logged-in .badge-dot {
+        background: #43a047;
+        animation: pulse-green 2s infinite;
+      }
+      .login-badge.logged-out {
+        border-color: var(--danger);
+        background: var(--danger-bg);
+        color: var(--danger);
+      }
+      .login-badge.logged-out .badge-dot {
+        background: var(--danger);
+      }
+      .login-badge.checking {
+        border-color: #f38328;
+        background: #fff5ef;
+        color: var(--orange);
+      }
+      .login-badge.checking .badge-dot {
+        background: var(--orange);
+        animation: pulse-orange 1s infinite;
+      }
+      @keyframes pulse-green {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.4; }
+      }
+      @keyframes pulse-orange {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+      }
 
-    /* ── SECTION HEADING ── */
-    .section-heading { margin-bottom: 28px; }
-    .section-heading img { display: block; margin-bottom: 8px; }
-    .section-heading h2 { font-size: 1.55rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
-    .section-heading p  { font-size: 14px; color: var(--muted); }
+      /* ── PAGE WRAP ── */
+      .page-wrap {
+        flex: 1;
+        padding: 30px 40px 60px;
+        max-width: 1340px;
+        width: 100%;
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+      }
 
-    /* ── TWO-COL GRID ── */
-    .step-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-bottom: 28px; }
-    @media (max-width: 860px) {
-      .step-grid { grid-template-columns: 1fr; }
-      .navbar { padding: 12px 20px; }
-      .page-wrap { padding: 24px 20px 48px; }
-    }
+      /* ── SECTION HEADING ── */
+      .section-heading {
+        margin-bottom: 28px;
+      }
+      .section-heading img {
+        display: block;
+        margin-bottom: 8px;
+      }
+      .section-heading h2 {
+        font-size: 1.55rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 6px;
+      }
+      .section-heading p {
+        font-size: 14px;
+        color: var(--muted);
+      }
 
-    /* ── CARD ── */
-    .card {
-      background: var(--white); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow);
-    }
-    .card-title {
-      font-size: 14px; font-weight: 600; color: var(--text);
-      display: flex; align-items: center; gap: 8px;
-      padding-bottom: 14px; border-bottom: 1px solid var(--border); margin-bottom: 20px;
-    }
-    .card-title .step-pill {
-      background: var(--orange); color: var(--white);
-      font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 20px;
-    }
-    .card-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+      /* ── CARD ── */
+      .card {
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 28px;
+        box-shadow: var(--shadow);
+        margin-bottom: 24px;
+      }
+      .card-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 20px;
+      }
+      .card-title .step-pill {
+        background: var(--orange);
+        color: var(--white);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 10px;
+        border-radius: 20px;
+      }
+      .card-subtitle {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 20px;
+        line-height: 1.6;
+      }
 
-    /* ── UPLOAD AREA ── */
-    .upload-area {
-      border: 2px dashed var(--border); border-radius: var(--radius);
-      padding: 40px 24px; text-align: center; cursor: pointer;
-      transition: all .25s; background: var(--bg);
-    }
-    .upload-area:hover { border-color: var(--orange); background: #fff8f3; }
-    .upload-icon { font-size: 2.2rem; margin-bottom: 10px; display: block; }
-    .upload-area p { font-size: 13px; color: var(--muted); margin: 0; line-height: 1.6; }
-    .upload-area .file-name { font-weight: 600; color: var(--orange); font-size: 14px; margin-top: 4px; }
-    input[type="file"] { display: none; }
+      /* ── STAT STRIP ── */
+      .stat-strip {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 28px;
+      }
+      @media (max-width: 860px) {
+        .stat-strip {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      .stat-card {
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 18px 20px;
+        box-shadow: var(--shadow);
+      }
+      .stat-card .stat-label {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 500;
+        margin-bottom: 6px;
+      }
+      .stat-card .stat-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--orange);
+      }
+      .stat-card .stat-sub {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
 
-    /* ── BUTTONS ── */
-    .action-buttons { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
-    .btn {
-      font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600;
-      padding: 10px 36px; border-radius: 16px; border: none; cursor: pointer;
-      transition: all .2s; letter-spacing: .2px;
-    }
-    .btn i { margin-right: 8px; }
-    .btn:disabled { opacity: .45; cursor: not-allowed; }
-    .btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,.14); }
-    .btn-primary  { background: var(--orange); color: var(--white); }
-    .btn-primary:not(:disabled):hover  { background: var(--orange-dk); }
-    .btn-success  { background: #43a047; color: var(--white); }
-    .btn-success:not(:disabled):hover  { background: #388e3c; }
-    .btn-danger   { background: var(--danger); color: var(--white); }
-    .btn-danger:not(:disabled):hover   { background: #a93226; }
-    .btn-muted    { background: #888; color: var(--white); }
-    .btn-muted:not(:disabled):hover    { background: #666; }
-    .btn-sm { padding: 7px 15px; font-size: 12px; }
+      /* ── UPLOAD AREA ── */
+      .upload-area {
+        border: 2px dashed var(--border);
+        border-radius: var(--radius);
+        padding: 40px 24px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.25s;
+        background: var(--bg);
+      }
+      .upload-area:hover {
+        border-color: var(--orange);
+        background: #fff8f3;
+      }
+      .upload-icon {
+        font-size: 2.2rem;
+        margin-bottom: 10px;
+        display: block;
+      }
+      .upload-area p {
+        font-size: 13px;
+        color: var(--muted);
+        margin: 0;
+        line-height: 1.6;
+      }
+      .upload-area .file-name {
+        font-weight: 600;
+        color: var(--orange);
+        font-size: 14px;
+        margin-top: 4px;
+      }
+      input[type="file"] {
+        display: none;
+      }
+      .btn-download-sample {
+        margin-top: 16px;
+        padding: 8px 20px;
+        background: transparent;
+        border: 2px solid var(--accent);
+        color: var(--accent);
+        border-radius: 30px;
+        font-family: "Poppins", sans-serif;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .btn-download-sample:hover {
+        background: var(--accent);
+        color: white;
+      }
 
-    /* ── DIVIDER ── */
-    hr.divider { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
+      /* ── BUTTONS ── */
+      .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        font-family: "Poppins", sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 10px 36px;
+        border-radius: 16px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        letter-spacing: 0.2px;
+      }
+      .btn i {
+        margin-right: 8px;
+      }
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .btn:not(:disabled):hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+      }
+      .btn-primary {
+        background: var(--orange);
+        color: var(--white);
+      }
+      .btn-primary:not(:disabled):hover {
+        background: var(--orange-dk);
+      }
+      .btn-success {
+        background: #43a047;
+        color: var(--white);
+      }
+      .btn-success:not(:disabled):hover {
+        background: #388e3c;
+      }
+      .btn-danger {
+        background: var(--danger);
+        color: var(--white);
+      }
+      .btn-danger:not(:disabled):hover {
+        background: #a93226;
+      }
+      .btn-muted {
+        background: #888;
+        color: var(--white);
+      }
+      .btn-muted:not(:disabled):hover {
+        background: #666;
+      }
+      .btn-sm {
+        padding: 7px 15px;
+        font-size: 12px;
+      }
 
-    /* ── LOG PANEL ── */
-    .log-panel {
-      background: #1a1510; color: #d4c9ba;
-      font-family: 'Courier New', Consolas, monospace;
-      padding: 16px; border-radius: var(--radius-sm);
-      height: 350px; overflow-y: auto;
-      font-size: 12.5px; line-height: 1.65;
-      border: 1px solid #3a2e22;
-    }
-    .log-panel::-webkit-scrollbar { width: 6px; }
-    .log-panel::-webkit-scrollbar-track { background: #1a1510; }
-    .log-panel::-webkit-scrollbar-thumb { background: #5a4030; border-radius: 4px; }
-    .log-line { margin-bottom: 3px; border-left: 3px solid transparent; padding-left: 8px; }
-    .log-timestamp { color: #5a4a3a; margin-right: 6px; font-size: 11px; }
-    .log-success { border-left-color: #43a047; color: #89d18b; }
-    .log-error   { border-left-color: var(--danger); color: #f48a8a; }
-    .log-info    { border-left-color: #f38328; color: #f4b47a; }
-    .log-warning { border-left-color: #e5a24e; color: #f0c070; }
-    .log-footer  { margin-top: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+      /* ── DIVIDER ── */
+      hr.divider {
+        border: none;
+        border-top: 1px solid var(--border);
+        margin: 22px 0;
+      }
 
-    /* ── SCREENSHOT GRID ── */
-    .screenshots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; margin-top: 12px; }
-    .screenshot-item { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; cursor: pointer; transition: transform .2s; background: var(--bg); }
-    .screenshot-item:hover { transform: scale(1.03); }
-    .screenshot-item img { width: 100%; height: 90px; object-fit: cover; display: block; }
-    .screenshot-name { padding: 6px 8px; font-size: 11px; text-align: center; color: var(--muted); font-weight: 500; }
+      /* ── PROGRESS BAR ── */
+      .progress-section {
+        margin-top: 16px;
+        padding: 12px 0;
+        display: none;
+      }
+      .progress-section.active {
+        display: block;
+      }
+      .progress-bar-container {
+        background: var(--border);
+        border-radius: 20px;
+        height: 10px;
+        overflow: hidden;
+        margin: 8px 0;
+      }
+      .progress-bar {
+        background: linear-gradient(90deg, var(--accent), var(--accent-dark));
+        height: 100%;
+        border-radius: 20px;
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+      .progress-info {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: var(--muted);
+      }
 
-    /* ── STAT STRIP ── */
-    .stat-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
-    @media (max-width: 860px) { .stat-strip { grid-template-columns: repeat(2, 1fr); } }
-    .stat-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); }
-    .stat-card .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
-    .stat-card .stat-value { font-size: 22px; font-weight: 700; color: var(--orange); }
-    .stat-card .stat-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+      /* ── LOG PANEL ── */
+      .log-panel {
+        background: #1a1510;
+        color: #d4c9ba;
+        font-family: "Courier New", Consolas, monospace;
+        padding: 16px;
+        border-radius: var(--radius-sm);
+        height: 320px;
+        overflow-y: auto;
+        font-size: 12.5px;
+        line-height: 1.65;
+        border: 1px solid #3a2e22;
+      }
+      .log-panel::-webkit-scrollbar {
+        width: 6px;
+      }
+      .log-panel::-webkit-scrollbar-track {
+        background: #1a1510;
+      }
+      .log-panel::-webkit-scrollbar-thumb {
+        background: #5a4030;
+        border-radius: 4px;
+      }
+      .log-line {
+        margin-bottom: 3px;
+        border-left: 3px solid transparent;
+        padding-left: 8px;
+      }
+      .log-timestamp {
+        color: #5a4a3a;
+        margin-right: 6px;
+        font-size: 11px;
+      }
+      .log-success {
+        border-left-color: #43a047;
+        color: #89d18b;
+      }
+      .log-error {
+        border-left-color: var(--danger);
+        color: #f48a8a;
+      }
+      .log-info {
+        border-left-color: #f38328;
+        color: #f4b47a;
+      }
+      .log-warning {
+        border-left-color: #e5a24e;
+        color: #f0c070;
+      }
+      .log-footer {
+        margin-top: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
 
-    /* ── PROGRESS BAR ── */
-    .progress-section { margin-top: 16px; padding: 12px 0; display: none; }
-    .progress-section.active { display: block; }
-    .progress-bar-container { background: var(--border); border-radius: 20px; height: 10px; overflow: hidden; margin: 8px 0; }
-    .progress-bar { background: linear-gradient(90deg, var(--accent), var(--accent-dark)); height: 100%; border-radius: 20px; width: 0%; transition: width .3s ease; }
-    .progress-info { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+      /* ── STATUS BOX ── */
+      .status-box {
+        padding: 13px 16px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-weight: 500;
+        border-left: 4px solid transparent;
+        margin-top: 14px;
+      }
+      .status-box.info {
+        background: var(--cream-dk);
+        border-color: var(--brown-lt);
+        color: var(--muted);
+      }
+      .status-box.warning {
+        background: var(--warn-bg);
+        border-color: #e5a24e;
+        color: var(--warn);
+      }
+      .status-box.success {
+        background: var(--success-bg);
+        border-color: #43a047;
+        color: var(--success);
+      }
+      .status-box.error {
+        background: var(--danger-bg);
+        border-color: var(--danger);
+        color: #7b1c1c;
+      }
 
-    /* ── CAPTCHA / OTP OVERLAY ── */
-    .overlay-wrap { display: none; position: absolute; inset: 0; background: rgba(30,15,0,.55); justify-content: center; align-items: center; z-index: 200; border-radius: var(--radius); }
-    .overlay-wrap.visible { display: flex; }
-    .captcha-box { background: var(--white); padding: 32px 28px; border-radius: var(--radius); width: 420px; max-width: 90%; text-align: center; border: 1px solid var(--border); }
-    .captcha-box h3 { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
-    .captcha-box p  { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
-    .captcha-image-wrap { background: var(--cream-dk); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 18px; border: 1px solid var(--border); }
-    .captcha-image-wrap img { max-width: 100%; border-radius: 4px; display: block; margin: 0 auto; }
-    .form-control {
-      width: 100%; padding: 11px 14px; border: 1.5px solid var(--border);
-      border-radius: var(--radius-sm); font-size: 13px; font-family: 'Poppins', sans-serif;
-      color: var(--text); background: var(--bg); outline: none; transition: border .2s;
-      margin-bottom: 20px; text-align: center; letter-spacing: 2px;
-    }
-    .form-control:focus { border-color: var(--orange); }
+      /* ── SCREENSHOT GRID ── */
+      .screenshots-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+      }
+      .screenshot-item {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.2s;
+        background: var(--bg);
+      }
+      .screenshot-item:hover {
+        transform: scale(1.03);
+      }
+      .screenshot-item img {
+        width: 100%;
+        height: 90px;
+        object-fit: cover;
+        display: block;
+      }
+      .screenshot-name {
+        padding: 6px 8px;
+        font-size: 11px;
+        text-align: center;
+        color: var(--muted);
+        font-weight: 500;
+      }
 
-    /* ── FOOTER ── */
-    .footerMain { background: #fff; border-top: 1px solid var(--border); padding: 16px 24px; }
-    .footer-content { display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; }
-    .footerMain p { font-size: 12.5px; color: var(--text-muted); margin: 0; }
-    .footerMain span { color: var(--brown); font-weight: 600; }
-    .footer-logo { height: 26px; object-fit: contain; opacity: 0.7; }
-    @media (max-width: 768px) { .footer-content { flex-direction: column; gap: 10px; text-align: center; } }
+      /* ── PREVIEW SECTION ── */
+      .preview-section {
+        margin-top: 32px;
+        display: none;
+      }
+      .preview-section.visible {
+        display: block;
+      }
+      .preview-heading {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .preview-heading h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+        white-space: nowrap;
+      }
+      .preview-heading .line {
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
 
-    .grid-relative { position: relative; }
+      .preview-strip {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 24px;
+      }
+      @media (max-width: 700px) {
+        .preview-strip {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      .ps-card {
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px 18px;
+        box-shadow: var(--shadow);
+        text-align: center;
+      }
+      .ps-card .ps-label {
+        font-size: 11px;
+        color: var(--muted);
+        font-weight: 500;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+      .ps-card .ps-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--orange);
+      }
+      .ps-card.green .ps-value {
+        color: var(--success);
+      }
+      .ps-card.red .ps-value {
+        color: var(--danger);
+      }
 
-    .btn-download-sample {
-      margin-top: 16px; padding: 8px 20px;
-      background: transparent; border: 2px solid var(--accent);
-      color: var(--accent); border-radius: 30px;
-      font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 13px;
-      cursor: pointer; transition: all .2s;
-    }
-    .btn-download-sample:hover { background: var(--accent); color: white; }
+      .tag-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .tag-green {
+        background: var(--success-bg);
+        color: var(--success);
+      }
+      .tag-orange {
+        background: #fff0e0;
+        color: var(--orange);
+      }
 
-    /* ════════════════════════════════
-       PREVIEW SECTION
-    ════════════════════════════════ */
-    .preview-section { margin-top: 32px; display: none; }
-    .preview-section.visible { display: block; }
+      .ptable-wrap {
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        margin-bottom: 10px;
+        overflow-x: auto;
+      }
+      .ptable {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12.5px;
+        min-width: 700px;
+      }
+      .ptable thead tr {
+        background: var(--orange);
+        color: var(--white);
+      }
+      .ptable thead th {
+        padding: 11px 15px;
+        font-weight: 600;
+        text-align: left;
+        white-space: nowrap;
+      }
+      .ptable tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition: background 0.15s;
+      }
+      .ptable tbody tr:last-child {
+        border-bottom: none;
+      }
+      .ptable tbody tr:hover {
+        background: #fffaf5;
+      }
+      .ptable tbody td {
+        padding: 10px 15px;
+        color: var(--muted);
+        vertical-align: middle;
+      }
+      .ptable tbody td:first-child {
+        color: var(--text);
+        font-weight: 600;
+      }
 
-    .preview-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
-    .preview-heading h3 { font-size: 16px; font-weight: 700; color: var(--text); white-space: nowrap; }
-    .preview-heading .line { flex: 1; height: 1px; background: var(--border); }
+      .match-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .match-chip.yes {
+        background: var(--success-bg);
+        color: var(--success);
+      }
+      .match-chip.no {
+        background: var(--danger-bg);
+        color: var(--danger);
+      }
 
-    .preview-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
-    @media (max-width: 700px) { .preview-strip { grid-template-columns: repeat(2, 1fr); } }
-    .ps-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow); text-align: center; }
-    .ps-card .ps-label { font-size: 11px; color: var(--muted); font-weight: 500; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .4px; }
-    .ps-card .ps-value { font-size: 24px; font-weight: 700; color: var(--orange); }
-    .ps-card.green .ps-value { color: var(--success); }
-    .ps-card.red   .ps-value { color: var(--danger); }
+      .benefit-tag {
+        background: var(--info-bg);
+        color: var(--info);
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: "Courier New", monospace;
+        display: inline-block;
+        max-width: 280px;
+        word-break: break-all;
+      }
+      .mrp-highlight-input {
+        color: var(--orange);
+        font-weight: 700;
+      }
+      .mrp-highlight-no {
+        color: var(--danger);
+        font-weight: 700;
+      }
 
-    .sub-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; margin-top: 24px; }
-    .sub-head h4 { font-size: 13px; font-weight: 600; color: var(--text); }
-    .tag-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-    .tag-green  { background: var(--success-bg); color: var(--success); }
-    .tag-orange { background: #fff0e0; color: var(--orange); }
+      .empty-preview {
+        text-align: center;
+        padding: 36px 24px;
+        color: var(--muted);
+      }
+      .empty-preview .ep-icon {
+        font-size: 2.6rem;
+        margin-bottom: 10px;
+        display: block;
+      }
+      .empty-preview p {
+        font-size: 13px;
+      }
 
-    .ptable-wrap {
-      background: var(--white); border: 1px solid var(--border);
-      border-radius: var(--radius); overflow: hidden;
-      box-shadow: var(--shadow); margin-bottom: 10px; overflow-x: auto;
-    }
-    .ptable { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 700px; }
-    .ptable thead tr { background: var(--orange); color: var(--white); }
-    .ptable thead th { padding: 11px 15px; font-weight: 600; text-align: left; white-space: nowrap; }
-    .ptable tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
-    .ptable tbody tr:last-child { border-bottom: none; }
-    .ptable tbody tr:hover { background: #fffaf5; }
-    .ptable tbody td { padding: 10px 15px; color: var(--muted); vertical-align: middle; }
-    .ptable tbody td:first-child { color: var(--text); font-weight: 600; }
+      /* ── SKELETON ── */
+      @keyframes shimmer {
+        0% { background-position: -600px 0; }
+        100% { background-position: 600px 0; }
+      }
+      .skeleton-bar {
+        height: 12px;
+        border-radius: 6px;
+        background: linear-gradient(90deg, var(--border) 25%, #f0e8df 50%, var(--border) 75%);
+        background-size: 600px 100%;
+        animation: shimmer 1.4s infinite linear;
+      }
+      .skeleton-table {
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        margin-bottom: 10px;
+      }
+      .skeleton-thead {
+        background: var(--orange);
+        opacity: 0.35;
+        height: 42px;
+      }
+      .skeleton-body {
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
 
-    .match-chip {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
-    }
-    .match-chip.yes { background: var(--success-bg); color: var(--success); }
-    .match-chip.no  { background: var(--danger-bg);  color: var(--danger); }
+      .validation-banner {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--info-bg);
+        color: var(--info);
+        padding: 14px 18px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 24px;
+        border: 1px solid #b3cde8;
+      }
+      .spin-ring {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        border: 3px solid var(--info);
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.85s linear infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
 
-    .benefit-tag {
-      background: var(--info-bg); color: var(--info);
-      padding: 3px 8px; border-radius: 6px;
-      font-size: 11px; font-weight: 600; font-family: 'Courier New', monospace;
-      display: inline-block; max-width: 280px; word-break: break-all;
-    }
+      /* ── PER-ROW STATUS PANEL ── */
+      .row-status-panel {
+        margin-top: 0;
+      }
+      .row-status-panel .rsp-heading {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 16px;
+      }
+      .row-status-panel .rsp-heading .step-pill {
+        background: var(--orange);
+        color: var(--white);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 10px;
+        border-radius: 20px;
+      }
 
-    .mrp-highlight-input { color: var(--orange); font-weight: 700; }
-    .mrp-highlight-no    { color: var(--danger);  font-weight: 700; }
+      .row-cards-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
 
-    .empty-preview { text-align: center; padding: 36px 24px; color: var(--muted); }
-    .empty-preview .ep-icon { font-size: 2.6rem; margin-bottom: 10px; display: block; }
-    .empty-preview p { font-size: 13px; }
+      .row-card {
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 14px 16px;
+        background: var(--cream);
+        transition: border-color 0.25s, background 0.25s;
+        position: relative;
+        overflow: hidden;
+      }
+      .row-card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--border);
+        transition: background 0.25s;
+      }
+      .row-card.rc-running {
+        border-color: #1565c0;
+        background: var(--info-bg);
+      }
+      .row-card.rc-running::before {
+        background: #1565c0;
+      }
+      .row-card.rc-waiting {
+        border-color: #e5a24e;
+        background: var(--warn-bg);
+      }
+      .row-card.rc-waiting::before {
+        background: #e5a24e;
+      }
+      .row-card.rc-completed {
+        border-color: #43a047;
+        background: var(--success-bg);
+      }
+      .row-card.rc-completed::before {
+        background: #43a047;
+      }
+      .row-card.rc-failed {
+        border-color: var(--danger);
+        background: var(--danger-bg);
+      }
+      .row-card.rc-failed::before {
+        background: var(--danger);
+      }
 
-    /* ── SKELETON LOADER ── */
-    @keyframes shimmer {
-      0%   { background-position: -600px 0; }
-      100% { background-position:  600px 0; }
-    }
-    .skeleton-bar {
-      height: 12px; border-radius: 6px;
-      background: linear-gradient(90deg, var(--border) 25%, #f0e8df 50%, var(--border) 75%);
-      background-size: 600px 100%;
-      animation: shimmer 1.4s infinite linear;
-    }
-    .skeleton-table {
-      background: var(--white); border: 1px solid var(--border);
-      border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); margin-bottom: 10px;
-    }
-    .skeleton-thead { background: var(--orange); opacity: .35; height: 42px; }
-    .skeleton-body  { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+      .rc-top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .rc-sr {
+        font-size: 11px;
+        color: var(--muted);
+        min-width: 24px;
+        font-weight: 600;
+      }
+      .rc-msisdn {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+        flex: 1;
+        font-family: "Courier New", monospace;
+      }
+      .rc-status-badge {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 3px 11px;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        white-space: nowrap;
+      }
+      .rc-status-badge.pending {
+        background: var(--cream-dk);
+        color: var(--muted);
+      }
+      .rc-status-badge.running {
+        background: var(--info-bg);
+        color: var(--info);
+        animation: blink-badge 0.85s infinite;
+      }
+      .rc-status-badge.waiting {
+        background: var(--warn-bg);
+        color: var(--warn);
+      }
+      .rc-status-badge.completed {
+        background: var(--success-bg);
+        color: var(--success);
+      }
+      .rc-status-badge.failed {
+        background: var(--danger-bg);
+        color: var(--danger);
+      }
+      @keyframes blink-badge {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.45; }
+      }
 
-    /* ── VALIDATION LOADER BANNER ── */
-    .validation-banner {
-      display: flex; align-items: center; gap: 12px;
-      background: var(--info-bg); color: var(--info);
-      padding: 14px 18px; border-radius: 12px;
-      font-size: 13px; font-weight: 500; margin-bottom: 24px;
-      border: 1px solid #b3cde8;
-    }
-    .spin-ring {
-      width: 18px; height: 18px; flex-shrink: 0;
-      border: 3px solid var(--info); border-top-color: transparent;
-      border-radius: 50%; animation: spin 0.85s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+      .rc-meta {
+        margin-top: 7px;
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        font-size: 11px;
+        color: var(--muted);
+        padding-left: 34px;
+      }
+      .rc-meta span {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+      }
 
-    /* ── STATUS BOX ── */
-    .status-box {
-      padding: 13px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500;
-      border-left: 4px solid transparent; margin-bottom: 0;
-    }
-    .status-box.info    { background: var(--cream-dk); border-color: var(--brown-lt); color: var(--muted); }
-    .status-box.warning { background: var(--warn-bg);  border-color: #e5a24e;         color: var(--warn); }
-    .status-box.success { background: var(--success-bg); border-color: #43a047;       color: var(--success); }
-    .status-box.error   { background: var(--danger-bg);  border-color: var(--danger); color: #7b1c1c; }
+      .rc-spinner {
+        display: none;
+        width: 13px;
+        height: 13px;
+        border: 2px solid var(--info);
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        flex-shrink: 0;
+      }
+      .row-card.rc-running .rc-spinner {
+        display: inline-block;
+      }
 
-    /* ── MISC TABLE ── */
-    .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
-    table.schedule-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
-    table.schedule-tbl thead tr { background: var(--orange); color: var(--white); }
-    table.schedule-tbl thead th { padding: 13px 18px; font-weight: 600; text-align: left; white-space: nowrap; }
-    table.schedule-tbl tbody tr { border-bottom: 1px solid var(--border); transition: background .18s; }
-    table.schedule-tbl tbody tr:last-child { border-bottom: none; }
-    table.schedule-tbl tbody tr:hover { background: var(--bg); }
-    table.schedule-tbl tbody td { padding: 12px 18px; color: var(--muted); }
-    table.schedule-tbl tbody td:first-child { color: var(--text); font-weight: 500; }
-    .tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-    .tag.running   { background: var(--info-bg);    color: var(--info); }
-    .tag.ready     { background: var(--cream-dk);   color: var(--muted); }
-    .tag.completed { background: var(--success-bg); color: var(--success); }
-    .tag.failed    { background: var(--danger-bg);  color: var(--danger); }
-  </style>
-</head>
-<body>
+      .rc-msg {
+        display: none;
+        margin-top: 6px;
+        padding-left: 34px;
+        font-size: 11px;
+        color: var(--warn);
+        font-style: italic;
+      }
+      .rc-msg.visible {
+        display: block;
+      }
 
-  <div class="deco-chips" aria-hidden="true">
-    <div class="deco-chip"></div>
-    <div class="deco-chip"></div>
-    <div class="deco-chip"></div>
-  </div>
+      .rc-recharge-yes {
+        color: var(--orange);
+        font-weight: 700;
+      }
 
-  <!-- ═══ HEADER ═══ -->
-  <header class="mainHeader">
-    <nav class="navbar">
-      <a class="brandWrap" href="index.html">
-        <img src="https://qdegrees.com/img/logo.svg" alt="QDegrees Logo" class="brandLogo">
-        <span class="logoTagline">VI Sim Automation Platform</span>
-      </a>
-      <ul class="navbar-nav">
-        <li><a href="index.html" class="nav-link">Home</a></li>
-        <li><a href="bill-validation.html" class="nav-link">Bill Validation</a></li>
-        <li><a href="sim-recharge.html" class="nav-link active">SIM Recharge</a></li>
-      </ul>
-      <div class="nav-right">
-        <a href="index.html" class="btn-back">← Back</a>
-      </div>
-    </nav>
-  </header>
+      /* ── CAPTCHA / OTP OVERLAY ── */
+      .overlay-wrap {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(30, 15, 0, 0.55);
+        justify-content: center;
+        align-items: center;
+        z-index: 200;
+      }
+      .overlay-wrap.visible {
+        display: flex;
+      }
+      .captcha-box {
+        background: var(--white);
+        padding: 32px 28px;
+        border-radius: var(--radius);
+        width: 420px;
+        max-width: 90%;
+        text-align: center;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-lg);
+      }
+      .captcha-box h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 6px;
+      }
+      .captcha-box p {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 18px;
+      }
+      .captcha-image-wrap {
+        background: var(--cream-dk);
+        border-radius: var(--radius-sm);
+        padding: 12px;
+        margin-bottom: 18px;
+        border: 1px solid var(--border);
+      }
+      .captcha-image-wrap img {
+        max-width: 100%;
+        border-radius: 4px;
+        display: block;
+        margin: 0 auto;
+      }
+      .form-control {
+        width: 100%;
+        padding: 11px 14px;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-family: "Poppins", sans-serif;
+        color: var(--text);
+        background: var(--bg);
+        outline: none;
+        transition: border 0.2s;
+        margin-bottom: 20px;
+        text-align: center;
+        letter-spacing: 2px;
+      }
+      .form-control:focus {
+        border-color: var(--orange);
+      }
 
-  <!-- ═══ PAGE CONTENT ═══ -->
-  <main class="page-wrap">
+      /* ── FOOTER ── */
+      .footerMain {
+        background: #fff;
+        border-top: 1px solid var(--border);
+        padding: 16px 24px;
+      }
+      .footer-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .footerMain p {
+        font-size: 12.5px;
+        color: var(--text-muted);
+        margin: 0;
+      }
+      .footerMain span {
+        color: var(--brown);
+        font-weight: 600;
+      }
+      .footer-logo {
+        height: 26px;
+        object-fit: contain;
+        opacity: 0.7;
+      }
+      @media (max-width: 768px) {
+        .footer-content {
+          flex-direction: column;
+          gap: 10px;
+          text-align: center;
+        }
+      }
+      @media (max-width: 860px) {
+        .page-wrap {
+          padding: 24px 20px 48px;
+        }
+        .navbar {
+          padding: 12px 20px;
+        }
+      }
 
-    <div class="section-heading">
-      <img src="/images/landingpage/watermark.png" width="44" alt="" onerror="this.style.display='none'">
-      <h2>SIM Recharge UAT Automation</h2>
-      <p>Upload test data and execute automated recharge UAT for SWIFT CRM, IN, and VI Application.</p>
+      .tag {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .tag.running {
+        background: var(--info-bg);
+        color: var(--info);
+      }
+      .tag.ready {
+        background: var(--cream-dk);
+        color: var(--muted);
+      }
+      .tag.completed {
+        background: var(--success-bg);
+        color: var(--success);
+      }
+      .tag.failed {
+        background: var(--danger-bg);
+        color: var(--danger);
+      }
+
+      /* ── TEST CARDS ── */
+      .test-cards-container {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        max-height: 65vh;
+        overflow-y: auto;
+        padding-right: 4px;
+      }
+      .test-cards-container::-webkit-scrollbar {
+        width: 5px;
+      }
+      .test-cards-container::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 4px;
+      }
+
+      .test-card {
+        background: var(--white);
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        padding: 0;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow);
+        position: relative;
+      }
+      .test-card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 5px;
+        background: #bdbdbd;
+        transition: background 0.3s;
+      }
+      .test-card.pending::before {
+        background: #9e9e9e;
+      }
+      .test-card.running::before {
+        background: var(--info);
+      }
+      .test-card.waiting::before {
+        background: var(--warn);
+      }
+      .test-card.completed::before {
+        background: var(--success);
+      }
+      .test-card.failed::before {
+        background: var(--danger);
+      }
+
+      .test-card.pending {
+        border-color: #e0e0e0;
+      }
+      .test-card.running {
+        border-color: #bbdefb;
+        background: #fafafa;
+      }
+      .test-card.waiting {
+        border-color: #ffe0b2;
+        background: #fffbf5;
+      }
+      .test-card.completed {
+        border-color: #c8e6c9;
+        background: #f8fff8;
+      }
+      .test-card.failed {
+        border-color: #ffcdd2;
+        background: #fff8f8;
+      }
+
+      .test-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px 12px 24px;
+        border-bottom: 1px solid var(--border);
+        background: var(--cream);
+      }
+      .test-card-id {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--orange);
+        background: #fff;
+        padding: 2px 10px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+      }
+      .test-card-msisdn {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text);
+        font-family: "Courier New", monospace;
+        letter-spacing: 0.5px;
+      }
+      .test-card-vi-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 20px;
+        background: var(--success-bg);
+        color: var(--success);
+      }
+
+      .test-card-body {
+        padding: 16px 20px 16px 24px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+      .test-info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .test-info-label {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .test-info-value {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .test-info-value.benefit {
+        font-size: 11px;
+        color: var(--info);
+        font-weight: 500;
+        background: var(--info-bg);
+        padding: 4px 8px;
+        border-radius: 6px;
+        display: inline-block;
+        margin-top: 2px;
+      }
+      .test-info-value.mrp {
+        color: var(--orange);
+        font-size: 14px;
+      }
+
+      .test-status-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        padding: 0 20px 16px 24px;
+      }
+      .status-col {
+        background: var(--bg);
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 10px 8px;
+        text-align: center;
+        transition: all 0.25s;
+      }
+      .status-col-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 6px;
+      }
+      .status-col-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 20px;
+        min-width: 60px;
+      }
+      .status-col-badge .col-spinner {
+        width: 10px;
+        height: 10px;
+        border: 2px solid currentColor;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      .col-pending {
+        background: #eee;
+        color: #888;
+        border-color: #ddd;
+      }
+      .col-running {
+        background: var(--info-bg);
+        color: var(--info);
+        border-color: #90caf9;
+      }
+      .col-waiting {
+        background: var(--warn-bg);
+        color: var(--warn);
+        border-color: #ffe082;
+      }
+      .col-completed {
+        background: var(--success-bg);
+        color: var(--success);
+        border-color: #a5d6a7;
+      }
+      .col-failed {
+        background: var(--danger-bg);
+        color: var(--danger);
+        border-color: #ef9a9a;
+      }
+      .col-skipped {
+        background: #f5f5f5;
+        color: #999;
+        border-color: #e0e0e0;
+      }
+
+      .test-card-footer {
+        padding: 12px 20px 14px 24px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(0, 0, 0, 0.02);
+      }
+      .overall-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .overall-status .overall-spinner {
+        width: 16px;
+        height: 16px;
+        border: 2.5px solid var(--info);
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      .overall-status.running {
+        color: var(--info);
+      }
+      .overall-status.completed {
+        color: var(--success);
+      }
+      .overall-status.failed {
+        color: var(--danger);
+      }
+      .overall-status.pending {
+        color: #888;
+      }
+      .overall-status.waiting {
+        color: var(--warn);
+      }
+
+      .arrow-anim {
+        opacity: 0;
+        transform: translateX(-8px);
+        animation: arrowSlide 0.4s forwards;
+      }
+      @keyframes arrowSlide {
+        to { opacity: 1; transform: translateX(0); }
+      }
+
+      .test-timestamp {
+        font-size: 11px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="deco-chips" aria-hidden="true">
+      <div class="deco-chip"></div>
+      <div class="deco-chip"></div>
+      <div class="deco-chip"></div>
     </div>
 
-    <!-- Top stat strip -->
-    <div class="stat-strip" id="statStrip">
-      <div class="stat-card">
-        <div class="stat-label">Test Cases</div>
-        <div class="stat-value" id="statTotal">—</div>
-        <div class="stat-sub">from uploaded file</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Executed</div>
-        <div class="stat-value" id="statExecuted">0</div>
-        <div class="stat-sub">steps completed</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Passed</div>
-        <div class="stat-value" style="color:#43a047" id="statPassed">0</div>
-        <div class="stat-sub">validations matched</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Failed</div>
-        <div class="stat-value" style="color:#c0392b" id="statFailed">0</div>
-        <div class="stat-sub">mismatch / errors</div>
-      </div>
-    </div>
+    <!-- HEADER -->
+    <header class="mainHeader">
+      <nav class="navbar">
+        <a class="brandWrap" href="index.html">
+          <img src="https://qdegrees.com/img/logo.svg" alt="QDegrees Logo" class="brandLogo" />
+          <span class="logoTagline">VI Sim Automation Platform</span>
+        </a>
+        <ul class="navbar-nav">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="bill-validation.html" class="nav-link">Bill Validation</a></li>
+          <li><a href="sim-recharge.html" class="nav-link active">SIM Recharge</a></li>
+        </ul>
+        <div class="nav-right">
+          <div class="login-badge checking" id="loginBadge">
+            <span class="badge-dot"></span>
+            <span id="loginBadgeText">Checking login…</span>
+          </div>
+          <a href="index.html" class="btn-back">← Back</a>
+        </div>
+      </nav>
+    </header>
 
-    <!-- Two-column grid -->
-    <div class="" id="mainGrid">
+    <!-- PAGE -->
+    <main class="page-wrap">
+      <div class="section-heading">
+        <img src="/images/landingpage/watermark.png" width="44" alt="" onerror="this.style.display = 'none'" />
+        <h2>SIM Recharge UAT Automation</h2>
+        <p>Upload test data and execute automated recharge UAT for SWIFT CRM, IN, and VI Application.</p>
+      </div>
 
-      <!-- LEFT: Upload + Status -->
+      <!-- Stat strip -->
+      <div class="stat-strip">
+        <div class="stat-card">
+          <div class="stat-label">Test Cases</div>
+          <div class="stat-value" id="statTotal">—</div>
+          <div class="stat-sub">from uploaded file</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Executed</div>
+          <div class="stat-value" id="statExecuted">0</div>
+          <div class="stat-sub">rows completed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Passed</div>
+          <div class="stat-value" style="color: #43a047" id="statPassed">0</div>
+          <div class="stat-sub">rows successful</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Failed</div>
+          <div class="stat-value" style="color: #c0392b" id="statFailed">0</div>
+          <div class="stat-sub">rows failed</div>
+        </div>
+      </div>
+
+      <!-- STEP 1: Upload -->
       <div class="card">
         <div class="card-title">
           <span class="step-pill">STEP 1</span>
           Input Data
         </div>
-        <p class="card-subtitle">Upload the Excel file containing recharge test cases. The automation will execute UAT steps on SWIFT CRM.</p>
+        <p class="card-subtitle">
+          Upload the Excel file containing recharge test cases. The automation
+          will start automatically once the file is validated.
+        </p>
 
         <div class="upload-area" id="dropZone" onclick="document.getElementById('fileInput').click()">
           <span class="upload-icon">📁</span>
-          <p id="fileNameDisplay">Click to upload or drag &amp; drop your file here</p>
-          <p style="font-size:12px; margin-top:6px; opacity:.7">Accepted formats: .xlsx, .xls</p>
-          <input type="file" id="fileInput" accept=".xlsx,.xls">
-          <button class="btn-download-sample" onclick="event.stopPropagation(); downloadSample()">
+          <p id="fileNameDisplay">Click to upload or drag &amp; drop your Excel file here</p>
+          <p style="font-size: 12px; margin-top: 6px; opacity: 0.7">Accepted formats: .xlsx, .xls</p>
+          <input type="file" id="fileInput" accept=".xlsx,.xls" />
+          <button class="btn-download-sample" onclick="event.stopPropagation(); downloadSample();">
             <i class="bi bi-download"></i> Download Sample File
           </button>
         </div>
 
-
-        <hr class="divider">
-
         <div class="progress-section" id="progressSection">
           <div class="progress-info">
-            <span id="progressAction">Initializing...</span>
+            <span id="progressAction">Initializing…</span>
             <span id="progressStatus"></span>
           </div>
           <div class="progress-bar-container">
@@ -465,177 +1562,120 @@
             <span id="progressPercent">0%</span>
           </div>
         </div>
-
-        <hr class="divider">
       </div>
 
-      <!-- CAPTCHA OVERLAY -->
-      <div class="overlay-wrap" id="captchaOverlay">
-        <div class="captcha-box">
-          <h3>CAPTCHA Verification</h3>
-          <p>Please enter the characters shown in the image.</p>
-          <div class="captcha-image-wrap">
-            <img id="captchaImage" src="" alt="CAPTCHA" onerror="this.style.outline='2px solid red'; this.alt='⚠️ Image not found — check /captcha-images/ route'">
-          </div>
-          <input type="text" id="captchaInput" class="form-control" placeholder="Enter CAPTCHA code…">
-          <div class="action-buttons" style="justify-content:center;">
-            <button class="btn btn-primary" onclick="submitCaptcha()">Submit</button>
-            <button class="btn btn-muted"   onclick="closeCaptcha()">Cancel</button>
-          </div>
+      <!-- PREVIEW SECTION -->
+      <div class="preview-section" id="previewSection">
+        <div class="preview-heading">
+          <div class="line"></div>
+          <h3>Excel Data Preview &amp; Plan Matching</h3>
+          <div class="line"></div>
         </div>
-      </div>
 
-      <!-- OTP OVERLAY -->
-      <div class="overlay-wrap" id="otpOverlay">
-        <div class="captcha-box">
-          <h3>VI App OTP Verification</h3>
-          <p id="otpMessage">Please enter the OTP received on your mobile.</p>
-          <input type="text" id="otpInput" maxlength="6" inputmode="numeric" pattern="[0-9]{4,6}" class="form-control" placeholder="Enter 4-6 digit OTP…">
-          <div class="action-buttons" style="justify-content:center;">
-            <button class="btn btn-primary" onclick="submitOTP()">Submit</button>
-            <button class="btn btn-muted"   onclick="closeOTP()">Cancel</button>
+        <div class="preview-strip">
+          <div class="ps-card">
+            <div class="ps-label">Total Test Cases</div>
+            <div class="ps-value" id="pvTotal">0</div>
+          </div>
+          <div class="ps-card green">
+            <div class="ps-label">Matched Plans</div>
+            <div class="ps-value" id="pvMatched">—</div>
+          </div>
+          <div class="ps-card red">
+            <div class="ps-label">Unmatched</div>
+            <div class="ps-value" id="pvUnmatched">—</div>
           </div>
         </div>
-      </div>
 
-      <!-- RIGHT: Logs & Screenshots -->
-
-
-    </div><!-- /step-grid -->
-
-    <!-- ═══════════════════════════════════════════════════════
-         PREVIEW SECTION — single render after bulk API
-    ═══════════════════════════════════════════════════════ -->
-    <div class="preview-section" id="previewSection">
-
-      <div class="preview-heading">
-        <div class="line"></div>
-        <h3>Excel Data Preview &amp; Plan Matching</h3>
-        <div class="line"></div>
-      </div>
-
-      <!-- Summary stat strip -->
-      <div class="preview-strip">
-        <div class="ps-card">
-          <div class="ps-label">Total Test Cases</div>
-          <div class="ps-value" id="pvTotal">0</div>
-        </div>
-        <div class="ps-card green">
-          <div class="ps-label">Matched Plans</div>
-          <div class="ps-value" id="pvMatched">—</div>
-        </div>
-        <div class="ps-card red">
-          <div class="ps-label">Unmatched</div>
-          <div class="ps-value" id="pvUnmatched">—</div>
-        </div>
-      </div>
-
-      <!-- ── SKELETON LOADER (shown while API is in-flight) ── -->
-      <div id="validationLoader" style="display:none;">
-
-        <!-- Banner -->
-        <div class="validation-banner">
-          <span class="spin-ring"></span>
-          <span id="loaderMsg">Validating each numbers via Vi system, please wait…</span>
-        </div>
-
-        <!-- Skeleton matched -->
-        <div style="margin-bottom:28px;">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-            <div class="skeleton-bar" style="width:180px;height:14px;"></div>
-            <div class="skeleton-bar" style="width:70px;height:20px;border-radius:20px;"></div>
+        <!-- Skeleton loader -->
+        <div id="validationLoader" style="display: none">
+          <div class="validation-banner">
+            <span class="spin-ring"></span>
+            <span id="loaderMsg">Validating numbers via Vi system, please wait…</span>
           </div>
-          <div class="skeleton-table">
-            <div class="skeleton-thead"></div>
-            <div class="skeleton-body">
-              <div class="skeleton-bar" style="width:100%;"></div>
-              <div class="skeleton-bar" style="width:88%;"></div>
-              <div class="skeleton-bar" style="width:94%;"></div>
+          <div style="margin-bottom: 28px">
+            <div class="skeleton-table">
+              <div class="skeleton-thead"></div>
+              <div class="skeleton-body">
+                <div class="skeleton-bar" style="width: 100%"></div>
+                <div class="skeleton-bar" style="width: 88%"></div>
+                <div class="skeleton-bar" style="width: 94%"></div>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Skeleton unmatched -->
-        <div>
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-            <div class="skeleton-bar" style="width:210px;height:14px;"></div>
-            <div class="skeleton-bar" style="width:70px;height:20px;border-radius:20px;"></div>
+        <!-- Real tables -->
+        <div id="tablesContainer" style="display: none">
+          <!-- Matched -->
+          <div class="card" id="matchedCard">
+            <div class="card-title">
+              <span class="step-pill">STEP 2</span>
+              Matched Test Cases
+              <span class="tag-badge tag-green" id="matchedCountBadge">0 records</span>
+            </div>
+            <div id="testCardsContainer" class="test-cards-container">
+              <div class="empty-preview">
+                <span class="ep-icon">🔍</span>
+                <p>No matched records yet.</p>
+              </div>
+            </div>
           </div>
-          <div class="skeleton-table">
-            <div class="skeleton-thead"></div>
-            <div class="skeleton-body">
-              <div class="skeleton-bar" style="width:100%;"></div>
-              <div class="skeleton-bar" style="width:75%;"></div>
+
+          <!-- STEP 3: Execution -->
+          <div class="card">
+            <div class="card-title">
+              <span class="step-pill">STEP 3</span>
+              Execution
+            </div>
+            <p class="card-subtitle">
+              Tests start automatically after validation. Rows with
+              <strong>Recharge = Yes</strong> will pause and wait for the <strong>Smart Connect Application</strong>
+              confirmation before advancing to the next row.
+            </p>
+
+            <div class="action-buttons">
+              <button class="btn btn-primary" id="startBtn" onclick="startUAT()" disabled>
+                <i class="bi bi-play-circle-fill"></i> Start Validation
+              </button>
+              <button class="btn btn-danger" id="stopBtn" onclick="stopUAT()" disabled>
+                <i class="bi bi-stop-circle-fill"></i> Stop Test
+              </button>
+            </div>
+
+            <!-- Row status panel -->
+            <div class="row-status-panel" id="rowStatusPanel" style="display: none; margin-top: 24px">
+              <div class="rsp-heading">
+                <span class="step-pill">LIVE</span>
+                Row-by-Row Execution Status
+              </div>
+              <div class="row-cards-list" id="rowCardsList"></div>
+            </div>
+          </div>
+
+          <!-- Unmatched -->
+          <div class="card">
+            <div class="card-title">
+              Unmatched Test Cases
+              <span class="tag-badge tag-orange" id="unmatchedCountBadge">0 records</span>
+            </div>
+            <div class="ptable-wrap" id="unmatchedTableWrap">
+              <div class="empty-preview">
+                <span class="ep-icon">📋</span>
+                <p>No unmatched records.</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ── REAL TABLES (hidden until API resolves) ── -->
-      <div id="tablesContainer" style="display:none;">
-
-        <!-- Matched -->
-          <div class="card">
-         <div class="card-title">
-          <span class="step-pill">STEP 2</span>
-          Matched Test Cases
-           <span class="tag-badge tag-green" id="matchedCountBadge">0 records</span>
-        </div>
-      
-        <div class="ptable-wrap" id="matchedTableWrap">
-          <div class="empty-preview">
-            <span class="ep-icon">🔍</span>
-            <p>No matched records yet.</p>
-          </div>
-        </div>
-        </div>
-        
-         <div class="card">
-          <div class="card-title">
-          <span class="step-pill">STEP 3</span>
-          Execution
-        </div>
-
-          <div class="action-buttons">
-          <button class="btn btn-primary" id="startBtn" onclick="startUAT()" disabled>
-            <i class="bi bi-play-circle-fill"></i> Start Validation
-          </button>
-          <button class="btn btn-danger" id="stopBtn" onclick="stopUAT()" disabled>
-            <i class="bi bi-stop-circle-fill"></i> Stop Test
-          </button>
-        </div>
-         </div>
-        
-
-        <!-- Unmatched -->
-          <div class="card">
-              <div class="card-title">
-          <!-- <span class="step-pill">STEP 2</span> -->
-          Unmatched Test Cases
-          <span class="tag-badge tag-orange" id="unmatchedCountBadge">0 records</span>
-        </div>
-
-        <div class="ptable-wrap" id="unmatchedTableWrap">
-          <div class="empty-preview">
-            <span class="ep-icon">📋</span>
-            <p>No unmatched records.</p>
-          </div>
-        </div>
-          </div>
-        
-
-      </div><!-- /tablesContainer -->
-
-    </div><!-- /previewSection -->
+      <!-- STEP 4: Logs -->
       <div class="card">
         <div class="card-title">
           <span class="step-pill">STEP 4</span>
-          <div >Execution Logs &amp; Screenshots</div>
-          <button class="btn btn-muted btn-sm" onclick="clearLogs()">Clear Logs</button>
+          Execution Logs &amp; Screenshots
+          <button class="btn btn-muted btn-sm" style="margin-left: auto" onclick="clearLogs()">Clear Logs</button>
         </div>
-        
-        
-        
 
         <div class="log-panel" id="logPanel">
           <div class="log-line log-info">
@@ -644,740 +1684,1147 @@
           </div>
         </div>
 
-        <div class="log-footer">
-          
-          <button class="btn btn-success btn-sm" id="downloadReportBtn" style="display:none;" onclick="downloadReport()">
-            ↓ Download Report
-          </button>
-        </div>
-
-        <div class="card-title" style="margin-bottom:16px;">Execution Status</div>
         <div id="statusBox" class="status-box info">Ready to start — upload a file first.</div>
 
-         <div class="log-footer">
-          <!-- <button class="btn btn-muted btn-sm" onclick="clearLogs()">Clear Logs</button> -->
-          <button class="btn btn-success btn-sm" id="downloadReportBtn" style="display:none;" onclick="downloadReport()">
-            ↓ Download Report
+        <div class="log-footer">
+          <span></span>
+          <button class="btn btn-success btn-sm" id="downloadReportBtn" style="display: none" onclick="downloadReport()">
+            <i class="bi bi-download"></i> Download Report
           </button>
         </div>
-         </div>
 
-        <hr class="divider" style="margin:16px 0;">
+        <hr class="divider" style="margin: 20px 0 14px" />
 
-        <div class="card-title" style="margin-bottom:12px; font-size:13px;">
+        <div class="card-title" style="margin-bottom: 12px; font-size: 13px; border: none; padding: 0">
           <i class="bi bi-images"></i> Screenshots
         </div>
-        <div id="screenshotsContainer" style="min-height:80px;">
-          <p style="color:var(--muted);font-size:13px;text-align:center;padding:12px 0;">
+        <div id="screenshotsContainer">
+          <p style="color: var(--muted); font-size: 13px; text-align: center; padding: 12px 0;">
             Screenshots will appear here during execution.
           </p>
         </div>
       </div>
-  </main>
+    </main>
 
+    <!-- CAPTCHA overlay -->
+    <div class="overlay-wrap" id="captchaOverlay">
+      <div class="captcha-box">
+        <h3>SWIFT CRM Login</h3>
+        <p>Please enter your credentials and the CAPTCHA code.</p>
 
+        <div style="text-align: left; margin-bottom: 12px">
+          <label style="font-size: 13px; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px;">
+            <i class="bi bi-person"></i> Username
+          </label>
+          <input type="text" id="swiftUsername" class="form-control" placeholder="Enter SWIFT CRM username" style="text-align: left; letter-spacing: 0px" />
+        </div>
 
-  <!-- ═══ SCRIPTS ═══ -->
-  <script>
-    // ── STATE ──
-    let selectedFile = null;
-    let ws           = null;
-    let isRunning    = false;
-    let sessionId    = null;
+        <div style="text-align: left; margin-bottom: 12px">
+          <label style="font-size: 13px; font-weight: 600; color: var(--text); display: block; margin-bottom: 4px;">
+            <i class="bi bi-lock"></i> Password
+          </label>
+          <input type="password" id="swiftPassword" class="form-control" placeholder="Enter SWIFT CRM password" style="text-align: left; letter-spacing: 0px" />
+        </div>
 
-    // ── DOM REFS ──
-    const fileInput            = document.getElementById('fileInput');
-    const fileNameDisplay      = document.getElementById('fileNameDisplay');
-    const startBtn             = document.getElementById('startBtn');
-    const stopBtn              = document.getElementById('stopBtn');
-    const statusBox            = document.getElementById('statusBox');
-    const progressSection      = document.getElementById('progressSection');
-    const progressBar          = document.getElementById('progressBar');
-    const progressPercent      = document.getElementById('progressPercent');
-    const progressAction       = document.getElementById('progressAction');
-    const progressStatus       = document.getElementById('progressStatus');
-    const logPanel             = document.getElementById('logPanel');
-    const screenshotsContainer = document.getElementById('screenshotsContainer');
-    const downloadReportBtn    = document.getElementById('downloadReportBtn');
-    const captchaOverlay       = document.getElementById('captchaOverlay');
-    const captchaImage         = document.getElementById('captchaImage');
-    const captchaInput         = document.getElementById('captchaInput');
-    const otpOverlay           = document.getElementById('otpOverlay');
-    const otpInput             = document.getElementById('otpInput');
-    const otpMessage           = document.getElementById('otpMessage');
-    const statTotal            = document.getElementById('statTotal');
-    const statExecuted         = document.getElementById('statExecuted');
-    const statPassed           = document.getElementById('statPassed');
-    const statFailed           = document.getElementById('statFailed');
+        <div class="captcha-image-wrap">
+          <img id="captchaImage" src="" alt="CAPTCHA" />
+        </div>
 
-    // ── FILE HANDLING ──
-    fileInput.onchange = (e) => { const f = e.target.files[0]; if (f) handleFile(f); };
+        <input type="text" id="captchaInput" class="form-control" placeholder="Enter CAPTCHA code…" />
 
-    const dropZone = document.getElementById('dropZone');
-    dropZone.addEventListener('dragover',  (e) => { e.preventDefault(); dropZone.style.borderColor = 'var(--orange)'; });
-    dropZone.addEventListener('dragleave', ()  => { dropZone.style.borderColor = ''; });
-    dropZone.addEventListener('drop', (e) => {
-      e.preventDefault(); dropZone.style.borderColor = '';
-      const file = e.dataTransfer.files[0];
-      if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
-        handleFile(file);
-      } else {
-        addLog('Invalid file type. Please upload .xlsx or .xls.', 'error');
+        <div class="action-buttons" style="justify-content: center">
+          <button class="btn btn-primary" onclick="submitCaptcha()">
+            <i class="bi bi-box-arrow-in-right"></i> Login
+          </button>
+          <button class="btn btn-muted" onclick="closeCaptcha()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- OTP overlay -->
+    <div class="overlay-wrap" id="otpOverlay">
+      <div class="captcha-box">
+        <h3>VI App OTP Verification</h3>
+        <p id="otpMessage">Please enter the OTP received on your mobile.</p>
+        <input type="text" id="otpInput" maxlength="6" inputmode="numeric" class="form-control" placeholder="Enter 4–6 digit OTP…" />
+        <div class="action-buttons" style="justify-content: center">
+          <button class="btn btn-primary" onclick="submitOTP()">Submit OTP</button>
+          <button class="btn btn-muted" onclick="closeOTP()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footerMain">
+      <div class="footer-content">
+        <p>Copyright &copy; 2026 <span>QDegrees Services Pvt. Ltd.</span> &nbsp;|&nbsp; VI Sim Automation Platform</p>
+        <img src="https://qdegrees.com/img/logo.svg" alt="QDegrees" class="footer-logo" />
+      </div>
+    </footer>
+
+    <!-- SCRIPTS -->
+    <script>
+      /* ============================================================
+         STATE
+      ============================================================ */
+      let selectedFile = null;
+      let selectedFileName = null; // FIXED: Added this variable
+      let ws = null;
+      let isRunning = false;
+      let sessionId = null;
+      let rowCardMap = {};
+      let testCardsData = [];
+
+      /* ============================================================
+         DOM REFS
+      ============================================================ */
+      const fileInput = document.getElementById("fileInput");
+      const fileNameDisplay = document.getElementById("fileNameDisplay");
+      const startBtn = document.getElementById("startBtn");
+      const stopBtn = document.getElementById("stopBtn");
+      const statusBox = document.getElementById("statusBox");
+      const progressSection = document.getElementById("progressSection");
+      const progressBar = document.getElementById("progressBar");
+      const progressPercent = document.getElementById("progressPercent");
+      const progressAction = document.getElementById("progressAction");
+      const progressStatus = document.getElementById("progressStatus");
+      const logPanel = document.getElementById("logPanel");
+      const screenshotsContainer = document.getElementById("screenshotsContainer");
+      const downloadReportBtn = document.getElementById("downloadReportBtn");
+      const captchaOverlay = document.getElementById("captchaOverlay");
+      const captchaImage = document.getElementById("captchaImage");
+      const captchaInput = document.getElementById("captchaInput");
+      const otpOverlay = document.getElementById("otpOverlay");
+      const otpInput = document.getElementById("otpInput");
+      const otpMessage = document.getElementById("otpMessage");
+      const loginBadge = document.getElementById("loginBadge");
+      const loginBadgeText = document.getElementById("loginBadgeText");
+      const rowStatusPanel = document.getElementById("rowStatusPanel");
+      const rowCardsList = document.getElementById("rowCardsList");
+      const testCardsContainer = document.getElementById("testCardsContainer");
+
+      /* ============================================================
+         LOGIN STATUS BADGE
+      ============================================================ */
+      function setLoginBadge(state, label) {
+        loginBadge.className = `login-badge ${state}`;
+        loginBadgeText.textContent = label;
       }
-    });
 
-    function handleFile(file) {
-      selectedFile = file;
-      fileNameDisplay.innerHTML = `<span class="file-name">📄 ${file.name}</span>`;
-      startBtn.disabled = false;
-      addLog(`File selected: ${file.name}`, 'success');
-
-      // Reset UAT stats
-      statTotal.textContent    = '—';
-      statExecuted.textContent = '0';
-      statPassed.textContent   = '0';
-      statFailed.textContent   = '0';
-
-      // Reset preview section state
-      document.getElementById('previewSection').classList.remove('visible');
-      document.getElementById('validationLoader').style.display = 'none';
-      document.getElementById('tablesContainer').style.display  = 'none';
-      document.getElementById('pvMatched').textContent   = '—';
-      document.getElementById('pvUnmatched').textContent = '—';
-
-      parseExcelPreview(file);
-    }
-
-    // ══════════════════════════════════════════════════════════
-    //  PARSE EXCEL + SINGLE RENDER PASS
-    // ══════════════════════════════════════════════════════════
-    // In sim-recharge.html, update the parseExcelPreview function
-async function parseExcelPreview(file) {
-  const reader = new FileReader();
-  reader.onload = async function(e) {
-    try {
-      const wb = XLSX.read(e.target.result, { type: 'array' });
-
-      // Sheet 1: Input
-      const inputSheetName = wb.SheetNames.find(n => n.toLowerCase().includes('input')) || wb.SheetNames[0];
-      const inputRows = XLSX.utils.sheet_to_json(wb.Sheets[inputSheetName], { defval: '' });
-
-      // Sheet 2: Plans
-      const planSheetName = wb.SheetNames.find(n =>
-        n.toLowerCase().includes('recharge') || n.toLowerCase().includes('plan')
-      ) || wb.SheetNames[1];
-      const planRows = XLSX.utils.sheet_to_json(wb.Sheets[planSheetName], { defval: '' });
-
-      if (!inputRows.length) { addLog('⚠️ Input sheet is empty.', 'warning'); return; }
-      if (!planRows.length)  { addLog('⚠️ Plans sheet is empty.', 'warning'); return; }
-
-      // Build MRP → plan row lookup
-      const planMRPMap = {};
-      planRows.forEach(row => {
-        const mrp = Number(row['New MRP']);
-        if (!isNaN(mrp) && mrp) {
-          planMRPMap[mrp] = {
-            benefit: row['Benefit (Open)'] || '',
-            planName: row['Plan Name'] || '',
-            // Add any other fields you need
-          };
+      async function pollLoginStatus() {
+        try {
+          const r = await fetch("/api/swift/login-status");
+          if (!r.ok) return;
+          const d = await r.json();
+          if (d.isLoggedIn) {
+            const since = d.lastLoginAt ? " since " + new Date(d.lastLoginAt).toLocaleTimeString() : "";
+            setLoginBadge("logged-in", "Logged In – SWIFT CRM" + since);
+          } else {
+            setLoginBadge("logged-out", "Not Logged In");
+          }
+        } catch (_) {
+          setLoginBadge("checking", "SWIFT CRM Login");
         }
+      }
+
+      setLoginBadge("checking", "Checking…");
+      pollLoginStatus();
+      setInterval(() => {
+        if (!isRunning) pollLoginStatus();
+      }, 5000);
+
+      /* ============================================================
+         FILE HANDLING - FIXED
+      ============================================================ */
+      fileInput.onchange = (e) => {
+        const f = e.target.files[0];
+        if (f) {
+          console.log(`[File] Selected: ${f.name}, size: ${f.size} bytes, type: ${f.type}`);
+          handleFile(f);
+        }
+        fileInput.value = '';
+      };
+
+      const dropZone = document.getElementById("dropZone");
+      dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = "var(--orange)";
       });
-
-      // Show total immediately
-      statTotal.textContent = inputRows.length;
-      document.getElementById('pvTotal').textContent = inputRows.length;
-
-      // Show preview section + loader skeleton; hide real tables
-      document.getElementById('previewSection').classList.add('visible');
-      document.getElementById('loaderMsg').textContent =
-        `Validating ${inputRows.length} number${inputRows.length !== 1 ? 's' : ''} via Vi network, please wait…`;
-      document.getElementById('validationLoader').style.display = 'block';
-      document.getElementById('tablesContainer').style.display  = 'none';
-
-      // ── SINGLE BULK API CALL ──
-      const bulkResult = await callBulkValidationAPI(inputRows);
-
-      // Build number → API result map
-      const validationMap = {};
-      if (bulkResult && Array.isArray(bulkResult.results)) {
-        bulkResult.results.forEach(r => {
-          const num = String(r.number).trim();
-          // Find the corresponding input row to get amount and benefit
-          const inputRow = inputRows.find(row => String(row['MSISDN'] || '').trim() === num);
-          const mrp = inputRow ? Number(inputRow['Recharge MRP']) : 0;
-          const planData = planMRPMap[mrp] || {};
-          
-          validationMap[num] = {
-            ...r,
-            amount: mrp,
-            benefit: planData.benefit || 'N/A',
-            planName: planData.planName || 'Recharge Plan',
-            circle: inputRow ? (inputRow['CIRCLE'] || 'Vi') : 'Vi'
-          };
-        });
-      }
-
-      // ── CLASSIFY (one pass only) ──
-      const matched   = [];
-      const unmatched = [];
-
-      inputRows.forEach(row => {
-        const msisdn = String(row['MSISDN'] || '').trim();
-        const mrp    = Number(row['Recharge MRP']);
-        const apiRes = validationMap[msisdn];
-        const reasons = [];
-
-        const isViValid = apiRes ? apiRes.isValid : false;
-
-        if (apiRes && !apiRes.isValid) {
-          reasons.push(apiRes.message || 'Invalid Vi number');
-        } else if (!apiRes) {
-          reasons.push('Invalid MSISDN (must be 10 digits)');
-        }
-
-        if (!planMRPMap[mrp]) reasons.push('MRP not found in plan sheet');
-
-        if (reasons.length === 0) {
-          matched.push({ 
-            input: row, 
-            plan: planMRPMap[mrp], 
-            apiRes: {
-              ...apiRes,
-              amount: mrp,
-              benefit: planMRPMap[mrp] ? planMRPMap[mrp].benefit : 'N/A',
-              circle: row['CIRCLE'] || 'Vi'
-            }, 
-            isViValid 
-          });
+      dropZone.addEventListener("dragleave", () => {
+        dropZone.style.borderColor = "";
+      });
+      dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = "";
+        const file = e.dataTransfer.files[0];
+        if (file && (file.name.endsWith(".xlsx") || file.name.endsWith(".xls"))) {
+          console.log(`[File] Dropped: ${file.name}, size: ${file.size} bytes`);
+          handleFile(file);
         } else {
-          unmatched.push({ 
-            ...row, 
-            _reason: reasons.join(' · '), 
-            _apiRes: {
-              ...apiRes,
-              amount: mrp,
-              benefit: 'N/A',
-              circle: row['CIRCLE'] || 'N/A'
-            }, 
-            _isViValid: isViValid 
+          addLog("Invalid file type. Please upload .xlsx or .xls.", "error");
+        }
+      });
+
+      function handleFile(file) {
+        selectedFile = file;
+        selectedFileName = file.name;
+        fileNameDisplay.innerHTML = `<span class="file-name">📄 ${file.name}</span>`;
+        addLog(`File selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`, "success");
+
+        document.getElementById("statTotal").textContent = "—";
+        document.getElementById("statExecuted").textContent = "0";
+        document.getElementById("statPassed").textContent = "0";
+        document.getElementById("statFailed").textContent = "0";
+
+        document.getElementById("previewSection").classList.remove("visible");
+        document.getElementById("validationLoader").style.display = "none";
+        document.getElementById("tablesContainer").style.display = "none";
+        document.getElementById("pvMatched").textContent = "—";
+        document.getElementById("pvUnmatched").textContent = "—";
+        rowStatusPanel.style.display = "none";
+        rowCardsList.innerHTML = "";
+        rowCardMap = {};
+        testCardsData = [];
+
+        parseExcelPreview(file);
+      }
+
+      /* ============================================================
+         PARSE EXCEL + BULK API
+      ============================================================ */
+      async function parseExcelPreview(file) {
+        const reader = new FileReader();
+        reader.onload = async function (e) {
+          try {
+            const wb = XLSX.read(e.target.result, { type: "array" });
+
+            const inputSheetName = wb.SheetNames.find((n) => n.toLowerCase().includes("input")) || wb.SheetNames[0];
+            const inputRows = XLSX.utils.sheet_to_json(wb.Sheets[inputSheetName], { defval: "" });
+
+            const planSheetName = wb.SheetNames.find((n) => n.toLowerCase().includes("recharge") || n.toLowerCase().includes("plan")) || wb.SheetNames[1];
+            const planRows = wb.Sheets[planSheetName] ? XLSX.utils.sheet_to_json(wb.Sheets[planSheetName], { defval: "" }) : [];
+
+            if (!inputRows.length) {
+              addLog("⚠️ Input sheet is empty.", "warning");
+              return;
+            }
+
+            const planMRPMap = {};
+            planRows.forEach((row) => {
+              const mrp = Number(row["New MRP"]);
+              if (!isNaN(mrp) && mrp) {
+                planMRPMap[mrp] = {
+                  benefit: row["Benefit (Open)"] || "",
+                  planName: row["Plan Name"] || "",
+                };
+              }
+            });
+
+            document.getElementById("statTotal").textContent = inputRows.length;
+            document.getElementById("pvTotal").textContent = inputRows.length;
+
+            document.getElementById("previewSection").classList.add("visible");
+            document.getElementById("loaderMsg").textContent = `Validating ${inputRows.length} ${inputRows.length !== 1 ? "s" : ""} number via Vi Number System…`;
+            document.getElementById("validationLoader").style.display = "block";
+            document.getElementById("tablesContainer").style.display = "none";
+
+            const bulkResult = await callBulkValidationAPI(inputRows);
+
+            const validationMap = {};
+            if (bulkResult && Array.isArray(bulkResult.results)) {
+              bulkResult.results.forEach((r) => {
+                const num = String(r.number).trim();
+                const inputRow = inputRows.find((row) => String(row["MSISDN"] || "").trim() === num);
+                const mrp = inputRow ? Number(inputRow["Recharge MRP"]) : 0;
+                const planData = planMRPMap[mrp] || {};
+                validationMap[num] = {
+                  ...r,
+                  amount: mrp,
+                  benefit: planData.benefit || "N/A",
+                  planName: planData.planName || "",
+                  circle: inputRow ? inputRow["CIRCLE"] || "Vi" : "Vi",
+                };
+              });
+            }
+
+            const matched = [], unmatched = [];
+            inputRows.forEach((row) => {
+              const msisdn = String(row["MSISDN"] || "").trim();
+              const mrp = Number(row["Recharge MRP"]);
+              const apiRes = validationMap[msisdn];
+              const reasons = [];
+              const isViValid = apiRes ? apiRes.isValid : false;
+
+              if (apiRes && !apiRes.isValid) reasons.push(apiRes.message || "Invalid Vi number");
+              else if (!apiRes) reasons.push("Invalid MSISDN (must be 10 digits)");
+              if (!planMRPMap[mrp]) reasons.push("MRP not found in plan sheet");
+
+              if (reasons.length === 0) {
+                matched.push({
+                  input: row,
+                  plan: planMRPMap[mrp],
+                  apiRes: {
+                    ...apiRes,
+                    amount: mrp,
+                    benefit: planMRPMap[mrp]?.benefit || "N/A",
+                    circle: row["CIRCLE"] || "Vi",
+                  },
+                  isViValid,
+                });
+              } else {
+                unmatched.push({
+                  ...row,
+                  _reason: reasons.join(" · "),
+                  _apiRes: { ...apiRes, amount: mrp },
+                  _isViValid: isViValid,
+                });
+              }
+            });
+
+            document.getElementById("pvMatched").textContent = matched.length;
+            document.getElementById("pvUnmatched").textContent = unmatched.length;
+            document.getElementById("matchedCountBadge").textContent = `${matched.length} record${matched.length !== 1 ? "s" : ""}`;
+            document.getElementById("unmatchedCountBadge").textContent = `${unmatched.length} record${unmatched.length !== 1 ? "s" : ""}`;
+
+            // Build test-card data from matched rows
+            testCardsData = matched.map((r, idx) => {
+              const inp = r.input;
+              const rechargeVal = String(inp["Recharge"] || "").trim().toLowerCase();
+              const swiftVal = String(inp["SWIFT"] || "").trim().toLowerCase();
+              const inVal = String(inp["IN"] || "").trim().toLowerCase();
+              const viAppVal = String(inp["Vi App"] || "").trim().toLowerCase();
+              return {
+                rowIndex: idx,
+                msisdn: String(inp["MSISDN"] || "").trim(),
+                rechargeMRP: inp["Recharge MRP"],
+                circle: String(inp["CIRCLE"] || "").trim(),
+                benefit: (r.plan && (r.plan["Benefit (Open)"] ?? r.plan.benefit)) || "—",
+                viStatus: "Valid Vi",
+                recharge: rechargeVal,
+                swift: swiftVal,
+                in: inVal,
+                viApp: viAppVal,
+                colStatus: {
+                  recharge: rechargeVal === "yes" ? "pending" : "skipped",
+                  swift: "pending",
+                  in: inVal === "yes" ? "pending" : "skipped",
+                  viApp: viAppVal === "yes" ? "pending" : "skipped",
+                },
+                overallStatus: "pending",
+                startedAt: null,
+                completedAt: null,
+              };
+            });
+            renderTestCards();
+            renderUnmatchedTable(unmatched);
+
+            document.getElementById("validationLoader").style.display = "none";
+            document.getElementById("tablesContainer").style.display = "block";
+
+            addLog(`Preview ready — ${matched.length} matched, ${unmatched.length} unmatched.`, "success");
+            startBtn.disabled = matched.length === 0;
+
+            if (bulkResult && bulkResult.results && bulkResult.results.length > 0) {
+              const enriched = bulkResult.results.map((r) => {
+                const vm = validationMap[String(r.number).trim()] || {};
+                return {
+                  ...r,
+                  amount: vm.amount || 0,
+                  benefit: vm.benefit || "N/A",
+                  circle: vm.circle || "N/A",
+                  planName: vm.planName || "",
+                };
+              });
+              if (enriched.filter((r) => r.isValid).length > 0 || enriched.filter((r) => !r.isValid).length > 0) {
+                sendEmailsAfterValidation(enriched);
+              }
+            }
+          } catch (err) {
+            document.getElementById("validationLoader").style.display = "none";
+            addLog(`Excel parse error: ${err.message}`, "error");
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      }
+
+      async function callBulkValidationAPI(inputRows) {
+        const numbers = inputRows.map((row) => String(row["MSISDN"] || "").trim()).filter((n) => n);
+        if (!numbers.length) {
+          addLog("No MSISDN values found.", "warning");
+          return null;
+        }
+        addLog(`Sending ${numbers.length} number${numbers.length !== 1 ? "s" : ""} for bulk validation…`, "info");
+        try {
+          const response = await fetch("http://localhost:5174/api/validate/bulk", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ numbers }),
           });
-        }
-      });
-
-      // Update summary stats
-      document.getElementById('pvMatched').textContent   = matched.length;
-      document.getElementById('pvUnmatched').textContent = unmatched.length;
-      document.getElementById('matchedCountBadge').textContent   = `${matched.length} record${matched.length   !== 1 ? 's' : ''}`;
-      document.getElementById('unmatchedCountBadge').textContent = `${unmatched.length} record${unmatched.length !== 1 ? 's' : ''}`;
-
-      // ── RENDER ONCE ──
-      renderMatchedTable(matched);
-      renderUnmatchedTable(unmatched);
-
-      // Hide loader, show tables
-      document.getElementById('validationLoader').style.display = 'none';
-      document.getElementById('tablesContainer').style.display  = 'block';
-
-      addLog(`Preview ready — ${matched.length} matched, ${unmatched.length} unmatched.`, 'success');
-
-      // ═══════════════════════════════════════════════════════
-      // ── SEND EMAILS AFTER VALIDATION ──
-      // ═══════════════════════════════════════════════════════
-      if (bulkResult && bulkResult.results && bulkResult.results.length > 0) {
-        // Update the results with amount and benefit from the validation map
-        const enrichedResults = bulkResult.results.map(r => {
-          const num = String(r.number).trim();
-          const enriched = validationMap[num] || {};
-          return {
-            ...r,
-            amount: enriched.amount || 0,
-            benefit: enriched.benefit || 'N/A',
-            circle: enriched.circle || 'N/A',
-            planName: enriched.planName || 'Recharge Plan'
-          };
-        });
-
-        const validResults = enrichedResults.filter(r => r.isValid === true);
-        const invalidResults = enrichedResults.filter(r => r.isValid === false);
-        
-        if (validResults.length > 0 || invalidResults.length > 0) {
-          addLog(`📧 Preparing emails: ${validResults.length} valid (dual emails), ${invalidResults.length} invalid (single email)...`, 'info');
-          
-          // Update progress
-          progressAction.textContent = 'Sending emails...';
-          progressStatus.textContent = `Processing ${validResults.length} valid, ${invalidResults.length} invalid numbers`;
-          progressSection.classList.add('active');
-          progressBar.style.width = '50%';
-          progressPercent.textContent = '50%';
-          
-          // Call the email sending function with enriched results
-           sendEmailsAfterValidation(enrichedResults);
-        } else {
-          addLog('⚠️ No results to send emails.', 'warning');
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const result = await response.json();
+          addLog(`Validation complete — ✅ ${result.processed_valid ?? 0} valid, ❌ ${result.processed_invalid ?? 0} invalid.`, "success");
+          return result;
+        } catch (err) {
+          addLog(`Validation API Error: ${err.message}`, "error");
+          return null;
         }
       }
 
-    } catch (err) {
-      document.getElementById('validationLoader').style.display = 'none';
-      addLog(`Excel parse error: ${err.message}`, 'error');
-      console.error(err);
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
+      /* ============================================================
+         START UAT - FIXED
+      ============================================================ */
+      async function startUAT() {
+        if (!selectedFile || isRunning) return;
 
-    // ── BULK API (pure data fetch, no DOM side-effects) ──
-    async function callBulkValidationAPI(inputRows) {
-      const numbers = inputRows
-        .map(row => String(row['MSISDN'] || '').trim())
-        .filter(n => n);
-
-      if (!numbers.length) {
-        addLog('No MSISDN values found for validation.', 'warning');
-        return null;
-      }
-
-      addLog(`Sending ${numbers.length} number${numbers.length !== 1 ? 's' : ''} for bulk validation…`, 'info');
-
-      try {
-        const response = await fetch('http://localhost:5174/api/validate/bulk', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ numbers })
-        });
-
-        if (!response.ok) {
-          const errBody = await response.json().catch(() => ({}));
-          throw new Error(errBody.detail || errBody.message || `HTTP ${response.status}`);
+        if (!testCardsData || testCardsData.length === 0) {
+          addLog("⚠️ No matched rows to run. Re-check your Excel — nothing passed Vi validation / plan matching.", "warning");
+          return;
         }
 
-        const result = await response.json();
-        addLog(
-          `Validation complete — ✅ ${result.processed_valid ?? 0} valid, ❌ ${result.processed_invalid ?? 0} invalid.`,
-          'success'
-        );
-        return result;
+        isRunning = true;
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        setStatus("UAT in progress…", "info");
+        progressSection.classList.add("active");
+        progressBar.style.width = "0%";
+        progressPercent.textContent = "0%";
+        progressAction.textContent = "Uploading file…";
+        progressStatus.textContent = "";
 
-      } catch (err) {
-        addLog(`Validation API Error: ${err.message}`, 'error');
-        return null; // caller handles gracefully
+        addLog(`🚀 Starting UAT with ${testCardsData.length} matched row(s)`, "info");
+
+        const formData = new FormData();
+        formData.append("excel", selectedFile, selectedFileName || selectedFile.name);
+        addLog(`📤 Uploading file: ${selectedFileName || selectedFile.name}`, "info");
+
+        const matchedRowsPayload = testCardsData.map((t) => ({
+          rowIndex: t.rowIndex,
+          msisdn: t.msisdn,
+          rechargeMRP: t.rechargeMRP,
+          circle: t.circle,
+          recharge: t.recharge,
+          viApp: t.viApp,
+          swift: t.swift || 'yes',
+          inFlag: t.in || 'yes',
+        }));
+        formData.append("matchedRows", JSON.stringify(matchedRowsPayload));
+        addLog(`📋 Sending ${matchedRowsPayload.length} matched row(s)`, "info");
+
+        try {
+          const res = await fetch("/api/swift/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!res.ok) {
+            const errorText = await res.text();
+            throw new Error(`Upload failed (${res.status}): ${errorText}`);
+          }
+
+          const result = await res.json();
+          if (!result.success) throw new Error(result.message || "Upload failed");
+
+          sessionId = result.sessionId;
+          addLog(`✅ File uploaded — ${matchedRowsPayload.length} matched row(s) sent — connecting to automation server…`, "success");
+          setStatus("Connected to automation server", "success");
+          progressAction.textContent = "Connected, starting tests…";
+
+          connectWebSocket(sessionId);
+        } catch (err) {
+          addLog(`❌ Error: ${err.message}`, "error");
+          setStatus(`Error: ${err.message}`, "error");
+          resetUI();
+        }
       }
-    }
 
-    // ── RENDER MATCHED TABLE ──
-    function renderMatchedTable(rows) {
-      const wrap = document.getElementById('matchedTableWrap');
-      if (!rows.length) {
-        wrap.innerHTML = `<div class="empty-preview"><span class="ep-icon">🔍</span><p>No matched records found.</p></div>`;
-        return;
-      }
-      let html = `
-        <table class="ptable">
-          <thead>
-            <tr>
-              <th>Sr. No.</th>
-              <th>MSISDN</th>
-              <th>Vi Status</th>
-              <th>Circle</th>
-              <th>Recharge MRP (₹)</th>
-              <th>Benefit</th>
-              <th>Recharge</th>
-              <th>SWIFT</th>
-              <th>IN</th>
-              <th>Vi App</th>
-            </tr>
-          </thead>
-          <tbody>
-      `;
-      rows.forEach((r, i) => {
-        const inp    = r.input;
-        const plan   = r.plan;
-        const viMsg  = r.apiRes ? r.apiRes.message : 'Valid Vi number';
-        html += `
-          <tr>
-            <td>${i + 1}</td>
-            <td><code style="font-size:12px;">${inp['MSISDN'] || '—'}</code></td>
-            <td><span class="match-chip yes" title="${escHtml(viMsg)}">Valid Vi</span></td>
-            <td>${inp['CIRCLE'] || '—'}</td>
-            <td><span class="mrp-highlight-input">₹${inp['Recharge MRP']}</span></td>
-            <td><span class="benefit-tag">${(plan && (plan['Benefit (Open)'] ?? plan['Benefit'] ?? plan.benefit)) || '—'}</span></td>
-            <td>${yesNoIcon(inp['Recharge'])}</td>
-            <td>${yesNoIcon(inp['SWIFT'])}</td>
-            <td>${yesNoIcon(inp['IN'])}</td>
-            <td>${yesNoIcon(inp['Vi App'])}</td>
-          </tr>
-        `;
-      });
-      html += `</tbody></table>`;
-      wrap.innerHTML = html;
-    }
-
-    function renderUnmatchedTable(rows) {
-  const wrap = document.getElementById('unmatchedTableWrap');
-  if (!rows.length) {
-    wrap.innerHTML = `<div class="empty-preview"><p>All records matched — no unmatched entries!</p></div>`;
-    return;
-  }
-  let html = `
-    <table class="ptable">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>MSISDN</th>
-          <th>Vi Status</th>
-          <th>Circle</th>
-          <th>Recharge MRP (₹)</th>
-          <th>Reason</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
-  rows.forEach((r, i) => {
-    const apiRes    = r._apiRes;
-    const isViValid = r._isViValid;
-
-    // Vi Status chip — purely from isValid field
-    let viChip;
-    if (!apiRes) {
-      // Number wasn't processed by API (bad format, skipped)
-      viChip = `<span class="match-chip no">❌ Bad Format</span>`;
-    } else if (isViValid) {
-      // Valid Vi number but failed MRP check
-      viChip = `<span class="match-chip yes" title="${escHtml(apiRes.message)}">✅ Valid Vi</span>`;
-    } else {
-      // Invalid Vi number
-      viChip = `<span class="match-chip no" title="${escHtml(apiRes.message || '')}">❌ Invalid Vi</span>`;
-    }
-
-    html += `
-      <tr>
-        <td>${i + 1}</td>
-        <td><code style="font-size:12px;">${r['MSISDN'] || '—'}</code></td>
-        <td>${viChip}</td>
-        <td>${r['CIRCLE'] || '—'}</td>
-        <td><span class="mrp-highlight-no">₹${r['Recharge MRP']}</span></td>
-        <td><span class="match-chip no" style="white-space:normal;text-align:left;line-height:1.5;">${r._reason}</span></td>
-      </tr>
-    `;
-  });
-  html += `</tbody></table>`;
-  wrap.innerHTML = html;
-}
-    // ── HELPERS ──
-    function yesNoIcon(val) {
-      const v = String(val || '').trim().toLowerCase();
-      return v === 'yes'
-        ? `<span class="match-chip yes">✅ Yes</span>`
-        : `<span class="match-chip no">❌ No</span>`;
-    }
-
-    function escHtml(str) {
-      return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    }
-
-    // ── SAMPLE DOWNLOAD ──
-    function downloadSample() {
-      window.location.href = '/api/swift/download-sample';
-    }
-
-    // ══════════════════════════════════════════
-    //  START / STOP UAT
-    // ══════════════════════════════════════════
-    async function startUAT() {
-      if (!selectedFile || isRunning) return;
-      isRunning = true;
-      startBtn.disabled = true;
-      stopBtn.disabled  = false;
-      setStatus('UAT in progress…', 'info');
-      progressSection.classList.add('active');
-      progressBar.style.width     = '0%';
-      progressPercent.textContent = '0%';
-      progressAction.textContent  = 'Initializing…';
-      progressStatus.textContent  = '';
-
-      const formData = new FormData();
-      formData.append('excel', selectedFile);
-
-      try {
-        const res    = await fetch('/api/swift/upload', { method: 'POST', body: formData });
-        const result = await res.json();
-        if (!result.success) throw new Error(result.message || 'Upload failed');
-        sessionId = result.sessionId;
-        addLog('File uploaded, connecting to automation server…', 'success');
-        connectWebSocket(sessionId);
-      } catch (err) {
-        addLog(`Error: ${err.message}`, 'error');
+      async function stopUAT() {
+        try {
+          await fetch("/api/swift/stop", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId }),
+          });
+          addLog("Stop command sent.", "warning");
+        } catch (_) {}
+        if (ws) {
+          ws.close();
+          ws = null;
+        }
         resetUI();
       }
-    }
 
-    function stopUAT() {
-      if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'stop' }));
-      addLog('Stop command sent.', 'warning');
-      stopBtn.disabled  = true;
-      isRunning         = false;
-      startBtn.disabled = false;
-      setStatus('Stopped by user.', 'warning');
-    }
+      /* ============================================================
+         WEBSOCKET
+      ============================================================ */
+      function connectWebSocket(sid) {
+        const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+        const wsUrl = `${protocol}//${location.host}/swift-ws?sessionId=${sid}`;
+        addLog(`🔌 Connecting WebSocket: ${wsUrl}`, "info");
 
-    // ── WEBSOCKET ──
-    function connectWebSocket(sid) {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      ws = new WebSocket(`${protocol}//${window.location.host}/swift-ws?sessionId=${sid}`);
-      ws.onopen    = () => { addLog('WebSocket connected.', 'success'); ws.send(JSON.stringify({ type: 'start' })); };
-      ws.onmessage = (event) => handleWsMessage(JSON.parse(event.data));
-      ws.onerror   = () => addLog('WebSocket error.', 'error');
-      ws.onclose   = () => { addLog('WebSocket closed.', 'warning'); if (isRunning) resetUI(); };
-    }
+        ws = new WebSocket(wsUrl);
 
-    function handleWsMessage(data) {
-      switch (data.type) {
-        case 'log':         addLog(data.message, data.logType || 'info'); break;
-        case 'progress':    updateProgress(data.progress); break;
-        case 'captcha':     if (data.action === 'show') showCaptcha(data.imageUrl, data.timestamp); break;
-        case 'otp':         if (data.action === 'show') showOTP(data.message); break;
-        case 'screenshots': updateScreenshots(data.screenshots); break;
-        case 'complete':    handleComplete(data); break;
-        case 'stats':       updateStats(data); break;
-        case 'recent_runs': renderRecentRuns(data.runs); break;
-        default: break;
+        ws.onopen = () => {
+          addLog("✅ WebSocket connected.", "success");
+          setStatus("WebSocket connected — launching browser", "info");
+          progressAction.textContent = "Launching browser…";
+          ws.send(JSON.stringify({ type: "start" }));
+          addLog("🚀 Start command sent to orchestrator — launching browser...", "info");
+        };
+
+        ws.onmessage = (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            handleWsMessage(data);
+          } catch (err) {
+            console.error("WebSocket parse error:", err);
+            addLog(`⚠️ WebSocket message parse error: ${err.message}`, "error");
+          }
+        };
+
+        ws.onerror = (err) => {
+          addLog(`❌ WebSocket error: ${err.message || 'Unknown error'}`, "error");
+        };
+
+        ws.onclose = () => {
+          addLog("🔌 WebSocket closed.", "warning");
+          if (isRunning) resetUI();
+        };
       }
-    }
 
-    // ── OTP ──
-    function showOTP(message) {
-      if (message) otpMessage.textContent = message;
-      otpOverlay.classList.add('visible');
-      otpInput.value = ''; otpInput.focus();
-    }
-    function submitOTP() {
-      const otp = otpInput.value.trim();
-      if (!otp) { addLog('⚠️ OTP is empty', 'warning'); return; }
-      if (!/^\d{4,6}$/.test(otp)) { addLog('⚠️ OTP must be 4-6 digits', 'warning'); return; }
-      if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'otp', otp }));
-      closeOTP();
-      addLog(`✅ OTP submitted: ${otp}`, 'success');
-    }
-    function closeOTP() { otpOverlay.classList.remove('visible'); }
-    otpInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitOTP(); });
-
-    // ── CAPTCHA ──
-   function showCaptcha(imageUrl) {
-  console.log(imageUrl, "imageUrlimageUrl");
-  // debugger
-  if (imageUrl) {
-    // The imageUrl from the backend is "/captcha-images/captcha_xxx.png"
-    // Use it directly with cache-busting
-    captchaImage.src = imageUrl ;
-  } else {
-    // Fallback
-    captchaImage.src = '/captcha-images/latest.png?t=' + Date.now();
-  }
-  
-  captchaInput.value = '';
-  captchaOverlay.classList.add('visible');
-  captchaInput.focus();
-  addLog('📸 CAPTCHA image loaded — please enter the code', 'info');
-}
-
-    function submitCaptcha() {
-      const answer = captchaInput.value.trim();
-      if (!answer) { addLog('⚠️ Please enter the CAPTCHA first', 'warning'); return; }
-      if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'captcha', answer }));
-      closeCaptcha();
-      addLog(`✅ CAPTCHA submitted: "${answer}"`, 'success');
-    }
-    function closeCaptcha() {
-      captchaOverlay.classList.remove('visible');
-      captchaInput.value = '';
-    }
-    captchaInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitCaptcha(); });
-
-    // ── LOG HELPERS ──
-    function addLog(message, type = 'info') {
-      const line = document.createElement('div');
-      line.className = `log-line log-${type}`;
-      const time = new Date().toLocaleTimeString();
-      line.innerHTML = `<span class="log-timestamp">[${time}]</span> ${message}`;
-      logPanel.appendChild(line);
-      logPanel.scrollTop = logPanel.scrollHeight;
-    }
-    function clearLogs() { logPanel.innerHTML = ''; addLog('Logs cleared.', 'info'); }
-
-    function setStatus(text, boxClass) {
-      statusBox.textContent = text;
-      statusBox.className   = `status-box ${boxClass}`;
-    }
-
-    function updateProgress(progress) {
-      const pct = progress.percentage || 0;
-      progressBar.style.width     = pct + '%';
-      progressPercent.textContent = pct + '%';
-      if (progress.action) progressAction.textContent = progress.action;
-      if (progress.status) progressStatus.textContent = progress.status;
-    }
-
-    function updateStats(data) {
-      if (data.total    !== undefined) statTotal.textContent    = data.total;
-      if (data.executed !== undefined) statExecuted.textContent = data.executed;
-      if (data.passed   !== undefined) statPassed.textContent   = data.passed;
-      if (data.failed   !== undefined) statFailed.textContent   = data.failed;
-    }
-
-    // ── SCREENSHOTS ──
-    function updateScreenshots(screenshots) {
-      if (!screenshots || !screenshots.length) {
-        screenshotsContainer.innerHTML = `<p style="color:var(--muted);font-size:13px;text-align:center;padding:12px 0;">No screenshots yet.</p>`;
-        return;
+      /* ============================================================
+         RESET UI - FIXED
+      ============================================================ */
+      function resetUI() {
+        isRunning = false;
+        startBtn.disabled = !selectedFile || testCardsData.length === 0;
+        stopBtn.disabled = true;
+        if (!isRunning) {
+          setStatus("Ready", "info");
+        }
+        progressSection.classList.remove("active");
+        if (ws) {
+          try { ws.close(); } catch (_) {}
+          ws = null;
+        }
       }
-      const grid = document.createElement('div');
-      grid.className = 'screenshots-grid';
-      screenshots.forEach(s => {
-        const item = document.createElement('div');
-        item.className = 'screenshot-item';
-        item.innerHTML = `<img src="${s.url || s}" alt="${s.name || 'screenshot'}"><div class="screenshot-name">${s.name || 'Screenshot'}</div>`;
-        item.onclick = () => window.open(s.url || s, '_blank');
-        grid.appendChild(item);
+
+      /* ============================================================
+         TEST CARDS
+      ============================================================ */
+      function renderTestCards() {
+        if (!testCardsData.length) {
+          testCardsContainer.innerHTML = '<div class="empty-preview"><p>No matched records yet.</p></div>';
+          return;
+        }
+        testCardsContainer.innerHTML = "";
+        testCardsData.forEach((t, i) => {
+          const card = document.createElement("div");
+          card.className = `test-card ${t.overallStatus}`;
+          card.id = `testCard-${t.rowIndex}`;
+          card.innerHTML = buildTestCardHTML(t, i + 1);
+          testCardsContainer.appendChild(card);
+        });
+      }
+
+      function buildTestCardHTML(t, serialNo) {
+        const colHtml = (label, key, status) => {
+          const cfg = colStatusConfig(status);
+          return `<div class="status-col ${cfg.cssClass}">
+            <div class="status-col-label">${label}</div>
+            <div class="status-col-badge ${cfg.cssClass}">${cfg.icon} ${cfg.text}</div>
+          </div>`;
+        };
+        const overall = overallStatusConfig(t.overallStatus);
+        return `<div class="test-card-header">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="test-card-id">#${serialNo}</span>
+            <span class="test-card-msisdn">${t.msisdn || "—"}</span>
+          </div>
+          <span class="test-card-vi-status"><i class="bi bi-check-circle-fill"></i> ${t.viStatus || "Valid Vi"}</span>
+        </div>
+        <div class="test-card-body">
+          <div class="test-info-item"><span class="test-info-label">Circle</span><span class="test-info-value">${t.circle || "—"}</span></div>
+          <div class="test-info-item"><span class="test-info-label">Recharge MRP</span><span class="test-info-value mrp">₹${t.rechargeMRP || "—"}</span></div>
+          <div class="test-info-item"><span class="test-info-label">Benefit</span><span class="test-info-value benefit">${t.benefit || "—"}</span></div>
+        </div>
+        <div class="test-status-grid">
+          ${colHtml("Recharge", "recharge", t.colStatus.recharge)}
+          ${colHtml("SWIFT", "swift", t.colStatus.swift)}
+          ${colHtml("IN", "in", t.colStatus.in)}
+          ${colHtml("Vi App", "viApp", t.colStatus.viApp)}
+        </div>
+        <div class="test-card-footer">
+          <div class="overall-status ${t.overallStatus}">${overall.icon}<span>${overall.text}</span></div>
+          <span class="test-timestamp">${t.completedAt || t.startedAt || "Waiting to start"}</span>
+        </div>`;
+      }
+
+      function colStatusConfig(status) {
+        const map = {
+          pending: { cssClass: "col-pending", icon: "⏳", text: "Pending" },
+          running: { cssClass: "col-running", icon: '<span class="col-spinner"></span>', text: "Running" },
+          waiting: { cssClass: "col-waiting", icon: "✉️", text: "Waiting" },
+          completed: { cssClass: "col-completed", icon: "✅", text: "Done" },
+          failed: { cssClass: "col-failed", icon: "❌", text: "Fail" },
+          skipped: { cssClass: "col-skipped", icon: "⊘", text: "N/A" },
+        };
+        return map[status] || map.pending;
+      }
+
+      function overallStatusConfig(status) {
+        const map = {
+          pending: { icon: "⏳", text: "Pending" },
+          running: { icon: '<span class="overall-spinner"></span>', text: "⟳ Running" },
+          waiting: { icon: "✉️", text: "Awaiting Email" },
+          completed: { icon: '<span class="arrow-anim">→ ✅</span>', text: "Completed" },
+          failed: { icon: '<span class="arrow-anim">→ ❌</span>', text: "Failed" },
+        };
+        return map[status] || map.pending;
+      }
+
+      function updateTestCard(rowIndex, updates) {
+        const t = testCardsData.find((x) => x.rowIndex === rowIndex);
+        if (!t) return;
+        if (updates.colStatus) Object.assign(t.colStatus, updates.colStatus);
+        if (updates.overallStatus) t.overallStatus = updates.overallStatus;
+        if (updates.startedAt) t.startedAt = updates.startedAt;
+        if (updates.completedAt) t.completedAt = updates.completedAt;
+
+        const card = document.getElementById(`testCard-${rowIndex}`);
+        if (!card) return;
+        const serialNo = testCardsData.findIndex((x) => x.rowIndex === rowIndex) + 1;
+        card.className = `test-card ${t.overallStatus}`;
+        card.innerHTML = buildTestCardHTML(t, serialNo);
+      }
+
+      /* ============================================================
+         UNMATCHED TABLE
+      ============================================================ */
+      function renderUnmatchedTable(rows) {
+        const wrap = document.getElementById("unmatchedTableWrap");
+        if (!rows.length) {
+          wrap.innerHTML = `<div class="empty-preview"><p>All records matched!</p></div>`;
+          return;
+        }
+        let html = `<table class="ptable"><thead><tr>
+          <th>#</th><th>MSISDN</th><th>Vi Status</th><th>Circle</th><th>Recharge MRP (₹)</th><th>Reason</th>
+        </tr></thead><tbody>`;
+        rows.forEach((r, i) => {
+          const apiRes = r._apiRes;
+          let viChip;
+          if (!apiRes) viChip = `<span class="match-chip no">❌ Bad Format</span>`;
+          else if (r._isViValid) viChip = `<span class="match-chip yes" title="${escHtml(apiRes.message || "")}">✅ Valid Vi</span>`;
+          else viChip = `<span class="match-chip no" title="${escHtml(apiRes.message || "")}">❌ Invalid Vi</span>`;
+
+          html += `<tr>
+            <td>${i + 1}</td>
+            <td><code style="font-size:12px;">${r["MSISDN"] || "—"}</code></td>
+            <td>${viChip}</td>
+            <td>${r["CIRCLE"] || "—"}</td>
+            <td><span class="mrp-highlight-no">₹${r["Recharge MRP"]}</span></td>
+            <td><span class="match-chip no" style="white-space:normal;text-align:left;line-height:1.5;">${r._reason}</span></td>
+          </tr>`;
+        });
+        html += `</tbody></table>`;
+        wrap.innerHTML = html;
+      }
+
+      /* ============================================================
+         ROW STATUS CARDS
+      ============================================================ */
+      function renderRowPlan(rows) {
+        rowCardMap = {};
+        rowCardsList.innerHTML = "";
+        if (!rows || !rows.length) return;
+
+        rowStatusPanel.style.display = "block";
+
+        rows.forEach((row) => {
+          const rechargeValue = row.recharge || row.Recharge || "";
+          const isRechargeYes = String(rechargeValue).toLowerCase().trim() === "yes";
+
+          const card = document.createElement("div");
+          card.className = "row-card";
+          card.dataset.rowIndex = row.rowIndex;
+          card.innerHTML = `
+            <div class="rc-top">
+              <span class="rc-sr">#${row.srNo || row.rowIndex + 1}</span>
+              <span class="rc-msisdn">${row.msisdn || "—"}</span>
+              <span class="rc-spinner"></span>
+              <span class="rc-status-badge pending" id="rcbadge-${row.rowIndex}">Pending</span>
+            </div>
+            <div class="rc-meta">
+              <span>Recharge MRP ₹${row.rechargeMRP || row["Recharge MRP"] || "—"}</span>
+              <span>Circle ${row.circle || row.CIRCLE || "—"}</span>
+              ${isRechargeYes ? `<span class="rc-recharge-yes">🔁 Recharge: Yes</span>` : `<span>🔁 Recharge: No</span>`}
+            </div>
+            <div class="rc-msg" id="rcmsg-${row.rowIndex}"></div>
+          `;
+          rowCardsList.appendChild(card);
+          rowCardMap[row.rowIndex] = {
+            card,
+            badge: document.getElementById(`rcbadge-${row.rowIndex}`),
+            msg: document.getElementById(`rcmsg-${row.rowIndex}`),
+          };
+        });
+      }
+
+      function updateRowCard(rowIndex, status, extra = {}) {
+        const ref = rowCardMap[rowIndex];
+        if (!ref) return;
+        const { card, badge, msg } = ref;
+
+        card.classList.remove("rc-running", "rc-waiting", "rc-completed", "rc-failed");
+        badge.className = "rc-status-badge";
+
+        switch (status) {
+          case "running":
+            card.classList.add("rc-running");
+            badge.classList.add("running");
+            badge.textContent = "⟳ Running";
+            msg.classList.remove("visible");
+            break;
+          case "waiting_recharge_confirm":
+            card.classList.add("rc-waiting");
+            badge.classList.add("waiting");
+            badge.textContent = "Awaiting Recharge";
+            msg.textContent = extra.message || "Recharge under processing";
+            msg.classList.add("visible");
+            break;
+          case "completed":
+            card.classList.add("rc-completed");
+            badge.classList.add("completed");
+            badge.textContent = "Completed";
+            msg.classList.remove("visible");
+            document.getElementById("statExecuted").textContent = parseInt(document.getElementById("statExecuted").textContent || "0") + 1;
+            document.getElementById("statPassed").textContent = parseInt(document.getElementById("statPassed").textContent || "0") + 1;
+            break;
+          case "failed":
+            card.classList.add("rc-failed");
+            badge.classList.add("failed");
+            badge.textContent = "❌ Failed";
+            if (extra.error) {
+              msg.textContent = extra.error;
+              msg.classList.add("visible");
+            }
+            document.getElementById("statExecuted").textContent = parseInt(document.getElementById("statExecuted").textContent || "0") + 1;
+            document.getElementById("statFailed").textContent = parseInt(document.getElementById("statFailed").textContent || "0") + 1;
+            break;
+          default:
+            badge.classList.add("pending");
+            badge.textContent = "Pending";
+        }
+
+        if (status === "running" || status === "waiting_recharge_confirm") {
+          card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      }
+
+      /* ============================================================
+         WEBSOCKET MESSAGE HANDLER
+      ============================================================ */
+      function handleWsMessage(data) {
+        switch (data.type) {
+          case "login_status":
+            if (data.status === "logged_in") {
+              setLoginBadge("logged-in", "🔒 Logged In – SWIFT CRM");
+              addLog("✅ SWIFT CRM login successful!", "success");
+              setStatus("Logged in — proceeding with tests", "success");
+            } else if (data.status === "logged_out") {
+              setLoginBadge("logged-out", "⚪ Logged Out" + (data.detail ? ` (${data.detail})` : ""));
+              addLog("⚠️ SWIFT CRM login required", "warning");
+              setStatus("Please log in via the popup", "warning");
+            } else if (data.status === "not_logged_in") {
+              setLoginBadge("checking", "Waiting for login...");
+              addLog(" Waiting for manual login via popup...", "info");
+              setStatus("Please enter credentials in the popup", "info");
+            } else {
+              setLoginBadge("checking", data.detail || "Checking…");
+            }
+            break;
+
+          case "captcha":
+            if (data.action === "show") {
+              showCaptcha(data.imageUrl, data.timestamp, data.requiresCredentials);
+            }
+            break;
+
+          case "row_plan":
+            renderRowPlan(data.rows);
+            break;
+
+          case "row_status":
+            updateRowCard(data.rowIndex, data.status, data);
+            break;
+
+          case "row_recharge_confirmed":
+            updateRowCard(data.rowIndex, "completed", data);
+            break;
+
+          case "col_status":
+            if (data.rowIndex !== undefined && data.col) {
+              const upd = { colStatus: {} };
+              upd.colStatus[data.col] = data.status;
+              updateTestCard(data.rowIndex, upd);
+            }
+            break;
+
+          case "test_status":
+            updateTestCard(data.rowIndex, {
+              overallStatus: data.overallStatus,
+              startedAt: data.startedAt,
+              completedAt: data.completedAt,
+              detail: data.detail,
+            });
+            break;
+
+          case "log":
+            addLog(data.message, data.logType || "info");
+            break;
+
+          case "progress":
+            updateProgress(data.progress);
+            break;
+
+          case "otp":
+            if (data.action === "show") showOTP(data.message);
+            break;
+
+          case "screenshots":
+            updateScreenshots(data.screenshots);
+            break;
+
+          case "complete":
+            handleComplete(data);
+            break;
+
+          case "stats":
+            updateStats(data);
+            break;
+        }
+      }
+
+      /* ============================================================
+         CAPTCHA
+      ============================================================ */
+      function showCaptcha(imageUrl, timestamp, requiresCredentials = true) {
+        captchaImage.src = imageUrl + (timestamp ? "?t=" + timestamp : "?t=" + Date.now());
+        document.getElementById("captchaInput").value = "";
+
+        const usernameField = document.getElementById("swiftUsername");
+        const passwordField = document.getElementById("swiftPassword");
+        const usernameLabel = usernameField.parentElement;
+        const passwordLabel = passwordField.parentElement;
+
+        if (requiresCredentials) {
+          usernameLabel.style.display = "block";
+          passwordLabel.style.display = "block";
+          document.querySelector(".captcha-box h3").textContent = "SWIFT CRM Login";
+          document.querySelector(".captcha-box p").textContent = "Enter your SWIFT CRM credentials and the CAPTCHA code below.";
+        } else {
+          usernameLabel.style.display = "none";
+          passwordLabel.style.display = "none";
+          document.querySelector(".captcha-box h3").textContent = " CAPTCHA Verification";
+          document.querySelector(".captcha-box p").textContent = "Please enter the characters shown in the image.";
+        }
+
+        captchaOverlay.classList.add("visible");
+        if (requiresCredentials) {
+          document.getElementById("swiftUsername").focus();
+        } else {
+          document.getElementById("captchaInput").focus();
+        }
+        addLog("📸 Please enter your credentials and CAPTCHA code.", "info");
+      }
+
+      function submitCaptcha() {
+        const answer = document.getElementById("captchaInput").value.trim();
+        const username = document.getElementById("swiftUsername").value.trim();
+        const password = document.getElementById("swiftPassword").value.trim();
+
+        const usernameField = document.getElementById("swiftUsername");
+        const requiresCredentials = usernameField.parentElement.style.display !== "none";
+
+        if (requiresCredentials) {
+          if (!username || !password) {
+            addLog("⚠️ Please enter both username and password.", "warning");
+            return;
+          }
+        }
+
+        if (!answer) {
+          addLog("⚠️ Please enter the CAPTCHA code.", "warning");
+          return;
+        }
+
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: "captcha",
+            answer,
+            username: username || "",
+            password: password || "",
+          }));
+          addLog(`✅ CAPTCHA submitted for user: ${username || "N/A"}`, "success");
+          closeCaptcha();
+          return;
+        }
+
+        fetch("/api/swift/captcha-response", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ answer, username: username || "", password: password || "" }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) {
+              addLog(`✅ CAPTCHA submitted via REST for user: ${username || "N/A"}`, "success");
+              closeCaptcha();
+            } else {
+              addLog(`❌ Failed to submit CAPTCHA: ${data.error}`, "error");
+            }
+          })
+          .catch((err) => {
+            addLog(`❌ Error submitting CAPTCHA: ${err.message}`, "error");
+          });
+      }
+
+      function closeCaptcha() {
+        captchaOverlay.classList.remove("visible");
+        document.getElementById("captchaInput").value = "";
+        document.getElementById("swiftUsername").value = "";
+        document.getElementById("swiftPassword").value = "";
+      }
+
+      function handleCaptchaKeydown(e) {
+        if (e.key === "Enter") {
+          if (e.target.id === "swiftUsername") {
+            document.getElementById("swiftPassword").focus();
+            e.preventDefault();
+            return;
+          }
+          if (e.target.id === "swiftPassword") {
+            document.getElementById("captchaInput").focus();
+            e.preventDefault();
+            return;
+          }
+          if (e.target.id === "captchaInput") {
+            submitCaptcha();
+            e.preventDefault();
+          }
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("swiftUsername").addEventListener("keydown", handleCaptchaKeydown);
+        document.getElementById("swiftPassword").addEventListener("keydown", handleCaptchaKeydown);
+        document.getElementById("captchaInput").addEventListener("keydown", handleCaptchaKeydown);
+        addLoginButton();
+        pollLoginStatus();
       });
-      screenshotsContainer.innerHTML = '';
-      screenshotsContainer.appendChild(grid);
-    }
 
-    // ── COMPLETE ──
-    function handleComplete(data) {
-      isRunning = false;
-      startBtn.disabled = false;
-      stopBtn.disabled  = true;
-      setStatus('UAT completed.', 'success');
-      progressAction.textContent = 'Complete';
-      progressStatus.textContent = data.success ? '✅ Passed' : '❌ Failed';
-      downloadReportBtn.style.display = 'inline-block';
-      addLog(data.message || 'UAT suite finished.', data.success ? 'success' : 'error');
-      if (data.screenshots) updateScreenshots(data.screenshots);
-      if (data.stats)       updateStats(data.stats);
-    }
-
-    function resetUI() {
-      isRunning = false;
-      startBtn.disabled = !selectedFile;
-      stopBtn.disabled  = true;
-      setStatus('Ready', 'info');
-      progressSection.classList.remove('active');
-    }
-// ── SEND EMAILS AFTER VALIDATION ──
-async function sendEmailsAfterValidation(validationResults) {
-  if (!validationResults || validationResults.length === 0) {
-    addLog('No validation results to process.', 'warning');
-    return;
-  }
-
-  const validCount = validationResults.filter(r => r.isValid === true).length;
-  const invalidCount = validationResults.filter(r => r.isValid === false).length;
-  
-  addLog(`📧 Processing ${validationResults.length} numbers (${validCount} valid, ${invalidCount} invalid) for email...`, 'info');
-  
-  // Show status in progress
-  progressAction.textContent = 'Sending emails...';
-  progressStatus.textContent = `Preparing ${validCount > 0 ? 'dual' : ''} ${invalidCount > 0 ? 'single' : ''} email notifications`;
-  progressBar.style.width = '60%';
-  progressPercent.textContent = '60%';
-
-  try {
-    const response = await fetch('/api/process-validation-and-send-emails', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        validationResults: validationResults,
-        recipients: ['amit.kumar1@qdegrees.org']
-      })
-    });
-
-    const data = await response.json();
-
-    if (data.success) {
-      let message = `Emails sent: ${data.summary.emailsSuccessful}/${data.summary.emailsSent} successful. `;
-      message += `Valid: ${data.summary.validCount} (2 emails each), `;
-      message += `Invalid: ${data.summary.invalidCount} (1 email each)`;
-      
-      addLog(message, 'success');
-      
-      // Update stats
-      if (data.summary.validCount > 0) {
-        statPassed.textContent = data.summary.validCount;
+      /* ============================================================
+         OTP
+      ============================================================ */
+      function showOTP(message) {
+        if (message) otpMessage.textContent = message;
+        otpOverlay.classList.add("visible");
+        otpInput.value = "";
+        otpInput.focus();
       }
-      if (data.summary.invalidCount > 0) {
-        statFailed.textContent = data.summary.invalidCount;
+
+      function submitOTP() {
+        const otp = otpInput.value.trim();
+        if (!otp) {
+          addLog("⚠️ OTP is empty.", "warning");
+          return;
+        }
+        if (!/^\d{4,6}$/.test(otp)) {
+          addLog("⚠️ OTP must be 4–6 digits.", "warning");
+          return;
+        }
+        if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "otp", otp }));
+        closeOTP();
+        addLog(`✅ OTP submitted: ${otp}`, "success");
       }
-      
-      // Show download report button if available
-      if (data.summary.emailsSuccessful > 0) {
-        downloadReportBtn.style.display = 'inline-block';
+
+      function closeOTP() {
+        otpOverlay.classList.remove("visible");
       }
-      
-      // Update progress to complete
-      progressAction.textContent = 'Emails sent successfully';
-      progressStatus.textContent = `✅ ${data.summary.emailsSuccessful}/${data.summary.emailsSent}`;
-      progressBar.style.width = '100%';
-      progressPercent.textContent = '100%';
-      
-    } else {
-      addLog(`❌ Email sending failed: ${data.message || 'Unknown error'}`, 'error');
-      progressStatus.textContent = '❌ Failed to send emails';
-      progressBar.style.width = '80%';
-      progressPercent.textContent = '80%';
-    }
-  } catch (error) {
-    addLog(`❌ Email API error: ${error.message}`, 'error');
-    console.error('Email API error:', error);
-    progressStatus.textContent = '❌ Error sending emails';
-    progressBar.style.width = '80%';
-    progressPercent.textContent = '80%';
-  }
-}
 
-    // ── DOWNLOAD REPORT ──
-    function downloadReport() { window.location.href = '/api/swift/download-report'; }
-
-    // ── RECENT RUNS ──
-    async function fetchRecentRuns() {
-      try {
-        const res  = await fetch('/api/swift/recent-runs');
-        const data = await res.json();
-        if (data.runs) renderRecentRuns(data.runs);
-      } catch (e) { /* ignore */ }
-    }
-    fetchRecentRuns();
-
-    function renderRecentRuns(runs) {
-      const tbody = document.getElementById('recentRunsBody');
-      if (!tbody || !runs) return;
-      tbody.innerHTML = '';
-      runs.forEach(run => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${run.id   || '—'}</td>
-          <td>${run.file || '—'}</td>
-          <td>${run.date || '—'}</td>
-          <td><span class="tag ${run.status || 'ready'}">${run.status || '—'}</span></td>
-          <td>${run.passed || 0} / ${run.total || 0}</td>
-        `;
-        tbody.appendChild(tr);
+      otpInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") submitOTP();
       });
-    }
-  </script>
 
-    <!-- ═══ FOOTER ═══ -->
-  <footer class="footerMain">
-    <div class="footer-content">
-      <p>
-        Copyright &copy; 2026
-        <span>QDegrees Services Pvt. Ltd.</span>
-        &nbsp;|&nbsp; VI Sim Automation Platform
-      </p>
-      <img src="https://qdegrees.com/img/logo.svg" alt="QDegrees" class="footer-logo">
-    </div>
-  </footer>
+      /* ============================================================
+         PROGRESS / LOG / STATUS
+      ============================================================ */
+      function updateProgress(progress) {
+        const pct = progress.percentage || 0;
+        progressBar.style.width = pct + "%";
+        progressPercent.textContent = pct + "%";
+        if (progress.action) progressAction.textContent = progress.action;
+        if (progress.status) progressStatus.textContent = progress.status;
+      }
 
-</body>
+      function addLog(message, type = "info") {
+        const line = document.createElement("div");
+        line.className = `log-line log-${type}`;
+        const time = new Date().toLocaleTimeString();
+        line.innerHTML = `<span class="log-timestamp">[${time}]</span> ${message}`;
+        logPanel.appendChild(line);
+        logPanel.scrollTop = logPanel.scrollHeight;
+        while (logPanel.children.length > 5000000) logPanel.removeChild(logPanel.firstChild);
+      }
+
+      function clearLogs() {
+        logPanel.innerHTML = "";
+        addLog("Logs cleared.", "info");
+      }
+
+      function setStatus(text, boxClass) {
+        statusBox.textContent = text;
+        statusBox.className = `status-box ${boxClass}`;
+      }
+
+      function updateStats(data) {
+        if (data.total !== undefined) document.getElementById("statTotal").textContent = data.total;
+        if (data.executed !== undefined) document.getElementById("statExecuted").textContent = data.executed;
+        if (data.passed !== undefined) document.getElementById("statPassed").textContent = data.passed;
+        if (data.failed !== undefined) document.getElementById("statFailed").textContent = data.failed;
+      }
+
+      /* ============================================================
+         SCREENSHOTS
+      ============================================================ */
+      function updateScreenshots(screenshots) {
+        if (!screenshots || !screenshots.length) {
+          screenshotsContainer.innerHTML = `<p style="color:var(--muted);font-size:13px;text-align:center;padding:12px 0;">No screenshots yet.</p>`;
+          return;
+        }
+        const grid = document.createElement("div");
+        grid.className = "screenshots-grid";
+        screenshots.forEach((s) => {
+          const item = document.createElement("div");
+          item.className = "screenshot-item";
+          item.innerHTML = `<img src="${s.url || s}" alt="${s.name || "screenshot"}"><div class="screenshot-name">${s.name || "Screenshot"}</div>`;
+          item.onclick = () => window.open(s.url || s, "_blank");
+          grid.appendChild(item);
+        });
+        screenshotsContainer.innerHTML = "";
+        screenshotsContainer.appendChild(grid);
+      }
+
+      /* ============================================================
+         COMPLETE
+      ============================================================ */
+      function handleComplete(data) {
+        isRunning = false;
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        setStatus(data.success ? "✅ UAT completed successfully." : `❌ UAT ended: ${data.message}`, data.success ? "success" : "error");
+        progressAction.textContent = data.success ? "Complete" : "Stopped";
+        progressStatus.textContent = data.success ? "✅ All rows processed" : "❌ Check logs";
+        progressBar.style.width = "100%";
+        progressPercent.textContent = "100%";
+        downloadReportBtn.style.display = "inline-block";
+        addLog(data.message || "UAT suite finished.", data.success ? "success" : "error");
+        if (data.screenshots) updateScreenshots(data.screenshots);
+        if (data.stats) updateStats(data.stats);
+        pollLoginStatus();
+      }
+
+      /* ============================================================
+         EMAIL AFTER VALIDATION
+      ============================================================ */
+      async function sendEmailsAfterValidation(validationResults) {
+        if (!validationResults || !validationResults.length) return;
+        const validCount = validationResults.filter((r) => r.isValid === true).length;
+        const invalidCount = validationResults.filter((r) => r.isValid === false).length;
+        addLog(`📧 Sending emails: ${validCount} valid (2 emails each), ${invalidCount} invalid (1 email each)…`, "info");
+        try {
+          const response = await fetch("/api/process-validation-and-send-emails", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              validationResults,
+              recipients: ["kalidindi.chandra@qdegrees.org"],
+            }),
+          });
+          const data = await response.json();
+          if (data.success) {
+            addLog(`✅ Emails sent: ${data.summary.emailsSuccessful}/${data.summary.emailsSent} successful.`, "success");
+            if (data.summary.validCount) document.getElementById("statPassed").textContent = data.summary.validCount;
+            if (data.summary.invalidCount) document.getElementById("statFailed").textContent = data.summary.invalidCount;
+            downloadReportBtn.style.display = "inline-block";
+          } else {
+            addLog(`❌ Email sending failed: ${data.message || "Unknown error"}`, "error");
+          }
+        } catch (error) {
+          addLog(`❌ Email API error: ${error.message}`, "error");
+        }
+      }
+
+      /* ============================================================
+         MANUAL LOGIN
+      ============================================================ */
+      async function triggerManualLogin() {
+        try {
+          const response = await fetch("/api/swift/manual-login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ loggedIn: true }),
+          });
+          const result = await response.json();
+          if (result.success) {
+            addLog("✅ Manual login confirmed — proceeding with automation", "success");
+            setLoginBadge("logged-in", "Logged In – SWIFT CRM");
+          }
+        } catch (error) {
+          addLog(`❌ Manual login trigger failed: ${error.message}`, "error");
+        }
+      }
+
+      function addLoginButton() {
+        const loginBtn = document.createElement("button");
+
+
+        const navRight = document.querySelector(".nav-right");
+        if (navRight) {
+          const backBtn = navRight.querySelector(".btn-back");
+          if (backBtn) {
+            navRight.insertBefore(loginBtn, backBtn);
+          } else {
+            navRight.appendChild(loginBtn);
+          }
+        }
+      }
+
+      /* ============================================================
+         MISC
+      ============================================================ */
+      function downloadSample() {
+        window.location.href = "/api/swift/download-sample";
+      }
+
+      function downloadReport() {
+        window.location.href = "/api/swift/report/latest";
+      }
+
+      function yesNoIcon(val) {
+        return String(val || "").trim().toLowerCase() === "yes"
+          ? `<span class="match-chip yes">✅ Yes</span>`
+          : `<span class="match-chip no">❌ No</span>`;
+      }
+
+      function escHtml(str) {
+        return String(str).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+
+      // Initial setup
+      document.addEventListener("DOMContentLoaded", function() {
+        addLoginButton();
+        pollLoginStatus();
+      });
+    </script>
+  </body>
 </html>

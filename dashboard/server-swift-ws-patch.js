@@ -87,7 +87,7 @@ function handleSwiftConnection(ws, request) {
       // ── CAPTCHA answer from user ────────────────────────────────────────
       case 'captcha': {
         if (orchestrator) {
-          console.log('[SWIFT] 🔐 CAPTCHA received:', data.answer);
+          console.log('[SWIFT]  CAPTCHA received:', data.answer);
           orchestrator.setCaptchaAnswer(data.answer);
         } else {
           console.warn('[SWIFT] CAPTCHA received but no active orchestrator.');

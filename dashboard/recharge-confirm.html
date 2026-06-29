@@ -47,8 +47,18 @@
   .btn-ok:hover { background: #218838; }
   .btn-cancel { background: #e9ecef; color: #333; }
   .btn-cancel:hover { background: #dee2e6; }
+  .btn-skip { background: #ffc107; color: #333; }
+  .btn-skip:hover { background: #e0a800; }
   .status { margin-top: 16px; font-size: 13px; color: #888; }
-  .error { color: #dc3545; }
+  .status.error { color: #dc3545; }
+  .status.success { color: #28a745; }
+  .status.warning { color: #ffc107; }
+  .status.info { color: #17a2b8; }
+  
+  .btn-ok:disabled, .btn-cancel:disabled, .btn-skip:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 </style>
 </head>
 <body>
@@ -66,8 +76,9 @@
     </table>
 
     <div class="btn-row">
+      <button class="btn-skip" id="skipBtn">⏭ Skip</button>
       <button class="btn-cancel" id="cancelBtn">Cancel</button>
-      <button class="btn-ok" id="okBtn">OK, Proceed</button>
+      <button class="btn-ok" id="okBtn">✅ OK, Proceed</button>
     </div>
     <div class="status" id="statusMsg"></div>
   </div>
@@ -80,7 +91,6 @@
   const benefit = window.__BENEFIT__;
   const viStatus = window.__VI_STATUS__;
   const srNo = window.__SR_NO__;
-  const viUrl = window.__VI_URL__;
   const confirmApiUrl = window.__CONFIRM_API_URL__;
 
   document.getElementById('srNoDisplay').textContent = srNo || '—';
@@ -90,41 +100,121 @@
   document.getElementById('amountDisplay').textContent = amount ? ('₹' + amount) : '—';
   document.getElementById('benefitDisplay').textContent = benefit || '—';
 
+  // ─── Cancel: Close tab / stop ───────────────────────────────────────────
   document.getElementById('cancelBtn').addEventListener('click', () => {
-    document.getElementById('statusMsg').textContent = 'Cancelled. You can close this tab.';
+    const statusMsg = document.getElementById('statusMsg');
+    statusMsg.textContent = 'Cancelled. You can close this tab.';
+    statusMsg.className = 'status error';
     document.getElementById('okBtn').disabled = true;
     document.getElementById('cancelBtn').disabled = true;
+    document.getElementById('skipBtn').disabled = true;
+    // Send cancellation to server
+    fetch(`/api/recharge/skip/${encodeURIComponent(txnId)}`, { 
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason: 'User cancelled' })
+    }).catch(() => {});
   });
 
-  document.getElementById('okBtn').addEventListener('click', async () => {
+  // ─── Skip: Skip this row, move to next ──────────────────────────────────
+  document.getElementById('skipBtn').addEventListener('click', async () => {
     const okBtn = document.getElementById('okBtn');
     const cancelBtn = document.getElementById('cancelBtn');
+    const skipBtn = document.getElementById('skipBtn');
     const statusMsg = document.getElementById('statusMsg');
 
     okBtn.disabled = true;
     cancelBtn.disabled = true;
-    statusMsg.textContent = 'Confirming...';
-    statusMsg.classList.remove('error');
+    skipBtn.disabled = true;
+    statusMsg.textContent = '⏭ Skipping this row...';
+    statusMsg.className = 'status warning';
 
     try {
-      await fetch(confirmApiUrl, { method: 'POST' }).catch(() => {});
-
-      try {
-        await navigator.clipboard.writeText(mobileNumber);
-        statusMsg.textContent = 'Number copied to clipboard. Redirecting to Vi recharge page...';
-      } catch (clipErr) {
-        statusMsg.textContent = 'Redirecting to Vi recharge page...';
+      const response = await fetch(`/api/recharge/skip/${encodeURIComponent(txnId)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          reason: 'User skipped',
+          timestamp: new Date().toISOString()
+        })
+      });
+      
+      if (response.ok) {
+        statusMsg.textContent = '✅ Row skipped. Continuing automation...';
+        statusMsg.className = 'status success';
+        setTimeout(() => {
+          window.close();
+        }, 1500);
+      } else {
+        statusMsg.textContent = '❌ Failed to skip. Please try again.';
+        statusMsg.className = 'status error';
+        okBtn.disabled = false;
+        cancelBtn.disabled = false;
+        skipBtn.disabled = false;
       }
-
-      setTimeout(() => {
-        window.location.href = viUrl;
-      }, 600);
-
     } catch (err) {
-      statusMsg.textContent = 'Something went wrong. Please try again.';
-      statusMsg.classList.add('error');
+      statusMsg.textContent = '❌ Error skipping row. Please try again.';
+      statusMsg.className = 'status error';
       okBtn.disabled = false;
       cancelBtn.disabled = false;
+      skipBtn.disabled = false;
+      console.error('Skip error:', err);
+    }
+  });
+
+  // ─── OK, Proceed: Confirm recharge and continue test ─────────────────────
+  document.getElementById('okBtn').addEventListener('click', async () => {
+    const okBtn = document.getElementById('okBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const skipBtn = document.getElementById('skipBtn');
+    const statusMsg = document.getElementById('statusMsg');
+
+    okBtn.disabled = true;
+    cancelBtn.disabled = true;
+    skipBtn.disabled = true;
+    statusMsg.textContent = '⏳ Confirming recharge...';
+    statusMsg.className = 'status info';
+
+    try {
+      // Send confirmation to server
+      const response = await fetch(confirmApiUrl, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          confirmed: true,
+          timestamp: new Date().toISOString()
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        statusMsg.textContent = '✅ Recharge confirmed successfully! Continuing automation...';
+        statusMsg.className = 'status success';
+        console.log(`[Recharge Confirm] ✅ Confirmed for ${mobileNumber}`);
+        
+        // Close the popup after a short delay
+        setTimeout(() => {
+          window.close();
+          // If window.close doesn't work, redirect back
+          try {
+            window.location.href = '/sim-recharge.html';
+          } catch (_) {}
+        }, 1200);
+      } else {
+        statusMsg.textContent = '❌ Confirmation failed. Please try again.';
+        statusMsg.className = 'status error';
+        okBtn.disabled = false;
+        cancelBtn.disabled = false;
+        skipBtn.disabled = false;
+      }
+    } catch (err) {
+      console.error('Confirm error:', err);
+      statusMsg.textContent = '❌ Error confirming recharge. Please try again.';
+      statusMsg.className = 'status error';
+      okBtn.disabled = false;
+      cancelBtn.disabled = false;
+      skipBtn.disabled = false;
     }
   });
 </script>

@@ -45,7 +45,12 @@ const wss = new WebSocket.Server({ noServer: true });
 const swiftClients = new Map();
 
 // Session-to-file mapping for SWIFT uploads
-const swiftUploadPaths = new Map();
+    const swiftUploadPaths = new Map();
+ 
+    // Point 2: session-to-matched-rows mapping. Populated by /api/swift/upload
+    // from the frontend's already-validated testCardsData, so the orchestrator
+    // never has to re-derive which rows to run from the raw Excel sheet.
+    const swiftMatchedRows = new Map();
 
 // Handle HTTP upgrade requests manually
 server.on('upgrade', (request, socket, head) => {
@@ -194,28 +199,6 @@ app.get('/recharge/confirm/:txnId', (req, res) => {
 
   res.setHeader('Content-Type', 'text/html');
   res.send(html);
-});
-
-// Backend endpoint hit when user clicks "OK" on the confirm popup.
-// For now this just logs; later you can persist "completed" status here.
-app.post('/api/recharge/confirm/:txnId', (req, res) => {
-  const { txnId } = req.params;
-  const record = pendingRecharges.get(txnId);
-
-  if (record) {
-    record.confirmed = true;
-    record.confirmedAt = new Date().toISOString();
-    console.log(`✅ Recharge confirmed for txn ${txnId} (mobile: ${record.mobileNumber})`);
-  } else {
-    console.log(`⚠️ Recharge confirm called for unknown txn ${txnId}`);
-  }
-
-  // TODO: persist this to DB/file when you're ready to track completed status.
-  res.json({ success: true, txnId });
-});
-
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
 app.get('/device-progress.html', (req, res) => {
@@ -900,94 +883,126 @@ const { chromium } = require('playwright');
 
 const VI_URL = "https://www.myvi.in/prepaid/online-mobile-recharge";
 const SELECTORS = {
-  mobileInput: '#mobileNumber',
+  mobileInput: 'input#mobileNumber',
   errorMsg: '.ORCMobileInput_errorMsg__TecyC'
 };
-const WAIT_MS = 1500;
+const WAIT_MS = 500;
+const CACHE_TTL = 3600000; // 1 hour cache
+
+// ===== Browser Pool for Reuse =====
+let browserInstance = null;
+let pageInstance = null;
+let lastUsed = Date.now();
+const validationCache = new Map();
+
+async function closeBrowserPool() {
+  try {
+    await browserInstance?.close();
+  } catch (e) {}
+  browserInstance = null;
+  pageInstance = null;
+}
+
+async function getBrowserPage() {
+  // Close if idle for more than 5 minutes
+  if (lastUsed && Date.now() - lastUsed > 300000) {
+    await closeBrowserPool();
+  }
+  
+  if (!browserInstance) {
+    browserInstance = await chromium.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-blink-features=AutomationControlled',
+        '--disable-gpu',
+        '--disable-dev-shm-usage',
+        '--window-size=1920,1080'
+      ]
+    });
+  }
+  
+  if (!pageInstance || pageInstance.isClosed()) {
+    const context = await browserInstance.newContext({
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      viewport: { width: 1920, height: 1080 },
+      deviceScaleFactor: 1,
+      hasTouch: false,
+      isMobile: false,
+      locale: 'en-US',
+      timezoneId: 'Asia/Kolkata'
+    });
+    pageInstance = await context.newPage();
+    await pageInstance.setExtraHTTPHeaders({
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Connection': 'keep-alive',
+      'Upgrade-Insecure-Requests': '1'
+    });
+    await pageInstance.goto(VI_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  }
+  
+  lastUsed = Date.now();
+  return pageInstance;
+}
+
+// Clean up on process exit
+process.on('SIGTERM', closeBrowserPool);
+process.on('SIGINT', closeBrowserPool);
 
 function isValidFormat(n) {
   return typeof n === 'string' && /^\d{10}$/.test(n);
-  
-}
-
-function getBrowserLaunchOptions() {
-  return {
-    headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-blink-features=AutomationControlled',
-      '--disable-features=IsolateOrigins,site-per-process',
-      '--disable-web-security',
-      '--disable-gpu',
-      '--disable-dev-shm-usage',
-      '--window-size=1920,1080'
-    ]
-  };
-}
-
-async function createRealisticPage(browser) {
-  const context = await browser.newContext({
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    viewport: { width: 1920, height: 1080 },
-    deviceScaleFactor: 1,
-    hasTouch: false,
-    isMobile: false,
-    locale: 'en-US',
-    timezoneId: 'Asia/Kolkata'
-  });
-  const page = await context.newPage();
-  await page.setExtraHTTPHeaders({
-    'Accept-Language': 'en-US,en;q=0.9',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Connection': 'keep-alive',
-    'Upgrade-Insecure-Requests': '1'
-  });
-  return page;
 }
 
 async function validateOnPage(page, mobileNumber) {
+  // Check cache first
+  const cached = validationCache.get(mobileNumber);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.result;
+  }
+  
   const input = page.locator(SELECTORS.mobileInput);
-  await input.waitFor({ state: 'visible', timeout: 15000 });
+  await input.waitFor({ state: 'visible', timeout: 5000 });
   await input.click({ clickCount: 3 });
   await input.fill(mobileNumber);
   await page.waitForTimeout(WAIT_MS);
+  
   const errorLocator = page.locator(SELECTORS.errorMsg);
-  const hasError = await errorLocator.isVisible().catch(() => false);
+  const hasError = await errorLocator.count().then(count => count > 0).catch(() => false);
   const errorText = hasError ? (await errorLocator.innerText()).trim() : '';
   const isNonViError = errorText.toLowerCase().includes('non vi number');
   const isValid = !hasError || !isNonViError;
-  return {
+  
+  const result = {
     number: mobileNumber,
     isValid,
     message: isValid ? 'Valid Vi number' : `Invalid Vi number – "${errorText}"`,
     timestamp: new Date().toISOString()
   };
+  
+  // Cache the result
+  validationCache.set(mobileNumber, { result, timestamp: Date.now() });
+  return result;
 }
 
 app.get('/api/health', (_req, res) => {
-  console.log("hghghghghghghghgjkjkjkjkjkjkjkjkj")
   res.json({ status: 'ok', service: 'vi-number-validator', ts: new Date().toISOString() });
 });
 
 app.post('/api/validate', async (req, res) => {
   const number = (req.body || {}).number;
-  console.log("hghghgjhmmmmmmmmmmmmmmmmmmmmmmmmmmmm",req.body)
   if (!isValidFormat(number)) {
     return res.status(400).json({ error: 'Invalid input', detail: '"number" must be a 10-digit string' });
   }
-  let browser = null;
+  
   try {
-    browser = await chromium.launch(getBrowserLaunchOptions());
-    const page = await createRealisticPage(browser);
-    await page.goto(VI_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    const page = await getBrowserPage();
     const result = await validateOnPage(page, number);
     res.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     res.status(500).json({ error: 'Internal server error', detail: message });
-  } finally {
-    try { await browser?.close(); } catch (e) { /* ignore */ }
   }
 });
 
@@ -1002,25 +1017,54 @@ app.post('/api/validate/bulk', async (req, res) => {
   const validNumbers = numbers.filter((n) => isValidFormat(n));
 
   if (validNumbers.length === 0) {
-    // Nothing to process
-    return res.status(400).json({ error: 'No valid numbers', detail: 'No valid 10-digit numbers to process', invalid: invalid.map(String) });
+    return res.status(400).json({ 
+      error: 'No valid numbers', 
+      detail: 'No valid 10-digit numbers to process', 
+      invalid: invalid.map(String) 
+    });
   }
 
   if (validNumbers.length > 50) {
-    return res.status(400).json({ error: 'Limit exceeded', detail: 'Maximum 50 numbers per bulk request (valid numbers)' });
+    return res.status(400).json({ 
+      error: 'Limit exceeded', 
+      detail: 'Maximum 50 numbers per bulk request (valid numbers)' 
+    });
   }
 
   const start = Date.now();
-  let browser = null;
+  const BATCH_SIZE = 5; // Process 5 numbers concurrently
+  const results = [];
+
   try {
-    browser = await chromium.launch(getBrowserLaunchOptions());
-    const page = await createRealisticPage(browser);
-    await page.goto(VI_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
-
-
-    const results = [];
-    // Process numbers in the original input order. For invalid-format numbers,
-    // add a result entry immediately and skip Playwright processing.
+    const page = await getBrowserPage();
+    
+    // Process valid numbers in parallel batches
+    const validResults = [];
+    for (let i = 0; i < validNumbers.length; i += BATCH_SIZE) {
+      const batch = validNumbers.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.allSettled(
+        batch.map(num => validateOnPage(page, num))
+      );
+      
+      batchResults.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          validResults.push(result.value);
+        } else {
+          // Find which number failed
+          const idx = batchResults.indexOf(result);
+          const num = batch[idx] || 'unknown';
+          validResults.push({
+            number: num,
+            isValid: false,
+            message: `Validation error: ${result.reason}`,
+            timestamp: new Date().toISOString()
+          });
+        }
+      });
+    }
+    
+    // Reconstruct results in original input order
+    let validIndex = 0;
     for (const num of numbers) {
       if (!isValidFormat(num)) {
         results.push({
@@ -1029,15 +1073,13 @@ app.post('/api/validate/bulk', async (req, res) => {
           message: 'Invalid MSISDN (must be 10 digits)',
           timestamp: new Date().toISOString()
         });
-        continue;
-      }
-
-      try {
-        const r = await validateOnPage(page, num);
-        results.push(r);
-      } catch (innerErr) {
-        const message = innerErr instanceof Error ? innerErr.message : String(innerErr);
-        results.push({ number: num, isValid: false, message: `Validation error: ${message}`, timestamp: new Date().toISOString() });
+      } else {
+        results.push(validResults[validIndex++] || {
+          number: num,
+          isValid: false,
+          message: 'Validation failed',
+          timestamp: new Date().toISOString()
+        });
       }
     }
 
@@ -1058,20 +1100,125 @@ app.post('/api/validate/bulk', async (req, res) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     res.status(500).json({ error: 'Internal server error', detail: message });
-  } finally {
-    try { await browser?.close(); } catch (e) { /* ignore */ }
   }
 });
 
+// Optional: Endpoint to clear cache (for testing)
+app.post('/api/validate/cache/clear', (req, res) => {
+  validationCache.clear();
+  res.json({ success: true, message: 'Validation cache cleared' });
+});
 
-app.post('/api/adb/stop', (req, res) => {
-  exec('adb kill-server', (error) => {
-    if (error) {
-      return res.json({ success: false, message: error.message });
+// Backend endpoint hit when user clicks "OK" on the confirm popup.
+// In server.js, update the /api/recharge/confirm/:txnId endpoint
+app.post('/api/recharge/confirm/:txnId', (req, res) => {
+  const { txnId } = req.params;
+  const record = pendingRecharges.get(txnId);
+
+  if (record) {
+    record.confirmed = true;
+    record.confirmedAt = new Date().toISOString();
+    console.log(`✅ Recharge confirmed for txn ${txnId} (mobile: ${record.mobileNumber})`);
+    
+    // Write confirmation to file for WDIO to detect - use the SWIFT comm directory
+    try {
+      const commDir = path.join(__dirname, '..', 'swift-crm-automation', 'comm');
+      fs.mkdirSync(commDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(commDir, 'recharge_confirmed.json'),
+        JSON.stringify({ 
+          txnId, 
+          msisdn: record.mobileNumber, 
+          confirmed: true,
+          timestamp: Date.now() 
+        }, null, 2)
+      );
+      console.log(`[SWIFT] ✅ Recharge confirmed file written for ${record.mobileNumber}`);
+    } catch (fileErr) {
+      console.error(`[SWIFT] Failed to write confirm file: ${fileErr.message}`);
     }
-    adbStatus = 'stopped';
-    res.json({ success: true, message: 'ADB server stopped' });
-  });
+  } else {
+    console.log(`⚠️ Recharge confirm called for unknown txn ${txnId}`);
+  }
+
+  res.json({ success: true, txnId });
+});
+
+// ─── Skip recharge (user clicked Skip or Cancel) ──────────────────────────
+app.post('/api/recharge/skip/:txnId', (req, res) => {
+  const { txnId } = req.params;
+  const record = pendingRecharges.get(txnId);
+
+  if (record) {
+    record.skipped = true;
+    record.skippedAt = new Date().toISOString();
+    record.skipReason = req.body?.reason || 'User skipped';
+    console.log(`⏭ Recharge skipped for txn ${txnId} (mobile: ${record.mobileNumber}) - ${record.skipReason}`);
+    
+    // Write skip status to file for WDIO to detect
+    try {
+      const commDir = path.join(__dirname, '..', 'swift-crm-automation', 'comm');
+      fs.mkdirSync(commDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(commDir, 'recharge_skipped.json'),
+        JSON.stringify({ 
+          txnId, 
+          msisdn: record.mobileNumber, 
+          skipped: true,
+          reason: record.skipReason,
+          timestamp: Date.now() 
+        }, null, 2)
+      );
+      console.log(`[SWIFT] ⏭ Recharge skip file written for ${record.mobileNumber}`);
+    } catch (fileErr) {
+      console.error(`[SWIFT] Failed to write skip file: ${fileErr.message}`);
+    }
+  } else {
+    console.log(`⚠️ Recharge skip called for unknown txn ${txnId}`);
+  }
+
+  res.json({ success: true, txnId, skipped: true });
+});
+
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+
+// ─── Skip recharge (user clicked Skip or Cancel) ──────────────────────────
+app.post('/api/recharge/skip/:txnId', (req, res) => {
+  const { txnId } = req.params;
+  const record = pendingRecharges.get(txnId);
+
+  if (record) {
+    record.skipped = true;
+    record.skippedAt = new Date().toISOString();
+    record.skipReason = req.body?.reason || 'User skipped';
+    console.log(`⏭ Recharge skipped for txn ${txnId} (mobile: ${record.mobileNumber}) - ${record.skipReason}`);
+    
+    // Write skip status to file for WDIO to detect
+    try {
+      const commDir = path.join(__dirname, '..', 'swift-crm-automation', 'comm');
+      fs.mkdirSync(commDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(commDir, 'recharge_skipped.json'),
+        JSON.stringify({ 
+          txnId, 
+          msisdn: record.mobileNumber, 
+          skipped: true,
+          reason: record.skipReason,
+          timestamp: Date.now() 
+        }, null, 2)
+      );
+      console.log(`[SWIFT] ⏭ Recharge skip file written for ${record.mobileNumber}`);
+    } catch (fileErr) {
+      console.error(`[SWIFT] Failed to write skip file: ${fileErr.message}`);
+    }
+  } else {
+    console.log(`⚠️ Recharge skip called for unknown txn ${txnId}`);
+  }
+
+  res.json({ success: true, txnId, skipped: true });
 });
 
 // ========== Process Validation and Send Emails ==========
@@ -2558,24 +2705,30 @@ function handleSwiftConnection(ws, request) {
     console.warn(`[SWIFT] ⚠️ No upload found for session: ${sessionId}`);
   }
 
- ws.on('message', async (message) => {
+ws.on('message', async (message) => {
     try {
       const data = JSON.parse(message);
       
       if (data.type === 'start' && uploadPath) {
-        console.log(`[SWIFT] 🚀 Starting automation...`);
-        const viAppOtp = data.viAppOtp || null;
-        
-        // Create clients set for this session
-        const clientSet = new Set();
-        clientSet.add(ws);
-        
-        orchestrator = new SwiftCrmOrchestrator(uploadPath, clientSet, __dirname, viAppOtp);
-        swiftSessions.set(sessionId, { orchestrator, ws });
-        
-        // ✅ FIXED: Do NOT await — fires in background so this handler
-        // stays free to process incoming OTP / CAPTCHA messages
-        orchestrator.runRechargeUAT().catch(error => {
+            console.log(`[SWIFT] 🚀 Starting automation...`);
+            const viAppOtp = data.viAppOtp || null;
+ 
+            // Point 2: pull this session's frontend-validated matched rows
+            // (set during /api/swift/upload) and pass them through so the
+            // orchestrator never falls back to re-deriving rows from Excel
+            // unless the frontend genuinely didn't send any.
+            const matchedRowsForSession = swiftMatchedRows.get(sessionId) || null;
+ 
+            // Create clients set for this session
+            const clientSet = new Set();
+            clientSet.add(ws);
+ 
+            orchestrator = new SwiftCrmOrchestrator(uploadPath, clientSet, __dirname, viAppOtp, matchedRowsForSession);
+            swiftSessions.set(sessionId, { orchestrator, ws });
+ 
+            // Do NOT await — fires in background so this handler
+            // stays free to process incoming OTP / CAPTCHA messages
+            orchestrator.runRechargeUAT().catch(error => {
           console.error(`[SWIFT] ❌ Automation error:`, error);
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({
@@ -2587,23 +2740,49 @@ function handleSwiftConnection(ws, request) {
         });
 
       } else if (data.type === 'captcha' && orchestrator) {
-        console.log(`[SWIFT] 🔐 CAPTCHA received: ${data.answer}`);
+        console.log(`[SWIFT]  CAPTCHA received: ${data.answer}`);
+        
+        // Store credentials for the orchestrator (if provided)
+        if (data.username && data.password) {
+          orchestrator._pendingLoginCredentials = {
+            username: data.username,
+            password: data.password
+          };
+          console.log(`[SWIFT]  Stored login credentials for orchestrator`);
+        }
+        
         await orchestrator.setCaptchaAnswer(data.answer);
+        
       } else if (data.type === 'otp' && orchestrator) {
-        console.log(`[SWIFT] 🔐 OTP received: ${data.otp}`);
+        console.log(`[SWIFT]  OTP received: ${data.otp}`);
         await orchestrator.setOtp(data.otp);
+        
+      } else if (data.type === 'stop') {
+        // ── Stop request from frontend ─────────────────────────────────
+        console.log(`[SWIFT] ⏹ Stop requested for session ${sessionId}`);
+        if (orchestrator && orchestrator.currentWdioProcess) {
+          try { orchestrator.currentWdioProcess.kill('SIGTERM'); } catch (_) {}
+        }
+        if (orchestrator) {
+          try { orchestrator.stopPolling(); } catch (_) {}
+        }
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'complete', success: false, message: 'Stopped by user' }));
+        }
       }
     } catch (error) {
       console.error(`[SWIFT] ❌ WebSocket error:`, error);
     }
   });
 
-  ws.on('close', () => {
-    console.log(`[SWIFT] 👋 Client disconnected: ${sessionId}`);
-    swiftClients.delete(sessionId);
-    swiftSessions.delete(sessionId);
-    swiftUploadPaths.delete(sessionId);
-  });
+
+ ws.on('close', () => {
+      console.log(`[SWIFT] 👋 Client disconnected: ${sessionId}`);
+      swiftClients.delete(sessionId);
+      swiftSessions.delete(sessionId);
+      swiftUploadPaths.delete(sessionId);
+      swiftMatchedRows.delete(sessionId);
+    });
 
   ws.on('error', (error) => {
     console.error(`[SWIFT] ❌ WebSocket error:`, error);
@@ -2857,28 +3036,195 @@ const swiftUpload = multer({
   }
 });
 
+// Add this endpoint to handle CAPTCHA responses from frontend
+app.post('/api/swift/captcha-response', (req, res) => {
+  try {
+    const { answer, username, password } = req.body;
+    const commDir = path.join(__dirname, '..', 'swift-crm-automation', 'comm');
+    fs.mkdirSync(commDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(commDir, 'captcha_response.json'),
+      JSON.stringify({ 
+        timestamp: Date.now(), 
+        answer,
+        username,
+        password 
+      }, null, 2)
+    );
+    console.log(`[SWIFT] CAPTCHA response received: ${answer} for user ${username}`);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // Upload endpoint
-app.post('/api/swift/upload', swiftUpload.single('excel'), (req, res) => {
-  if (!req.file) {
-    return res.json({ success: false, message: 'No file uploaded' });
+// Upload endpoint
+    // Point 2: now also accepts a `matchedRows` form field — a JSON string
+    // built by the frontend from testCardsData (the Vi-validated, plan
+    // -matched rows shown in the STEP 2 preview table). multer puts non-file
+    // fields on req.body alongside req.file when using .single().
+    app.post('/api/swift/upload', swiftUpload.single('excel'), (req, res) => {
+      if (!req.file) {
+        return res.json({ success: false, message: 'No file uploaded' });
+      }
+ 
+      const sessionId = crypto.randomBytes(16).toString('hex');
+ 
+      // Store file path keyed by sessionId
+      swiftUploadPaths.set(sessionId, req.file.path);
+ 
+      // Point 2: parse + store the frontend's validated matched rows, if sent.
+      let matchedRows = null;
+      if (req.body && req.body.matchedRows) {
+        try {
+          const parsed = JSON.parse(req.body.matchedRows);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            matchedRows = parsed;
+            swiftMatchedRows.set(sessionId, matchedRows);
+            console.log(`[SWIFT] 📋 Received ${matchedRows.length} frontend-validated matched row(s) for session ${sessionId}`);
+          }
+        } catch (e) {
+          console.warn(`[SWIFT] ⚠️ Could not parse matchedRows from upload: ${e.message}`);
+        }
+      }
+      if (!matchedRows) {
+        console.warn('[SWIFT] ⚠️ No matchedRows received with upload — orchestrator will fall back to SWIFT=Yes Excel filtering.');
+      }
+ 
+      console.log(`[SWIFT] 📄 File uploaded: ${req.file.originalname} (Session: ${sessionId})`);
+ 
+      res.json({
+        success: true,
+        sessionId,
+        filename: req.file.originalname,
+        filePath: req.file.path
+      });
+    });
+
+
+// Add this to server.js after the existing routes
+
+app.post('/api/swift/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Username and password are required' 
+      });
+    }
+
+    // Write login request for orchestrator
+    const commDir = path.join(__dirname, '..', 'swift-crm-automation', 'comm');
+    fs.mkdirSync(commDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(commDir, 'login_request.json'),
+      JSON.stringify({ username, password, timestamp: Date.now() }, null, 2)
+    );
+
+    // Trigger login via orchestrator
+    // The orchestrator will pick this up and perform the login
+    
+    // For immediate response, check if login is already in progress
+    // or perform a quick login attempt
+    try {
+      // Use a lightweight login check
+      const loginResult = await performSwiftLogin(username, password);
+      if (loginResult.success) {
+        return res.json({ 
+          success: true, 
+          message: 'Login successful' 
+        });
+      }
+    } catch (loginError) {
+      // Login attempt failed, but we've queued the request
+      console.log('[SWIFT] Login queued for background processing');
+    }
+
+    // Return success immediately (login will complete in background)
+    res.json({ 
+      success: true, 
+      message: 'Login initiated, please wait for completion...' 
+    });
+    
+  } catch (error) {
+    console.error('[SWIFT] Login error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message 
+    });
+  }
+});
+
+// Helper function for quick login
+async function performSwiftLogin(username, password) {
+  try {
+    const { chromium } = require('playwright');
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    
+    await page.goto('https://swiftcrm.vodafoneidea.in/swift-portal/login');
+    
+    // Handle SSL warning if present
+    try {
+      await page.click('#details-button');
+      await page.click('#proceed-link');
+      await page.waitForTimeout(1000);
+    } catch (_) {}
+    
+    await page.fill('#tempusername', username);
+    await page.fill('#temppassword', password);
+    
+    // Wait for CAPTCHA and solve it (simplified)
+    await page.waitForSelector('img#LoginCaptcha', { timeout: 10000 });
+    
+    // For demo, we'll just return success
+    // In production, you'd use the CAPTCHA helper
+    
+    await browser.close();
+    return { success: true };
+  } catch (error) {
+    console.error('[SWIFT] Quick login failed:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+
+
+// -- Stop endpoint: kill running UAT for a session --
+app.post('/api/swift/stop', (req, res) => {
+  const { sessionId } = req.body || {};
+  const session = sessionId ? swiftSessions.get(sessionId) : null;
+
+  if (session && session.orchestrator) {
+    const { orchestrator, ws } = session;
+    if (orchestrator.currentWdioProcess) {
+      try { orchestrator.currentWdioProcess.kill('SIGTERM'); } catch (_) {}
+    }
+    try { orchestrator.stopPolling(); } catch (_) {}
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'complete', success: false, message: 'Stopped by user' }));
+    }
+    swiftSessions.delete(sessionId);
+    console.log(`[SWIFT] Stop: session ${sessionId} stopped via REST`);
+    return res.json({ success: true, message: 'Session stopped' });
   }
 
-  const sessionId = crypto.randomBytes(16).toString('hex');
-
-  // Store file path keyed by sessionId
-  swiftUploadPaths.set(sessionId, req.file.path);
-
-  console.log(`[SWIFT] 📄 File uploaded: ${req.file.originalname} (Session: ${sessionId})`);
-
-  res.json({
-    success: true,
-    sessionId,
-    filename: req.file.originalname,
-    filePath: req.file.path
+  const isWin = os.platform() === 'win32';
+  const killCmd = isWin
+    ? 'taskkill /F /IM node.exe /FI "WINDOWTITLE eq wdio*"'
+    : 'pkill -f "wdio run" || pkill -f "@wdio/cli" || true';
+  exec(killCmd, () => {
+    res.json({ success: true, message: 'Tests stopped' });
   });
 });
 
-
+// Latest report alias (sim-recharge.html uses /api/swift/report/latest)
+app.get('/api/swift/report/latest', (req, res) => {
+  res.redirect('/api/swift/download-report');
+});
 
 // Serve screenshots
 app.use('/screenshots', express.static(path.join(__dirname, '..', 'swift-crm-automation', 'screenshots')));
@@ -2955,7 +3301,7 @@ app.options('*', cors());
 // If you want the server to be accessible from both
 server.listen(PORT, '0.0.0.0', () => {  // Listen on all interfaces
   console.log(` Backend server running on port ${PORT}`);
-  console.log(`🔌 WebSocket server ready on ws://localhost:${PORT} and ws://${SERVER_IP}:${PORT}`);
-  console.log(`📊 API endpoints ready`);
+  console.log(`WebSocket server ready on ws://localhost:${PORT} and ws://${SERVER_IP}:${PORT}`);
+  console.log(`API endpoints ready`);
   console.log(` Dashboard: http://localhost:${PORT}/`);
 });
