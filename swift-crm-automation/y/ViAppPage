@@ -1,0 +1,780 @@
+import { $, browser } from '@wdio/globals';
+import { execSync } from 'child_process';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as readline from 'readline';
+
+/** Drop-in replacement for browser.pause() */
+const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
+
+// ─── ADB / app constants ─────────────────────────────────────────────────────
+// Dynamic device detection - get connected device(s)
+function getConnectedDevices(): string[] {
+    try {
+        const output = execSync('adb devices', { encoding: 'utf8' });
+        const lines = output.split('\n').filter(line => line.trim() !== '');
+        // Skip the first line "List of devices attached"
+        const deviceLines = lines.slice(1);
+        const devices = deviceLines
+            .filter(line => line.includes('\tdevice'))
+            .map(line => line.split('\t')[0].trim())
+            .filter(serial => serial !== '');
+        
+        if (devices.length === 0) {
+            throw new Error('No Android devices connected. Please connect a device and try again.');
+        }
+        
+        return devices;
+    } catch (error: any) {
+        throw new Error(`Failed to get connected devices: ${error.message}`);
+    }
+}
+
+// Get the first connected device or use environment variable
+let DEVICE_SERIAL: string;
+let detectedDevices: string[] = [];
+
+try {
+    detectedDevices = getConnectedDevices();
+    
+    // Check if device is specified in environment variable
+    if (process.env.DEVICE_SERIAL) {
+        const envDevice = process.env.DEVICE_SERIAL.trim();
+        if (detectedDevices.includes(envDevice)) {
+            DEVICE_SERIAL = envDevice;
+            console.log(`[ViAppPage] Using device from env: ${DEVICE_SERIAL}`);
+        } else {
+            console.warn(`[ViAppPage] Device ${envDevice} from env not found in connected devices. Using first available device.`);
+            DEVICE_SERIAL = detectedDevices[0];
+            console.log(`[ViAppPage] Using device: ${DEVICE_SERIAL}`);
+        }
+    } else {
+        // Use first connected device
+        DEVICE_SERIAL = detectedDevices[0];
+        console.log(`[ViAppPage] Using first connected device: ${DEVICE_SERIAL}`);
+    }
+} catch (error: any) {
+    console.error(`[ViAppPage] Device detection error: ${error.message}`);
+    // Fallback to default if detection fails
+    DEVICE_SERIAL = process.env.DEVICE_SERIAL || 'LFMVIBEMW8HUR4XK';
+    console.log(`[ViAppPage] Using fallback device: ${DEVICE_SERIAL}`);
+}
+
+// Optional: Store all detected devices for reference
+const ALL_DEVICES = detectedDevices;
+
+const VI_APP_PACKAGE = 'com.mventus.selfcare.activity';
+
+// ─── File-based OTP comm (optional – used when otp_response.json is written) ─
+const COMM_DIR         = path.resolve('./comm');
+const OTP_REQUEST_FILE = path.join(COMM_DIR, 'otp_request.json');
+const OTP_RESPONSE_FILE = path.join(COMM_DIR, 'otp_response.json');
+
+// ─── Selectors ───────────────────────────────────────────────────────────────
+const Selectors = {
+  // Step 2 – mobile number entry
+  mobileNumberField:    '//android.widget.TextView[@text="enter mobile number"]',
+  mobileNumberFieldAlt: '//android.view.View[@content-desc="-, enter mobile number"]',
+
+  // Popup dismiss
+  googleCancelBtn: '//android.widget.Button[@resource-id="com.google.android.gms:id/cancel"]',
+
+  // Step 3 – OTP flow
+  sendOtpBtn:      '//android.widget.Button[@content-desc="send OTP"]',
+  loginWithOtpBtn: '//android.widget.Button[@content-desc="login with OTP"]',
+
+  // OTP digit boxes – structural selector, works regardless of nesting depth
+  otpDigitBoxes: '(//android.view.ViewGroup[count(android.view.ViewGroup)=4])[last()]/android.view.ViewGroup',
+
+  // Post-login
+  hamburgerIcon: '//android.widget.FrameLayout[@resource-id="android:id/content"]/android.widget.FrameLayout/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup[1]/android.view.ViewGroup/android.view.ViewGroup/android.view.ViewGroup[2]',
+  logoutBtn:     '//android.view.View[@content-desc="logout"]',
+  
+  // NEW: ViMTV and Order Now selectors
+  viMTVBanner: '//android.widget.Button[@content-desc="ViMTV FIFA"]/android.widget.ImageView',
+  orderNow: '//android.widget.ImageView[@content-desc="order now"]',
+  popularActions: '//android.widget.TextView[@text="popular actions"]',
+  logoutConfirm: '//android.widget.Button[@text="yes, logout"]',
+  logoutConfirmAlt: '//android.widget.Button[@content-desc="yes, logout"]',
+  logoutConfirmXPath: '//*[@id="screenshotContainer"]/div[2]/div/div/div/div/div[199]/div',
+} as const;
+
+export class ViAppPage {
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PRIVATE HELPERS
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /** Dismiss Google Play / "none of the above" popups that appear on field focus */
+  private async dismissAllPopups(): Promise<void> {
+    const popupSelectors = [
+      '//android.widget.Button[@resource-id="com.google.android.gms:id/cancel"]',
+      '//android.widget.Button[contains(@text, "none of the above")]',
+      '//android.widget.Button[contains(@text, "NONE OF THE ABOVE")]',
+    ];
+
+    let dismissed = 0;
+    const deadline = Date.now() + 5000;
+
+    while (Date.now() < deadline) {
+      let found = false;
+      for (const sel of popupSelectors) {
+        try {
+          const els = await $$(sel);
+          for (const el of els) {
+            if (await el.isDisplayed()) {
+              const txt = await el.getText();
+              console.log(`[ViAppPage] Dismissing popup: "${txt}"`);
+              await el.click();
+              dismissed++;
+              found = true;
+              await sleep(500);
+              break;
+            }
+          }
+        } catch (_e) { /* not found */ }
+      }
+      if (!found) break;
+    }
+
+    console.log(dismissed > 0
+      ? `[ViAppPage] Dismissed ${dismissed} popup(s)`
+      : '[ViAppPage] No popups to dismiss');
+  }
+
+  /** Poll until any meaningful element is visible — proves the screen is ready */
+  private async waitForAppReady(timeoutMs = 30000): Promise<void> {
+    console.log('[ViAppPage] Waiting for app to be ready...');
+    const deadline = Date.now() + timeoutMs;
+
+    while (Date.now() < deadline) {
+      try {
+        const els = await $$('//android.widget.TextView | //android.widget.EditText | //android.view.View');
+        for (const el of els) {
+          try {
+            if (await el.isDisplayed()) {
+              const text = await el.getText();
+              if (text && text.length > 0) {
+                console.log(`[ViAppPage] App ready — found: "${text.substring(0, 40)}"`);
+                return;
+              }
+            }
+          } catch (_e) { /* inaccessible yet */ }
+        }
+      } catch (_e) { /* no elements yet */ }
+      await sleep(500);
+    }
+    console.log('[ViAppPage] App-ready timeout — continuing anyway');
+  }
+
+  /** Find the mobile-number input field with multiple fallback strategies */
+  private async findMobileNumberField(): Promise<WebdriverIO.Element> {
+    console.log('[ViAppPage] Looking for mobile number field...');
+    await this.waitForAppReady();
+
+    // 1. Primary selector (retry × 5)
+    for (let i = 0; i < 5; i++) {
+      try {
+        const el = await $(Selectors.mobileNumberField);
+        if (await el.isDisplayed()) {
+          console.log('[ViAppPage] Found via primary selector');
+          return el;
+        }
+      } catch (_e) { await sleep(500); }
+    }
+
+    // 2. Alt selector
+    try {
+      const el = await $(Selectors.mobileNumberFieldAlt);
+      if (await el.isDisplayed()) {
+        console.log('[ViAppPage] Found via alt selector');
+        return el;
+      }
+    } catch (_e) { /* continue */ }
+
+    // 3. Generic text/hint search
+    try {
+      const els = await $$('//android.widget.TextView | //android.widget.EditText');
+      for (const el of els) {
+        if (await el.isDisplayed()) {
+          const combined = ((await el.getText()) + (await el.getAttribute('hint') || '')).toLowerCase();
+          if (combined.includes('mobile') || combined.includes('enter') || combined.includes('number')) {
+            console.log(`[ViAppPage] Found via text/hint search`);
+            return el;
+          }
+        }
+      }
+    } catch (_e) { /* continue */ }
+
+    // 4. content-desc search
+    try {
+      const els = await $$('//android.view.View');
+      for (const el of els) {
+        const desc = (await el.getAttribute('content-desc') || '').toLowerCase();
+        if (desc.includes('enter') || desc.includes('mobile')) {
+          console.log(`[ViAppPage] Found via content-desc: "${desc}"`);
+          return el;
+        }
+      }
+    } catch (_e) { /* continue */ }
+
+    throw new Error('[ViAppPage] Could not find mobile number input field');
+  }
+
+  /** Check if the OTP screen is currently showing (reliable: looks for "login with OTP" button) */
+  private async isOTPScreenVisible(): Promise<boolean> {
+    try {
+      const btn = await $(Selectors.loginWithOtpBtn);
+      return await btn.isDisplayed();
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  /**
+   * Read the current value of each OTP digit box.
+   */
+  private async readOTPDigitBoxes(): Promise<{ filledCount: number; otpValue: string }> {
+    let filledCount = 0;
+    let otpValue    = '';
+
+    try {
+      const boxes = await $$(Selectors.otpDigitBoxes);
+      console.log(`[ViAppPage] Found ${boxes.length} OTP digit box(es)`);
+
+      for (let i = 0; i < Math.min(4, boxes.length); i++) {
+        const box = boxes[i];
+        let value = '';
+
+        try { value = await box.getText(); }                          catch (_e) {}
+        if (!value) { try { value = await box.getValue(); }          catch (_e) {} }
+        if (!value) { try { value = await box.getAttribute('text'); } catch (_e) {} }
+        if (!value) { try { value = await box.getAttribute('content-desc'); } catch (_e) {} }
+
+        const digit = (value || '').trim();
+        // Filter out: empty strings, spaces, and the literal strings "null" or "undefined"
+        const isEmpty = !digit || digit === '' || digit === ' ' || digit === 'null' || digit === 'undefined';
+        
+        console.log(`[ViAppPage] Box ${i + 1}: "${digit}" (filled: ${!isEmpty})`);
+
+        if (!isEmpty) {
+          filledCount++;
+          otpValue += digit;
+        }
+      }
+    } catch (_e) {
+      console.warn('[ViAppPage] Could not read OTP boxes:', _e);
+    }
+
+    return { filledCount, otpValue };
+  }
+
+  /**
+   * Wait for auto-fill to complete.
+   */
+  private async waitForAutoFill(waitMs = 8000): Promise<string> {
+    console.log(`[ViAppPage] Waiting up to ${waitMs / 1000}s for SIM auto-fill...`);
+    const deadline = Date.now() + waitMs;
+
+    while (Date.now() < deadline) {
+      const { filledCount, otpValue } = await this.readOTPDigitBoxes();
+      if (filledCount >= 4) {
+        console.log(`[ViAppPage] ✅ All 4 digits auto-filled: ${otpValue}`);
+        return otpValue;
+      }
+      if (filledCount > 0) {
+        console.log(`[ViAppPage] Auto-fill in progress (${filledCount}/4)...`);
+      }
+      await sleep(500);
+    }
+
+    // Final read
+    const { filledCount, otpValue } = await this.readOTPDigitBoxes();
+    if (filledCount >= 4) return otpValue;
+
+    console.log(`[ViAppPage] Auto-fill ended with ${filledCount}/4 digits — not fully filled`);
+    return '';
+  }
+
+  /**
+   * Enter OTP digits manually into the 4 boxes.
+   */
+  private async enterOTPIntoBoxes(otp: string): Promise<void> {
+    console.log(`[ViAppPage] Entering OTP manually: ${otp}`);
+    const digits = otp.replace(/\D/g, '').split('');
+
+    const boxes = await $$(Selectors.otpDigitBoxes);
+    console.log(`[ViAppPage] Found ${boxes.length} box(es) to fill`);
+
+    for (let i = 0; i < Math.min(4, digits.length, boxes.length); i++) {
+      try {
+        const box = boxes[i];
+        await box.waitForDisplayed({ timeout: 5000 });
+        await box.click();
+        await sleep(200);
+        await box.setValue(digits[i]);
+        console.log(`[ViAppPage] ✅ Digit ${i + 1} entered: ${digits[i]}`);
+        await sleep(150);
+      } catch (e: any) {
+        console.warn(`[ViAppPage] setValue failed for box ${i + 1} — keyboard fallback`);
+        try { await browser.keys([digits[i]]); } catch (_e) { /* ignore */ }
+      }
+    }
+  }
+
+  /**
+   * Request OTP via frontend pop-up (file-based communication).
+   * Writes otp_request.json and waits for frontend to write otp_response.json.
+   * Includes timeout protection to prevent indefinite waiting.
+   */
+  private async waitForFrontendOTP(): Promise<string> {
+    // ── Set up file-based comm (similar to CAPTCHA) ──────────────────────────
+    if (!fs.existsSync(COMM_DIR)) fs.mkdirSync(COMM_DIR, { recursive: true });
+    if (fs.existsSync(OTP_RESPONSE_FILE)) fs.unlinkSync(OTP_RESPONSE_FILE);
+
+    const requestTimestamp = Date.now();
+    fs.writeFileSync(OTP_REQUEST_FILE, JSON.stringify({
+      timestamp: requestTimestamp,
+      type: 'otp',
+      message: 'Please enter the 4-digit OTP received on your mobile.',
+    }, null, 2));
+
+    console.log('[ViAppPage] 📱 OTP request written to frontend (timestamp: ' + requestTimestamp + ')');
+    console.log('[ViAppPage] ⏳ Waiting for OTP pop-up to appear in frontend...');
+
+    // ── Wait for response with timeout (60 seconds max) ──────────────────────
+    const maxWaitTime = 60000; // 60 seconds
+    const pollInterval = 200; // Check every 200ms
+    const deadline = Date.now() + maxWaitTime;
+    let lastCheckTime = Date.now();
+
+    while (Date.now() < deadline) {
+      // Check for response file
+      if (fs.existsSync(OTP_RESPONSE_FILE)) {
+        try {
+          const raw = fs.readFileSync(OTP_RESPONSE_FILE, 'utf8');
+          const data = JSON.parse(raw);
+          const otp = (data.otp || '').trim();
+          
+          if (/^\d{4,6}$/.test(otp)) {
+            // Clean up
+            fs.unlinkSync(OTP_RESPONSE_FILE);
+            if (fs.existsSync(OTP_REQUEST_FILE)) fs.unlinkSync(OTP_REQUEST_FILE);
+            console.log(`[ViAppPage] ✅ OTP received from frontend: ${otp} (took ${Date.now() - requestTimestamp}ms)`);
+            return otp;
+          }
+        } catch (_e) {
+          // File not ready yet or invalid JSON
+        }
+      }
+
+      // Log progress every 5 seconds
+      const timeSinceLastLog = Date.now() - lastCheckTime;
+      if (timeSinceLastLog >= 5000) {
+        const elapsed = Math.round((Date.now() - requestTimestamp) / 1000);
+        console.log(`[ViAppPage] ⏳ Still waiting for OTP... (${elapsed}s elapsed)`);
+        lastCheckTime = Date.now();
+      }
+
+      await sleep(pollInterval);
+    }
+
+    // Timeout reached
+    console.error('[ViAppPage] ❌ OTP timeout: No response received within 60 seconds');
+    throw new Error('[ViAppPage] ❌ OTP input timeout — user did not enter OTP within 60 seconds');
+  }
+
+  /** Check hamburger is visible → confirms home screen loaded after login */
+  private async verifyLoggedInState(): Promise<boolean> {
+    console.log('[ViAppPage] Verifying logged-in state...');
+    try {
+      const hamburger = await $(Selectors.hamburgerIcon);
+      if (await hamburger.isDisplayed()) {
+        console.log('[ViAppPage] ✅ Hamburger visible — user is logged in');
+        return true;
+      }
+    } catch (_e) { /* continue */ }
+
+    // Fallback: any home-screen text indicator
+    try {
+      const els = await $$('//android.widget.TextView');
+      for (const el of els) {
+        const text = await el.getText().catch(() => '');
+        if (['hi', 'welcome', 'dashboard', 'my account'].some(k => text.toLowerCase().includes(k))) {
+          console.log(`[ViAppPage] ✅ Logged-in text found: "${text}"`);
+          return true;
+        }
+      }
+    } catch (_e) { /* continue */ }
+
+    console.log('[ViAppPage] ❌ No logged-in indicators found');
+    return false;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PUBLIC STEPS
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Get current device serial (useful for debugging)
+   */
+  static getDeviceSerial(): string {
+    return DEVICE_SERIAL;
+  }
+
+  /**
+   * Get all connected devices
+   */
+  static getAllDevices(): string[] {
+    return ALL_DEVICES;
+  }
+
+  /** Step 1 — Launch Vi App via ADB monkey */
+  async launchApp(): Promise<void> {
+    console.log(`[ViAppPage] Step 1: Launching Vi App on device ${DEVICE_SERIAL}...`);
+    const cmd = `adb -s ${DEVICE_SERIAL} shell monkey -p ${VI_APP_PACKAGE} -c android.intent.category.LAUNCHER 1`;
+    try {
+      const out = execSync(cmd, { encoding: 'utf8' });
+      console.log(`[ViAppPage] ADB output:\n${out}`);
+    } catch (err: any) {
+      throw new Error(`[ViAppPage] Launch failed on device ${DEVICE_SERIAL}: ${err.message}`);
+    }
+    await sleep(5000);
+    console.log('[ViAppPage] Vi App launched successfully');
+  }
+
+  /** Step 2 — Enter MSISDN using the on-screen numeric keypad */
+  async enterMSISDN(msisdn: string): Promise<void> {
+    console.log(`[ViAppPage] Step 2: Entering MSISDN ${msisdn}...`);
+
+    const mobileField = await this.findMobileNumberField();
+    await mobileField.waitForDisplayed({ timeout: 15000 });
+    console.log('[ViAppPage] Mobile number field visible');
+
+    await mobileField.click();
+    await sleep(1000);
+    await this.dismissAllPopups();
+
+    // Clear any pre-filled digits
+    try {
+      for (let i = 0; i < 15; i++) { await browser.keys(['Backspace']); await sleep(30); }
+    } catch (_e) { /* ignore */ }
+
+    // Tap each digit on the in-app numeric keypad
+    const keypadSelector: Record<string, string> = {
+      '0': '//android.widget.Button[@content-desc="0"]',
+      '1': '//android.widget.Button[@content-desc="1"]',
+      '2': '//android.widget.Button[@content-desc="2"]',
+      '3': '//android.widget.Button[@content-desc="3"]',
+      '4': '//android.widget.Button[@content-desc="4"]',
+      '5': '//android.widget.Button[@content-desc="5"]',
+      '6': '//android.widget.Button[@content-desc="6"]',
+      '7': '//android.widget.Button[@content-desc="7"]',
+      '8': '//android.widget.Button[@content-desc="8"]',
+      '9': '//android.widget.Button[@content-desc="9"]',
+    };
+
+    for (const digit of msisdn) {
+      let tapped = false;
+      try {
+        const btn = await $(keypadSelector[digit]);
+        if (await btn.isDisplayed()) { await btn.click(); tapped = true; await sleep(100); }
+      } catch (_e) { /* try keyboard */ }
+      if (!tapped) { await browser.keys([digit]); await sleep(100); }
+    }
+
+    console.log(`[ViAppPage] MSISDN entered: ${msisdn}`);
+    try { await browser.hideKeyboard(); } catch (_e) { /* already hidden */ }
+  }
+
+  /**
+   * Step 3 — Click "send OTP", handle OTP screen, click "login with OTP"
+   */
+  async submitAndLogin(otp?: string): Promise<void> {
+    console.log('[ViAppPage] Step 3: Clicking "send OTP"...');
+
+    await this.dismissAllPopups();
+
+    const sendOtp = await $(Selectors.sendOtpBtn);
+    await sendOtp.waitForDisplayed({ timeout: 15000 });
+    await sendOtp.click();
+    console.log('[ViAppPage] "send OTP" clicked — waiting for OTP screen or auto-login...');
+
+    // Give the app 5 s to either show the OTP screen or complete auto-login
+    await sleep(5000);
+
+    const otpScreenVisible = await this.isOTPScreenVisible();
+
+    if (otpScreenVisible) {
+      console.log('[ViAppPage] ✅ OTP screen detected');
+
+      // ── Try auto-fill first (wait up to 8 s) ──────────────────────────────
+      const autoFilledOtp = await this.waitForAutoFill(8000);
+
+      if (autoFilledOtp) {
+        // SIM filled all 4 digits — nothing to type
+        console.log(`[ViAppPage] ✅ SIM auto-filled OTP: ${autoFilledOtp} — proceeding to login`);
+      } else {
+        // Boxes are completely empty — request OTP from frontend pop-up
+        console.log('[ViAppPage] 📵 OTP boxes are empty — requesting manual OTP via frontend pop-up');
+        const manualOtp = otp || await this.waitForFrontendOTP();
+        await this.enterOTPIntoBoxes(manualOtp);
+      }
+
+      // ── Click "login with OTP" ─────────────────────────────────────────────
+      console.log('[ViAppPage] Clicking "login with OTP"...');
+      const loginBtn = await $(Selectors.loginWithOtpBtn);
+      await loginBtn.waitForDisplayed({ timeout: 20000 });
+      await loginBtn.click();
+      await sleep(5000);
+
+      const isLoggedIn = await this.verifyLoggedInState();
+      if (!isLoggedIn) throw new Error('[ViAppPage] ❌ Login failed after OTP submission');
+      console.log('[ViAppPage] ✅ Login successful via OTP');
+
+    } else {
+      // No OTP screen — app auto-logged in via SIM
+      console.log('[ViAppPage] OTP screen not shown — checking for auto-login...');
+      const isLoggedIn = await this.verifyLoggedInState();
+      if (!isLoggedIn) throw new Error('[ViAppPage] ❌ Auto-login failed — home screen not detected');
+      console.log('[ViAppPage] ✅ Auto-login successful (no OTP screen needed)');
+    }
+  }
+
+  /**
+   * Post-login — click hamburger → My Account screen → verify MSISDN
+   */
+  async verifyAccountMSISDN(msisdn: string): Promise<boolean> {
+    console.log('[ViAppPage] Clicking hamburger (3-lines) → My Account...');
+    await this.dismissAllPopups();
+
+    const hamburger = await $(Selectors.hamburgerIcon);
+    await hamburger.waitForDisplayed({ timeout: 15000 });
+    await hamburger.click();
+    console.log('[ViAppPage] Hamburger clicked — waiting for My Account screen...');
+
+    let verified = false;
+    try {
+      const el = await $(`//android.widget.TextView[@text="${msisdn}"]`);
+      await el.waitForDisplayed({ timeout: 15000 });
+      verified = await el.isDisplayed();
+      console.log(verified
+        ? `[ViAppPage] ✅ MSISDN ${msisdn} verified on My Account screen`
+        : `[ViAppPage] ⚠️  MSISDN element found but not displayed`);
+    } catch (_e) {
+      console.warn(`[ViAppPage] ⚠️  MSISDN ${msisdn} not found on My Account screen`);
+    }
+
+    return verified;
+  }
+
+  /**
+   * NEW: Tap on ViMTV FIFA banner/order now button
+   */
+  async tapOnViMTVOrOrderNow(): Promise<void> {
+    console.log('[ViAppPage] Tapping on ViMTV FIFA / Order Now...');
+    await this.dismissAllPopups();
+
+    try {
+      // Try ViMTV FIFA first
+      const viMTVElement = await $(Selectors.viMTVBanner);
+      if (await viMTVElement.isDisplayed()) {
+        await viMTVElement.click();
+        console.log('[ViAppPage] ✅ ViMTV FIFA tapped successfully');
+        await sleep(2000);
+        return;
+      }
+    } catch (_e) {
+      console.log('[ViAppPage] ViMTV FIFA not found, trying Order Now...');
+    }
+
+    try {
+      // Try Order Now as fallback
+      const orderNowElement = await $(Selectors.orderNow);
+      if (await orderNowElement.isDisplayed()) {
+        await orderNowElement.click();
+        console.log('[ViAppPage] ✅ Order Now tapped successfully');
+        await sleep(2000);
+        return;
+      }
+    } catch (_e) {
+      console.warn('[ViAppPage] ⚠️ Neither ViMTV FIFA nor Order Now found');
+      throw new Error('[ViAppPage] Could not find ViMTV FIFA or Order Now button');
+    }
+  }
+
+  /**
+   * NEW: Click hamburger menu icon (3 lines)
+   */
+  async clickHamburgerMenu(): Promise<void> {
+    console.log('[ViAppPage] Clicking hamburger menu (3 lines)...');
+    await this.dismissAllPopups();
+
+    // Using the same hamburger selector as before
+    const hamburger = await $(Selectors.hamburgerIcon);
+    await hamburger.waitForDisplayed({ timeout: 15000 });
+    await hamburger.click();
+    console.log('[ViAppPage] Hamburger menu clicked');
+    await sleep(2000);
+  }
+
+  /**
+   * NEW: Verify Popular Actions section is visible
+   */
+  async verifyPopularActions(): Promise<boolean> {
+    console.log('[ViAppPage] Verifying Popular Actions section...');
+    try {
+      const element = await $(Selectors.popularActions);
+      
+      // Wait for it to be displayed with timeout
+      await element.waitForDisplayed({ timeout: 10000 });
+      const isDisplayed = await element.isDisplayed();
+      
+      if (isDisplayed) {
+        console.log('[ViAppPage] ✅ Popular Actions section verified');
+        return true;
+      }
+    } catch (_e) {
+      console.warn('[ViAppPage] ⚠️ Popular Actions section not found');
+    }
+    return false;
+  }
+
+  /**
+   * NEW: Click logout button and confirm
+   */
+  async clickLogoutWithConfirmation(): Promise<void> {
+    console.log('[ViAppPage] Looking for logout button...');
+    await this.dismissAllPopups();
+
+    // Scroll down to find logout button (if needed)
+    try {
+      // Scroll down a bit to ensure logout is visible
+      await browser.execute('mobile: scroll', { direction: 'down' });
+      await sleep(1000);
+    } catch (_e) {
+      // Scroll might fail, continue anyway
+      console.log('[ViAppPage] Scroll not supported, continuing...');
+    }
+
+    // Click logout
+    try {
+      const logoutBtn = await $(Selectors.logoutBtn);
+      await logoutBtn.waitForDisplayed({ timeout: 15000 });
+      await logoutBtn.click();
+      console.log('[ViAppPage] Logout clicked, waiting for confirmation popup...');
+      await sleep(2000);
+    } catch (_e) {
+      console.warn('[ViAppPage] ⚠️ Logout button not found');
+      throw new Error('[ViAppPage] Could not find logout button');
+    }
+
+    // Handle confirmation popup
+    try {
+      // Try different selectors for "yes, logout" button
+      const confirmSelectors = [
+        Selectors.logoutConfirmXPath,
+        Selectors.logoutConfirm,
+        Selectors.logoutConfirmAlt,
+        '//android.widget.Button[contains(@text, "logout")]',
+        '//android.widget.Button[contains(@text, "Yes")]',
+      ];
+
+      let confirmed = false;
+      for (const selector of confirmSelectors) {
+        try {
+          const confirmBtn = await $(selector);
+          if (await confirmBtn.isDisplayed()) {
+            await confirmBtn.click();
+            console.log('[ViAppPage] ✅ Logout confirmed');
+            confirmed = true;
+            await sleep(2000);
+            break;
+          }
+        } catch (_e) {
+          // Continue to next selector
+        }
+      }
+
+      if (!confirmed) {
+        console.warn('[ViAppPage] ⚠️ Confirmation popup not found or already dismissed');
+      }
+    } catch (_e) {
+      console.warn('[ViAppPage] ⚠️ Error handling logout confirmation');
+    }
+  }
+
+  /**
+   * Logout — button is on the My Account screen (same screen as MSISDN).
+   * Selector confirmed: //android.view.View[@content-desc="logout"]
+   * Waits up to 15 s. Falls back to ADB force-stop if not found.
+   */
+  async logout(): Promise<void> {
+    console.log('[ViAppPage] Looking for logout button...');
+    await this.dismissAllPopups();
+
+    try {
+      const btn = await $(Selectors.logoutBtn);
+      await btn.waitForDisplayed({ timeout: 15000 });
+      await btn.click();
+      await sleep(2000);
+      console.log('[ViAppPage] ✅ Logged out of Vi App');
+    } catch (_e) {
+      console.warn('[ViAppPage] ⚠️  Logout button not found — force-stopping via ADB');
+      try {
+        execSync(`adb -s ${DEVICE_SERIAL} shell am force-stop ${VI_APP_PACKAGE}`, { encoding: 'utf8' });
+        await sleep(1000);
+        console.log('[ViAppPage] App force-stopped (effective logout)');
+      } catch (adbErr: any) {
+        console.warn(`[ViAppPage] ADB force-stop failed: ${adbErr.message}`);
+      }
+    }
+  }
+
+  /** Uninstall the app via ADB */
+  uninstallApp(): void {
+    console.log(`[ViAppPage] Uninstalling Vi App from device ${DEVICE_SERIAL}...`);
+    try {
+      const out = execSync(`adb -s ${DEVICE_SERIAL} uninstall ${VI_APP_PACKAGE}`, { encoding: 'utf8' });
+      console.log(`[ViAppPage] Uninstall: ${out.trim()}`);
+    } catch (err: any) {
+      console.warn(`[ViAppPage] Uninstall warning: ${err.message}`);
+    }
+  }
+
+  /**
+   * UPDATED: Full flow with all new steps
+   */
+  async runViAppFlow(msisdn: string, otp?: string): Promise<void> {
+    console.log(`[ViAppPage] 🚀 Starting complete Vi App flow on device: ${DEVICE_SERIAL}...`);
+    
+    // Step 1: Launch app
+    await this.launchApp();
+    
+    // Step 2: Enter MSISDN
+    await this.enterMSISDN(msisdn);
+    
+    // Step 3: Submit OTP and login
+    await this.submitAndLogin(otp);
+    
+    // Step 4: Verify account MSISDN
+    await this.verifyAccountMSISDN(msisdn);
+    
+    // Step 5: Tap on ViMTV FIFA or Order Now
+    await this.tapOnViMTVOrOrderNow();
+    
+    // Step 6: Click hamburger menu (3 lines)
+    await this.clickHamburgerMenu();
+    
+    // Step 7: Verify Popular Actions section
+    const popularActionsVisible = await this.verifyPopularActions();
+    if (!popularActionsVisible) {
+      console.warn('[ViAppPage] ⚠️ Popular Actions not visible, but continuing...');
+    }
+    
+    // Step 8: Click logout with confirmation
+    await this.clickLogoutWithConfirmation();
+    
+    console.log(`[ViAppPage] ✅ Complete Vi App flow executed successfully on device ${DEVICE_SERIAL}`);
+  }
+}

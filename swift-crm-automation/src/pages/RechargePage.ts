@@ -28,6 +28,11 @@ interface OfferHistoryItem {
   category: string;
   benefits: string;
   detailValidity: string;
+  // ─── NEW FIELDS ─────────────────────────────────────────────
+  isMatched: boolean;          // did MRP or core balance match target?
+  isTodayActivation: boolean;  // is activationDateTime = today's date?
+  matchStatus: "Pass" | "Fail-DateMismatch" | "Unmatched" | "Fail-UnparsableDate";
+  matchReason: string;
 }
 
 interface DedicatedAccount {
@@ -632,80 +637,94 @@ async clickSearchButton(): Promise<void> {
   }
 
   // ─── Helper: Capture Account Overview Details ─────────────────────────────────
-  async captureAccountOverview(): Promise<any> {
-    console.log("[RechargePage] Capturing Account Overview details...");
-    const accountDetails: any = {
-      activationDate: "",
-      serviceRemovalOn: "",
-      supervisionExpiresOn: "",
-      mainBalance: "",
-      serviceFeeExpiresOn: "",
-      subscriberStatus: "",
-      creditClearanceOn: ""
-    };
-
-    try {
-      // Wait for account overview section
-      const accountBox = await $('.accountBox');
-      await accountBox.waitForDisplayed({ timeout: 10000 });
-
-      // Get all label-value pairs using the specific IDs
-      const fieldMappings = [
-        { id: 'ActivationDateValue', key: 'activationDate' },
-        { id: 'ServiceRemovalOnValue', key: 'serviceRemovalOn' },
-        { id: 'SupervisionExpiresOnValue', key: 'supervisionExpiresOn' },
-        { id: 'MainBalanceValue', key: 'mainBalance' },
-        { id: 'ServiceFeeExpiresOnValue', key: 'serviceFeeExpiresOn' },
-        { id: 'SubscriberStatusValue', key: 'subscriberStatus' },
-        { id: 'CreditClearanceOnValue', key: 'creditClearanceOn' }
-      ];
-
-      for (const mapping of fieldMappings) {
-        try {
-          const element = await $(`#${mapping.id}`);
-          if (await element.isExisting() && await element.isDisplayed()) {
-            const value = await element.getText();
-            accountDetails[mapping.key] = value.trim();
-            console.log(`[RechargePage] ✅ ${mapping.key}: ${value.trim()}`);
-          }
-        } catch (error) {
-          console.log(`[RechargePage] Error getting ${mapping.key}:`, error);
-        }
-      }
-
-      // Fallback: Try to parse from the entire account box
-      if (Object.values(accountDetails).some(v => !v)) {
-        console.log("[RechargePage] Trying fallback extraction from account box...");
-        const fullText = await accountBox.getText();
-        
-        const patterns = {
-          activationDate: /Activation Date\s*([^\n]+)/i,
-          serviceRemovalOn: /Service Removal On\s*([^\n]+)/i,
-          supervisionExpiresOn: /Supervision Expires On\s*([^\n]+)/i,
-          mainBalance: /Main Balance\s*([^\n]+)/i,
-          serviceFeeExpiresOn: /Service Fee Expires On\s*([^\n]+)/i,
-          subscriberStatus: /Subscriber Status\s*([^\n]+)/i,
-          creditClearanceOn: /Credit Clearance On\s*([^\n]+)/i
+        async captureAccountOverview(): Promise<any> {
+        console.log("[RechargePage] Capturing Account Overview details...");
+        const accountDetails: any = {
+          activationDate: "", serviceRemovalOn: "", supervisionExpiresOn: "",
+          mainBalance: "", serviceFeeExpiresOn: "", subscriberStatus: "", creditClearanceOn: ""
         };
 
-        for (const [key, pattern] of Object.entries(patterns)) {
-          if (!accountDetails[key]) {
-            const match = fullText.match(pattern);
-            if (match && match[1]) {
-              accountDetails[key] = match[1].trim();
-              console.log(`[RechargePage] ✅ ${key} (regex): ${match[1].trim()}`);
+        let switchedFrame = false;
+        try {
+          // Try top-level first
+          let accountBox = await $('.accountBox');
+          let found = await accountBox.waitForDisplayed({ timeout: 5000 }).then(() => true).catch(() => false);
+
+          if (!found) {
+            console.log('[RechargePage] .accountBox not found in top document — checking iframes...');
+            const iframeCount = await browser.execute(() => document.querySelectorAll('iframe').length);
+            console.log(`[RechargePage] Found ${iframeCount} iframe(s) on page`);
+
+            for (let i = 0; i < iframeCount; i++) {
+              try {
+                const iframeEl = await $$('iframe')[i];
+                await browser.switchToFrame(iframeEl);
+                switchedFrame = true;
+
+                accountBox = await $('.accountBox');
+                found = await accountBox.waitForDisplayed({ timeout: 3000 }).then(() => true).catch(() => false);
+
+                if (found) {
+                  console.log(`[RechargePage] ✅ Found .accountBox inside iframe index ${i}`);
+                  break;
+                } else {
+                  await browser.switchToParentFrame();
+                  switchedFrame = false;
+                }
+              } catch (frameErr) {
+                console.warn(`[RechargePage] Error checking iframe ${i}:`, frameErr);
+                try { await browser.switchToParentFrame(); } catch (_) {}
+                switchedFrame = false;
+              }
+            }
+          }
+
+          if (!found) {
+            console.error('[RechargePage] 🚨 .accountBox not found in top document OR any iframe — genuine page-structure issue');
+            return accountDetails;
+          }
+
+          const fieldMappings = [
+            { id: 'ActivationDateValue', key: 'activationDate' },
+            { id: 'ServiceRemovalOnValue', key: 'serviceRemovalOn' },
+            { id: 'SupervisionExpiresOnValue', key: 'supervisionExpiresOn' },
+            { id: 'MainBalanceValue', key: 'mainBalance' },
+            { id: 'ServiceFeeExpiresOnValue', key: 'serviceFeeExpiresOn' },
+            { id: 'SubscriberStatusValue', key: 'subscriberStatus' },
+            { id: 'CreditClearanceOnValue', key: 'creditClearanceOn' }
+          ];
+
+          for (const mapping of fieldMappings) {
+            try {
+              const element = await $(`#${mapping.id}`);
+              const displayed = await element.waitForDisplayed({ timeout: 5000 }).then(() => true).catch(() => false);
+              if (displayed) {
+                const value = await element.getText();
+                accountDetails[mapping.key] = value.trim();
+                console.log(`[RechargePage] ✅ ${mapping.key}: ${value.trim()}`);
+              } else {
+                console.warn(`[RechargePage] ⚠️ #${mapping.id} not displayed within 5s`);
+              }
+            } catch (error) {
+              console.warn(`[RechargePage] ⚠️ Error getting ${mapping.key}:`, error instanceof Error ? error.message : error);
+            }
+          }
+
+          return accountDetails;
+        } catch (error) {
+          console.error("[RechargePage] Error capturing Account Overview:", error);
+          return accountDetails;
+        } finally {
+          if (switchedFrame) {
+            try {
+              await browser.switchToParentFrame();
+              console.log('[RechargePage] Switched back to parent frame');
+            } catch (switchBackErr) {
+              console.warn('[RechargePage] Could not switch back to parent frame:', switchBackErr);
             }
           }
         }
       }
-
-      console.log("[RechargePage] Account Overview captured successfully");
-      return accountDetails;
-    } catch (error) {
-      console.error("[RechargePage] Error capturing Account Overview:", error);
-      return accountDetails;
-    }
-  }
 
   // ─── Helper: Scrape Other Offers (Dedicated Account Table) ──────────────────
   async scrapeOtherOffersDA(): Promise<any[]> {
@@ -891,6 +910,8 @@ async clickSearchButton(): Promise<void> {
     }
   }
 
+  
+
   // ─── IN - Yes Case Testing Process ──────────────────────────────────────────
   async runINTest(msisdn: string, mrp: string): Promise<any> {
     console.log(`[RechargePage] Running IN test for MSISDN: ${msisdn}`);
@@ -995,68 +1016,190 @@ async clickSearchButton(): Promise<void> {
   }
 
   // ─── Swift - Yes Case Testing Process ──────────────────────────────────────
-  async runSwiftTest(msisdn: string, mrp: string): Promise<any> {
-    console.log(`[RechargePage] Running SWIFT test for MSISDN: ${msisdn}`);
-    const results = {
-      success: false,
-      steps: [] as any[],
-      totalUsage: {} as any,
-      unlimitedOffers: [] as any[],
-      vasOffers: [] as any[],
-      digitalPayment: {} as any,
-      autoPay: {} as any,
-      upssPromotional: [] as any[],
-      offerHistory: [] as OfferHistoryItem[],
-    };
+  // async runSwiftTest(msisdn: string, mrp: string): Promise<any> {
+  //   console.log(`[RechargePage] Running SWIFT test for MSISDN: ${msisdn}`);
+  //   const results = {
+  //     success: false,
+  //     steps: [] as any[],
+  //     totalUsage: {} as any,
+  //     unlimitedOffers: [] as any[],
+  //     vasOffers: [] as any[],
+  //     digitalPayment: {} as any,
+  //     autoPay: {} as any,
+  //     upssPromotional: [] as any[],
+  //     offerHistory: [] as OfferHistoryItem[],
+  //   };
 
-    try {
-      // ─── REFRESH PAGE BEFORE STARTING ──────────────────────────────────────
-      console.log("[RechargePage] Refreshing page before starting IN test...");
-      await browser.refresh();
-      await browser.pause(3000);
-      await this.closeBlockingPopups();
-      console.log("[RechargePage] ✅ Page refreshed successfully");
+  //   try {
+  //     // ─── REFRESH PAGE BEFORE STARTING ──────────────────────────────────────
+  //     console.log("[RechargePage] Refreshing page before starting IN test...");
+  //     await browser.refresh();
+  //     await browser.pause(3000);
+  //     await this.closeBlockingPopups();
+  //     console.log("[RechargePage] ✅ Page refreshed successfully");
       
-      await this.enterMSISDNswift(msisdn);
-      // await this.takeScreenshot("SWIFT_Step1_Search_MSISDN");
+  //     await this.enterMSISDNswift(msisdn);
+  //     // await this.takeScreenshot("SWIFT_Step1_Search_MSISDN");
 
-      await this.clickSearchButtonswift();
-      await this.takeScreenshot("SWIFT_Step2_Click_Search");
+  //     await this.clickSearchButtonswift();
+  //     await this.takeScreenshot("SWIFT_Step2_Click_Search");
 
-      const subscriberInfo = await this.captureSubscriberInfo(msisdn, 1);
-      results.steps.push({ step: "Subscriber Info", data: subscriberInfo });
+  //     const subscriberInfo = await this.captureSubscriberInfo(msisdn, 1);
+  //     results.steps.push({ step: "Subscriber Info", data: subscriberInfo });
 
-      await this.verifyRechargesAndBenefits();
-      await this.takeScreenshot("SWIFT_Step3_Recharges_Benefits");
+  //     await this.verifyRechargesAndBenefits();
+  //     await this.takeScreenshot("SWIFT_Step3_Recharges_Benefits");
 
-      // Parse all active offers using the new comprehensive method
-      const activeOffers = await this.parseActiveOffers();
-      results.totalUsage = activeOffers.totalUsage;
-      results.unlimitedOffers = activeOffers.unlimited;
-      results.vasOffers = activeOffers.vas;
-      results.digitalPayment = activeOffers.digitalPayment;
-      results.autoPay = activeOffers.autoPay;
-      results.upssPromotional = activeOffers.upssPromoHist;
+  //     // Parse all active offers using the new comprehensive method
+  //     const activeOffers = await this.parseActiveOffers();
+  //     results.totalUsage = activeOffers.totalUsage;
+  //     results.unlimitedOffers = activeOffers.unlimited;
+  //     results.vasOffers = activeOffers.vas;
+  //     results.digitalPayment = activeOffers.digitalPayment;
+  //     results.autoPay = activeOffers.autoPay;
+  //     results.upssPromotional = activeOffers.upssPromoHist;
       
-      await this.takeScreenshot("SWIFT_Step4_Active_Offers");
+  //     await this.takeScreenshot("SWIFT_Step4_Active_Offers");
 
-      await this.clickOfferHistoryTab();
-      await this.takeScreenshot("SWIFT_Step5_Offer_History");
+  //     await this.clickOfferHistoryTab();
+  //     await this.takeScreenshot("SWIFT_Step5_Offer_History");
 
-      const offerHistoryItem = await this.scrapeOfferHistory(mrp);
-      results.offerHistory = offerHistoryItem;
-      results.steps.push({ step: "Offer History", data: offerHistoryItem });
-      await this.takeScreenshot("SWIFT_Step6_Offer_History_Details");
+  //     const offerHistoryItem = await this.scrapeOfferHistory(mrp);
+  //     results.offerHistory = offerHistoryItem;
+  //     results.steps.push({ step: "Offer History", data: offerHistoryItem });
+  //     await this.takeScreenshot("SWIFT_Step6_Offer_History_Details");
 
-      results.success = true;
-      console.log(`[RechargePage] SWIFT test completed for ${msisdn}`);
-    } catch (error) {
-      console.error(`[RechargePage] SWIFT test failed for ${msisdn}:`, error);
-      results.success = false;
+  //     results.success = true;
+  //     console.log(`[RechargePage] SWIFT test completed for ${msisdn}`);
+  //   } catch (error) {
+  //     console.error(`[RechargePage] SWIFT test failed for ${msisdn}:`, error);
+  //     results.success = false;
+  //   }
+
+  //   return results;
+  // }
+
+  // ─── ADD THIS HELPER: reusable Swift search (refresh + enter + click + capture) ──
+private async performSwiftSearch(msisdn: string, srNo: number = 1): Promise<SubscriberInfo> {
+  console.log("[RechargePage] Refreshing page before Swift search...");
+  await browser.refresh();
+  await browser.pause(3000);
+  await this.closeBlockingPopups();
+  console.log("[RechargePage] ✅ Page refreshed successfully");
+
+  await this.enterMSISDNswift(msisdn);
+  await this.clickSearchButtonswift();
+
+  return await this.captureSubscriberInfo(msisdn, srNo);
+}
+
+// ─── ADD THIS HELPER: poll until Offer History table actually has fresh rows ──
+private async waitForOfferHistoryData(maxWaitMs: number = 8000): Promise<boolean> {
+  try {
+    const container = await $("#demoofferhistry");
+    await container.waitForDisplayed({ timeout: 5000 });
+
+    const start = Date.now();
+    let rowCount = 0;
+
+    while (Date.now() - start < maxWaitMs) {
+      const rows = await container.$$(".row.breakrow");
+      rowCount = rows.length;
+
+      if (rowCount > 0) {
+        // Guard against a loading/skeleton row that exists but has no real text yet
+        const firstRowText = await rows[0].getText().catch(() => "");
+        if (firstRowText && firstRowText.trim().length > 0) {
+          console.log(
+            `[RechargePage] ✅ Offer history data loaded (${rowCount} rows) after ${Date.now() - start}ms`,
+          );
+          return true;
+        }
+      }
+
+      await browser.pause(500);
     }
 
-    return results;
+    console.warn(
+      `[RechargePage] ⚠️ Offer history data not ready within ${maxWaitMs}ms (rows found: ${rowCount})`,
+    );
+    return false;
+  } catch (error) {
+    console.warn("[RechargePage] Error waiting for offer history data:", error);
+    return false;
   }
+}
+
+// ─── Swift - Yes Case Testing Process (refactored) ─────────────────────────
+async runSwiftTest(msisdn: string, mrp: string): Promise<any> {
+  console.log(`[RechargePage] Running SWIFT test for MSISDN: ${msisdn}`);
+  const results = {
+    success: false,
+    steps: [] as any[],
+    totalUsage: {} as any,
+    unlimitedOffers: [] as any[],
+    vasOffers: [] as any[],
+    digitalPayment: {} as any,
+    autoPay: {} as any,
+    upssPromotional: [] as any[],
+    offerHistory: [] as OfferHistoryItem[],
+  };
+
+  try {
+    // ─── STEP 1: Search (single call, no duplication) ────────────────────
+    const subscriberInfo = await this.performSwiftSearch(msisdn, 1);
+    results.steps.push({ step: "Subscriber Info", data: subscriberInfo });
+    await this.takeScreenshot("SWIFT_Step2_Click_Search");
+
+    await this.verifyRechargesAndBenefits();
+    await this.takeScreenshot("SWIFT_Step3_Recharges_Benefits");
+
+    // ─── STEP 2: Active Offers ─────────────────────────────────────────────
+    const activeOffers = await this.parseActiveOffers();
+    results.totalUsage = activeOffers.totalUsage;
+    results.unlimitedOffers = activeOffers.unlimited;
+    results.vasOffers = activeOffers.vas;
+    results.digitalPayment = activeOffers.digitalPayment;
+    results.autoPay = activeOffers.autoPay;
+    results.upssPromotional = activeOffers.upssPromoHist;
+    await this.takeScreenshot("SWIFT_Step4_Active_Offers");
+
+    // ─── STEP 3: Offer History (with staleness check + single conditional retry) ──
+    await this.clickOfferHistoryTab();
+    let dataReady = await this.waitForOfferHistoryData();
+
+    if (!dataReady) {
+      console.warn(
+        "[RechargePage] Offer history looked stale/empty — retrying search once before scraping...",
+      );
+      await this.performSwiftSearch(msisdn, 1);
+      await this.verifyRechargesAndBenefits();
+      await this.clickOfferHistoryTab();
+      dataReady = await this.waitForOfferHistoryData();
+
+      if (!dataReady) {
+        console.warn(
+          "[RechargePage] ⚠️ Offer history still not confirmed ready after retry — scraping anyway, results may be incomplete.",
+        );
+      }
+    }
+
+    await this.takeScreenshot("SWIFT_Step5_Offer_History");
+
+    const offerHistoryItem = await this.scrapeOfferHistory(mrp);
+    results.offerHistory = offerHistoryItem;
+    results.steps.push({ step: "Offer History", data: offerHistoryItem });
+    await this.takeScreenshot("SWIFT_Step6_Offer_History_Details");
+
+    results.success = true;
+    console.log(`[RechargePage] SWIFT test completed for ${msisdn}`);
+  } catch (error) {
+    console.error(`[RechargePage] SWIFT test failed for ${msisdn}:`, error);
+    results.success = false;
+  }
+
+  return results;
+}
 
   async captureSubscriberInfo(
     msisdn: string,
@@ -1097,19 +1240,44 @@ async clickSearchButton(): Promise<void> {
         );
       }
 
-      try {
-        const circleEl = await $("#FullDemo abbr[title]"); // Updated: Keep this selector
-        if (await circleEl.isDisplayed()) {
-          circle = (await circleEl.getAttribute("title")) || "";
-        } else {
-          const circleAlt = await $(
-            '//*[@id="FullDemo"]/div/div/div[1]/div[1]/div[1]/div/table/tbody/tr/td[1]/span[1]/span[2]/span/abbr',
-          );
-          if (await circleAlt.isDisplayed()) {
-            circle = (await circleAlt.getAttribute("title")) || "";
+      await browser.pause(3000);  
+        try {
+          const circleEl = await $("#FullDemo abbr[title]");
+          if (await circleEl.isDisplayed()) { 
+            circle = (await circleEl.getAttribute("title")) || "";
           }
-        }
-      } catch (_) {}
+        } catch (_) {}
+
+        try {
+          const circleEl = await $("#FullDemo abbr[title]"); // Broad fallback selector
+          if (await circleEl.isDisplayed()) {
+            circle = (await circleEl.getAttribute("title")) || "";
+          } else {
+            // Precise CSS path (converted from querySelector)
+            const circleCss = await $(
+              "#FullDemo > div > div > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div > table > tbody > tr > td.demoNameMsisdnPhotoRatingDiv > span.photoDiv.col-4 > span.col-12 > span > abbr"
+            );
+            if (await circleCss.isDisplayed()) {
+              circle = (await circleCss.getAttribute("title")) || "";
+            } else {
+              // XPath fallback (equivalent path)
+              const circleAlt = await $(
+                '//*[@id="FullDemo"]/div/div/div[1]/div[1]/div[1]/div/table/tbody/tr/td[contains(@class,"demoNameMsisdnPhotoRatingDiv")]/span[contains(@class,"photoDiv")]/span[contains(@class,"col-12")]/span/abbr'
+              );
+              if (await circleAlt.isDisplayed()) {
+                circle = (await circleAlt.getAttribute("title")) || "";
+              } else {
+                // Class-based fallback (most resilient — matches by class combo regardless of position)
+                const circleByClass = await $(
+                  "td.demoNameMsisdnPhotoRatingDiv span.photoDiv.col-4 span.col-12 span abbr"
+                );
+                if (await circleByClass.isDisplayed()) {
+                  circle = (await circleByClass.getAttribute("title")) || "";
+                }
+              }
+            }
+          }
+        } catch (_) {}
 
       try {
         const nameEl = await $("#custName a"); // Updated: Keep this selector
@@ -1780,163 +1948,273 @@ async parseUpssPromoHistTab(): Promise<any[]> {
     }
   }
 
-  //offerhistory
+  //offer history process
 
-    async scrapeOfferHistory(targetMRP: string): Promise<OfferHistoryItem[]> {
-    const results: OfferHistoryItem[] = [];
-    
-    // Store extracted values globally for fallback scenarios
-    let extractedName = "";
-    let extractedCategory = "";
-    let extractedBenefits = "";
-    let extractedDetailValidity = "";
-    let extractedValidity = "";
+    // ─── Helper: Parse SWIFT date format "01 Jul '26 05.22 PM" into a JS Date ──
+    private parseSwiftActivationDate(activationDateTime: string): Date | null {
+      if (!activationDateTime) return null;
 
-    try {
-      console.log(
-        "[RechargePage] Scraping offer history with exact structure..."
+      const cleaned = activationDateTime.trim();
+
+      // Format: "01 Jul '26 05.22 PM"
+      const match = cleaned.match(
+        /^(\d{1,2})\s+([A-Za-z]{3})\s+'?(\d{2,4})\s+(\d{1,2})\.(\d{2})\s?(AM|PM)$/i
       );
 
-      const container = await $("#demoofferhistry");
-      await container.waitForDisplayed({ timeout: 10000 });
+      if (!match) {
+        return null;
+      }
 
-      const isActive = await container
-        .getAttribute("class")
-        .then((cls) => cls?.includes("active") || false);
-      console.log(`[RechargePage] Container active: ${isActive}`);
+      const [, dayStr, monthStr, yearStr, hourStr, minStr, meridiem] = match;
 
-      const rows = await container.$$("div.row.breakrow");
-      console.log(`[RechargePage] Found ${rows.length} offer history rows`);
+      const monthMap: Record<string, number> = {
+        jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+        jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+      };
 
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        const rowText = await row.getText().catch(() => "");
-        console.log(`[RechargePage] Row ${i} text: ${rowText}`);
-        
-        const offer: OfferHistoryItem = {
-          transactionId: "",
-          activationDateTime: "",
-          validity: "",
-          mrp: "",
-          activationMode: "",
-          currentCoreBalance: "",
-          etopupTransactionId: "",
-          retailerMsisdn: "",
-          name: "",
-          category: "",
-          benefits: "",
-          detailValidity: "",
-        };
+      const monthIdx = monthMap[monthStr.toLowerCase()];
+      if (monthIdx === undefined) return null;
 
-        try {
-          // ---- MAIN ROW DATA (Columns) ----
-          let cells = await row.$$(".offerHistData1, .offerHistData, td");
-          
-          if (cells.length === 0) {
-            cells = await row.$$("div, td");
+      const day = parseInt(dayStr, 10);
+      let year = parseInt(yearStr, 10);
+      if (year < 100) year += 2000; // '26 -> 2026
+
+      let hour = parseInt(hourStr, 10);
+      const minute = parseInt(minStr, 10);
+
+      if (meridiem.toUpperCase() === "PM" && hour !== 12) hour += 12;
+      if (meridiem.toUpperCase() === "AM" && hour === 12) hour = 0;
+
+      const parsed = new Date(year, monthIdx, day, hour, minute);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+// ─── Helper: Check if activationDateTime is today's date (date-only compare) ──
+    private isDateToday(activationDateTime: string): { isToday: boolean; parsed: boolean } {
+      const parsedDate = this.parseSwiftActivationDate(activationDateTime);
+
+      if (!parsedDate) {
+        return { isToday: false, parsed: false };
+      }
+
+      const today = new Date();
+
+      const isSameDay =
+        parsedDate.getFullYear() === today.getFullYear() &&
+        parsedDate.getMonth() === today.getMonth() &&
+        parsedDate.getDate() === today.getDate();
+
+      return { isToday: isSameDay, parsed: true };
+    }
+
+    async scrapeOfferHistory(targetMRP: string): Promise<OfferHistoryItem[]> {
+      const results: OfferHistoryItem[] = [];
+
+      // Store extracted values globally for fallback scenarios
+      let extractedName = "";
+      let extractedCategory = "";
+      let extractedBenefits = "";
+      let extractedDetailValidity = "";
+      let extractedValidity = "";
+
+      try {
+        console.log("[RechargePage] Scraping offer history with exact structure...");
+
+        const container = await $("#demoofferhistry");
+        await container.waitForDisplayed({ timeout: 10000 });
+
+        const isActive = await container
+          .getAttribute("class")
+          .then((cls) => cls?.includes("active") || false);
+        console.log(`[RechargePage] Container active: ${isActive}`);
+
+        // Get all rows - both breakrow and datarow
+        const allRows = await container.$$(".row");
+        const breakRows: any[] = [];
+
+        // Find breakrow elements (these are the main rows with transaction data)
+        for (const row of allRows) {
+          const className = await row.getAttribute("class").catch(() => "");
+          if (className && className.includes("breakrow")) {
+            breakRows.push(row);
           }
-          
-          console.log(`[RechargePage] Found ${cells.length} cells in row ${i}`);
+        }
 
-          const cellTexts: string[] = [];
-          for (const cell of cells) {
-            const text = await cell.getText().catch(() => "");
-            if (text && text.trim() && !text.includes("Core Balance :") && 
-                !text.includes("Additions") && !text.includes("Complain") &&
-                !text.includes("Previous Page") && !text.includes("Next") &&
-                !text.includes("Deductions") && !text.includes("View Historical Data") &&
-                !text.includes("Online Recharge Invoice") && !text.includes("MVIVA")) {
-              cellTexts.push(text.trim());
-            }
-          }
-          
-          console.log(`[RechargePage] Filtered cell texts: ${cellTexts}`);
+        console.log(`[RechargePage] Found ${breakRows.length} offer history rows`);
+        console.log(`[RechargePage] Today's date for validation: ${new Date().toDateString()}`);
 
-          if (cellTexts.length >= 8) {
-            offer.transactionId = cellTexts[0] || "";
-            offer.activationDateTime = cellTexts[1] || "";
-            offer.validity = cellTexts[2] || "";
-            extractedValidity = offer.validity;
-            offer.mrp = cellTexts[3] || "";
-            offer.activationMode = cellTexts[4] || "";
-            offer.currentCoreBalance = cellTexts[5] || "";
-            offer.etopupTransactionId = cellTexts[6] || "";
-            offer.retailerMsisdn = cellTexts[7] || "";
-            
-            console.log(
-              `[RechargePage] Extracted: TXN=${offer.transactionId}, MRP=${offer.mrp}, Validity=${offer.validity}, Mode=${offer.activationMode}`
-            );
-          } else {
-            // Fallback: try to parse from row text
-            const parts = rowText.split("\n").filter((s) => s.trim() && 
-              !s.includes("Core Balance :") && !s.includes("Additions") && 
-              !s.includes("Complain") && !s.includes("Previous Page") && 
-              !s.includes("Next") && !s.includes("Deductions") && 
-              !s.includes("View Historical Data") && !s.includes("Online Recharge Invoice") &&
-              !s.includes("MVIVA"));
-            
-            console.log(`[RechargePage] Parsed from text: ${parts}`);
-            
-            if (parts.length >= 8) {
-              offer.transactionId = parts[0]?.trim() || "";
-              offer.activationDateTime = parts[1]?.trim() || "";
-              offer.validity = parts[2]?.trim() || "";
-              extractedValidity = offer.validity;
-              offer.mrp = parts[3]?.trim() || "";
-              offer.activationMode = parts[4]?.trim() || "";
-              offer.currentCoreBalance = parts[5]?.trim() || "";
-              offer.etopupTransactionId = parts[6]?.trim() || "";
-              offer.retailerMsisdn = parts[7]?.trim() || "";
-            }
-          }
+        // Track which .datarow elements have already been consumed so that
+        // multiple breakrows never accidentally bind to the same detail row.
+        const claimedDataRowIndices = new Set<number>();
 
-          // ---- EXPAND DETAILS ----
+        for (let i = 0; i < breakRows.length; i++) {
+          const breakRow = breakRows[i];
+          const rowText = await breakRow.getText().catch(() => "");
+          console.log(`[RechargePage] Row ${i} text: ${rowText}`);
+
+          const offer: OfferHistoryItem = {
+            transactionId: "",
+            activationDateTime: "",
+            validity: "",
+            mrp: "",
+            activationMode: "",
+            currentCoreBalance: "",
+            etopupTransactionId: "",
+            retailerMsisdn: "",
+            name: "",
+            category: "",
+            benefits: "",
+            detailValidity: "",
+            isMatched: false,
+            isTodayActivation: false,
+            matchStatus: "Unmatched",
+            matchReason: "",
+          };
+
           try {
-            const detailRow = await row.parentElement().$(".datarow");
-            const isDetailVisible = detailRow
-              ? await detailRow.isDisplayed().catch(() => false)
-              : false;
+            // ---- MAIN ROW DATA (Columns) ----
+            let cells = await breakRow.$$(".offerHistData1, .offerHistData, td");
 
-            if (!isDetailVisible) {
-              const expandBtn = await row.$(
-                '.breakbutton a, .breakbutton span, [class*="breakbutton"] svg, .breakbutton'
-              );
-              if (expandBtn && (await expandBtn.isExisting())) {
-                console.log("[RechargePage] Expanding detail row...");
-                await expandBtn.click();
-                await browser.pause(1000);
+            if (cells.length === 0) {
+              cells = await breakRow.$$("div:not(.h1):not(.breakbutton):not(.bd_cb_col)");
+            }
+
+            console.log(`[RechargePage] Found ${cells.length} cells in row ${i}`);
+
+            const cellTexts: string[] = [];
+            for (const cell of cells) {
+              const text = await cell.getText().catch(() => "");
+              if (text && text.trim() && !text.includes("Core Balance :") &&
+                  !text.includes("Additions") && !text.includes("Complain") &&
+                  !text.includes("Previous Page") && !text.includes("Next") &&
+                  !text.includes("Deductions") && !text.includes("View Historical Data") &&
+                  !text.includes("Online Recharge Invoice") && !text.includes("MVIVA") &&
+                  !text.includes("checkbox")) {
+                // Get abbr title if present
+                try {
+                  const abbr = await cell.$("abbr");
+                  if (await abbr.isExisting()) {
+                    const title = await abbr.getAttribute("title");
+                    if (title) {
+                      cellTexts.push(title.trim());
+                      continue;
+                    }
+                  }
+                } catch (_) {}
+                cellTexts.push(text.trim());
               }
             }
-          } catch (e) {
-            console.log("[RechargePage] Could not expand detail row:", e);
-          }
 
-          // ---- GET EXPANDED DETAILS ----
-          try {
-            const detailRow = await row.parentElement().$(".datarow");
-            if (detailRow && (await detailRow.isExisting())) {
+            console.log(`[RechargePage] Filtered cell texts: ${cellTexts}`);
+
+            if (cellTexts.length >= 8) {
+              offer.transactionId = cellTexts[0] || "";
+              offer.activationDateTime = cellTexts[1] || "";
+              offer.validity = cellTexts[2] || "";
+              extractedValidity = offer.validity;
+              offer.mrp = cellTexts[3] || "";
+              offer.activationMode = cellTexts[4] || "";
+              offer.currentCoreBalance = cellTexts[5] || "";
+              offer.etopupTransactionId = cellTexts[6] || "";
+              offer.retailerMsisdn = cellTexts[7] || "";
+
+              console.log(
+                `[RechargePage] Extracted: TXN=${offer.transactionId}, Activation=${offer.activationDateTime}, MRP=${offer.mrp}, Validity=${offer.validity}, Mode=${offer.activationMode}`
+              );
+            } else {
+              // Fallback: try to parse from row text
+              const parts = rowText.split("\n").filter((s) => s.trim() &&
+                !s.includes("Core Balance :") && !s.includes("Additions") &&
+                !s.includes("Complain") && !s.includes("Previous Page") &&
+                !s.includes("Next") && !s.includes("Deductions") &&
+                !s.includes("View Historical Data") && !s.includes("Online Recharge Invoice") &&
+                !s.includes("MVIVA") && !s.includes("checkbox"));
+
+              console.log(`[RechargePage] Parsed from text: ${parts}`);
+
+              if (parts.length >= 8) {
+                offer.transactionId = parts[0]?.trim() || "";
+                offer.activationDateTime = parts[1]?.trim() || "";
+                offer.validity = parts[2]?.trim() || "";
+                extractedValidity = offer.validity;
+                offer.mrp = parts[3]?.trim() || "";
+                offer.activationMode = parts[4]?.trim() || "";
+                offer.currentCoreBalance = parts[5]?.trim() || "";
+                offer.etopupTransactionId = parts[6]?.trim() || "";
+                offer.retailerMsisdn = parts[7]?.trim() || "";
+              }
+            }
+
+            // ---- EXPAND DETAILS FOR THIS SPECIFIC ROW ----
+            const expandBtn = await breakRow.$('.breakbutton a, .breakbutton span, [class*="breakbutton"] svg, .breakbutton');
+            if (expandBtn && await expandBtn.isExisting()) {
+              console.log(`[RechargePage] Expanding detail row ${i}...`);
+              await expandBtn.click();
+              await browser.pause(1500);
+              await browser.pause(500);
+            }
+
+            // ---- FIND THE ASSOCIATED DETAIL ROW (INDEX-BASED, FIXED) ----
+            let detailRow = null;
+
+            try {
+              const allDataRows = await container.$$(".datarow");
+              if (i < allDataRows.length && !claimedDataRowIndices.has(i)) {
+                const possibleDetailRow = allDataRows[i];
+                const detailText = await possibleDetailRow.getText().catch(() => "");
+                if (detailText && (detailText.includes("Name") || detailText.includes("Category") || detailText.includes("Benefits"))) {
+                  detailRow = possibleDetailRow;
+                  claimedDataRowIndices.add(i);
+                }
+              }
+            } catch (_) {
+              console.log(`[RechargePage] Could not find datarow by index for row ${i}`);
+            }
+
+            // Fallback: pick the first unclaimed .datarow that has detail content
+            if (!detailRow) {
+              try {
+                const allDataRows = await container.$$(".datarow");
+                for (let k = 0; k < allDataRows.length; k++) {
+                  if (claimedDataRowIndices.has(k)) continue;
+                  const candidate = allDataRows[k];
+                  const detailText = await candidate.getText().catch(() => "");
+                  if (detailText && (detailText.includes("Name") || detailText.includes("Category") || detailText.includes("Benefits"))) {
+                    detailRow = candidate;
+                    claimedDataRowIndices.add(k);
+                    break;
+                  }
+                }
+              } catch (_) {}
+            }
+
+            // If we found a detail row, extract data from it
+            if (detailRow && await detailRow.isExisting()) {
+              console.log(`[RechargePage] Found associated detail row for row ${i}`);
+
               const detailLabels = await detailRow.$$("label.l1, label, .label");
               const detailValues = await detailRow.$$("span.s1, span, .value");
 
               console.log(
-                `[RechargePage] Found ${detailLabels.length} detail labels, ${detailValues.length} detail values`
+                `[RechargePage] Found ${detailLabels.length} detail labels, ${detailValues.length} detail values for row ${i}`
               );
 
-              for (
-                let j = 0;
-                j < Math.min(detailLabels.length, detailValues.length);
-                j++
-              ) {
+              for (let j = 0; j < Math.min(detailLabels.length, detailValues.length); j++) {
                 const label = (await detailLabels[j].getText().catch(() => "")) || "";
                 let value = (await detailValues[j].getText().catch(() => "")) || "";
 
-                const abbrElem = await detailValues[j].$("abbr");
-                if (abbrElem && (await abbrElem.isExisting())) {
-                  value = (await abbrElem.getAttribute("title")) || value;
-                }
+                try {
+                  const abbrElem = await detailValues[j].$("abbr");
+                  if (abbrElem && await abbrElem.isExisting()) {
+                    const title = await abbrElem.getAttribute("title");
+                    if (title) {
+                      value = title;
+                    }
+                  }
+                } catch (_) {}
 
                 const cleanLabel = label.replace(/[:*]/g, "").trim();
-                
+
                 if (cleanLabel === "Name" || cleanLabel === "Plan Name" || cleanLabel === "Offer Name") {
                   offer.name = value;
                   extractedName = value;
@@ -1948,11 +2226,10 @@ async parseUpssPromoHistTab(): Promise<any[]> {
                 } else if (cleanLabel === "Benefits" || cleanLabel === "Plan Benefits") {
                   offer.benefits = value;
                   extractedBenefits = value;
-                  console.log(`[RechargePage] ✅ Benefits: ${value}`);
+                  console.log(`[RechargePage] ✅ Benefits: ${value.substring(0, 50)}...`);
                 } else if (cleanLabel === "Validity" || cleanLabel === "Plan Validity") {
                   offer.detailValidity = value;
                   extractedDetailValidity = value;
-                  // Update main validity if it's "View" or empty
                   if (
                     !offer.validity ||
                     offer.validity === "View" ||
@@ -1967,33 +2244,33 @@ async parseUpssPromoHistTab(): Promise<any[]> {
                   console.log(`[RechargePage] ✅ Detail Validity: ${value}`);
                 }
               }
-              
+
               // ---- FALLBACK: Parse detail text if labels didn't match ----
-              const detailText = await detailRow.getText().catch(() => "");
-              console.log(`[RechargePage] Detail text: ${detailText}`);
-              
               if (!offer.name || !offer.category || !offer.benefits || !offer.detailValidity) {
+                const detailText = await detailRow.getText().catch(() => "");
+                console.log(`[RechargePage] Detail text: ${detailText}`);
+
                 const nameMatch = detailText.match(/Name[:*]\s*([^\n]+)/i);
                 if (nameMatch) {
                   offer.name = nameMatch[1].trim();
                   extractedName = offer.name;
-                  console.log(`[RechargePage] ✅ Name (regex): ${offer.name}`);
+                  console.log(`[RechargePage] Name (regex): ${offer.name}`);
                 }
-                
+
                 const categoryMatch = detailText.match(/Category[:*]\s*([^\n]+)/i);
                 if (categoryMatch) {
                   offer.category = categoryMatch[1].trim();
                   extractedCategory = offer.category;
-                  console.log(`[RechargePage] ✅ Category (regex): ${offer.category}`);
+                  console.log(`[RechargePage] Category (regex): ${offer.category}`);
                 }
-                
+
                 const benefitsMatch = detailText.match(/Benefits[:*]\s*([^\n]+)/i);
                 if (benefitsMatch) {
                   offer.benefits = benefitsMatch[1].trim();
                   extractedBenefits = offer.benefits;
-                  console.log(`[RechargePage] ✅ Benefits (regex): ${offer.benefits}`);
+                  console.log(`[RechargePage] Benefits (regex): ${offer.benefits.substring(0, 50)}...`);
                 }
-                
+
                 const validityMatch = detailText.match(/Validity[:*]\s*([^\n]+)/i);
                 if (validityMatch) {
                   offer.detailValidity = validityMatch[1].trim();
@@ -2002,245 +2279,95 @@ async parseUpssPromoHistTab(): Promise<any[]> {
                     offer.validity = offer.detailValidity;
                     extractedValidity = offer.validity;
                   }
-                  console.log(`[RechargePage] ✅ Detail Validity (regex): ${offer.detailValidity}`);
+                  console.log(`[RechargePage] Detail Validity (regex): ${offer.detailValidity}`);
                 }
               }
+            } else {
+              console.log(`[RechargePage] No detail row found for row ${i}`);
             }
-          } catch (e) {
-            console.log("[RechargePage] Error getting detail data:", e);
-          }
 
-          // ─── CHECK FOR MATCHES ──────────────────────────────────────────────
-          console.log(`[RechargePage] Checking offer row ${i}:`);
-          console.log(`  └─ Target MRP: "${targetMRP}"`);
-          console.log(`  └─ Offer MRP: "${offer.mrp}"`);
-          console.log(`  └─ Validity: "${offer.validity}"`);
-          console.log(`  └─ Current Core Balance: "${offer.currentCoreBalance}"`);
-          console.log(`  └─ Name: "${offer.name}"`);
-          console.log(`  └─ Category: "${offer.category}"`);
-          console.log(`  └─ Benefits: "${offer.benefits}"`);
-          console.log(`  └─ Detail Validity: "${offer.detailValidity}"`);
-
-          // Check MRP match
-          const mrpMatch = offer.mrp === targetMRP;
-          const coreMatch = offer.currentCoreBalance && parseFloat(offer.currentCoreBalance) === parseFloat(targetMRP);
-
-          console.log(`  └─ MRP Match: ${mrpMatch ? '✅ YES' : '❌ NO'}`);
-          console.log(`  └─ Core Balance Match: ${coreMatch ? '✅ YES' : '❌ NO'}`);
-
-          // ─── ONLY ADD IF MRP OR CORE BALANCE MATCHES TARGET ──────────────
-          if (mrpMatch || coreMatch) {
-            // Ensure all fields are preserved
+            // Fill in fallback extracted values if this row's own data is still empty
             if (!offer.name && extractedName) offer.name = extractedName;
             if (!offer.category && extractedCategory) offer.category = extractedCategory;
             if (!offer.benefits && extractedBenefits) offer.benefits = extractedBenefits;
             if (!offer.detailValidity && extractedDetailValidity) offer.detailValidity = extractedDetailValidity;
-            if (!offer.validity || offer.validity === "View") {
-              offer.validity = extractedValidity || offer.detailValidity || "30 days";
+
+            // ---- CHECK MRP / CORE BALANCE MATCH ----
+            const mrpMatch = offer.mrp === targetMRP;
+            const coreMatch = !!offer.currentCoreBalance && parseFloat(offer.currentCoreBalance) === parseFloat(targetMRP);
+            offer.isMatched = mrpMatch || coreMatch;
+
+            // ---- CHECK ACTIVATION DATE = TODAY ----
+            const dateCheck = this.isDateToday(offer.activationDateTime);
+            offer.isTodayActivation = dateCheck.isToday;
+
+            // ---- DETERMINE FINAL MATCH STATUS ----
+            if (!offer.isMatched) {
+              offer.matchStatus = "Unmatched";
+              offer.matchReason = `MRP/Core Balance did not match target (${targetMRP})`;
+            } else if (!dateCheck.parsed) {
+              offer.matchStatus = "Fail-UnparsableDate";
+              offer.matchReason = `Could not parse activation date: "${offer.activationDateTime}"`;
+            } else if (!dateCheck.isToday) {
+              offer.matchStatus = "Fail-DateMismatch";
+              offer.matchReason = `Activation date "${offer.activationDateTime}" is not today (${new Date().toDateString()})`;
+            } else {
+              offer.matchStatus = "Pass";
+              offer.matchReason = "MRP/Core Balance matched AND activation date is today";
             }
-            
+
+            // ---- LOGGING ----
+            console.log(`[RechargePage] Checking offer row ${i}:`);
+            console.log(`  └─ Activation Date & Time: "${offer.activationDateTime}"`);
+            console.log(`  └─ Target MRP: "${targetMRP}"`);
+            console.log(`  └─ Offer MRP: "${offer.mrp}"`);
+            console.log(`  └─ Validity: "${offer.validity}"`);
+            console.log(`  └─ Current Core Balance: "${offer.currentCoreBalance}"`);
+            console.log(`  └─ Name: "${offer.name}"`);
+            console.log(`  └─ Category: "${offer.category}"`);
+            console.log(`  └─ Benefits: "${offer.benefits?.substring(0, 50)}..."`);
+            console.log(`  └─ Detail Validity: "${offer.detailValidity}"`);
+            console.log(`  └─ MRP/Core Match: ${offer.isMatched ? '✅ YES' : '❌ NO'}`);
+            console.log(`  └─ Activation = Today: ${offer.isTodayActivation ? '✅ YES' : '❌ NO'}`);
+            console.log(`  └─ Final Status: ${offer.matchStatus} — ${offer.matchReason}`);
+
+            // ---- ALWAYS PUSH THE ROW (MATCHED OR UNMATCHED) ----
             results.push(offer);
-            
-            console.log(
-              `[RechargePage] ✅ ADDED offer history item: ${offer.transactionId}`
-            );
+
+            if (offer.matchStatus === "Pass") {
+              console.log(`[RechargePage] PASS offer history item: ${offer.transactionId}`);
+            } else {
+              console.log(`[RechargePage] ${offer.matchStatus.toUpperCase()} offer history item: ${offer.transactionId || 'No TXN'} — ${offer.matchReason}`);
+            }
+            console.log(`[RechargePage]   ├─ Activation Date & Time: ${offer.activationDateTime}`);
             console.log(`[RechargePage]   ├─ Name: ${offer.name}`);
             console.log(`[RechargePage]   ├─ Category: ${offer.category}`);
-            console.log(`[RechargePage]   ├─ Benefits: ${offer.benefits}`);
+            console.log(`[RechargePage]   ├─ Benefits: ${offer.benefits?.substring(0, 50)}...`);
             console.log(`[RechargePage]   ├─ Validity: ${offer.validity}`);
             console.log(`[RechargePage]   └─ Detail Validity: ${offer.detailValidity}`);
-          } else {
-            console.log(
-              `[RechargePage] ❌ SKIPPED offer history item: ${offer.transactionId || 'No TXN'} (MRP: ${offer.mrp} | Core Balance: ${offer.currentCoreBalance} - no match)`
-            );
-          }
-          
-        } catch (rowError) {
-          console.error(`[RechargePage] Error processing row ${i}:`, rowError);
-        }
-      }
 
-      console.log(
-        `[RechargePage] Found ${results.length} offer history items matching target MRP ${targetMRP}`
-      );
-
-      // ─── FALLBACK 1: Scan all rows without MRP filter ───────────────────
-      if (results.length === 0) {
-        console.log(
-          "[RechargePage] No matching rows found, scanning all rows..."
-        );
-        const allRows = await container.$$(".row.breakrow, .row");
-        for (const row of allRows) {
-          try {
-            const text = await row.getText().catch(() => "");
-            const parts = text.split("\n").filter((s) => s.trim() && 
-              !s.includes("Core Balance :") && !s.includes("Additions") && 
-              !s.includes("Complain") && !s.includes("Previous Page") && 
-              !s.includes("Next") && !s.includes("Deductions") && 
-              !s.includes("View Historical Data") && !s.includes("Online Recharge Invoice"));
-            
-            if (parts.length >= 8) {
-              const mrp = parts[3]?.trim() || "";
-              const coreBalance = parts[5]?.trim() || "0";
-              const validity = parts[2]?.trim() || "";
-              
-              if (mrp === targetMRP || (coreBalance && parseFloat(coreBalance) === parseFloat(targetMRP))) {
-                const offer: OfferHistoryItem = {
-                  transactionId: parts[0]?.trim() || `TXN-${Date.now()}`,
-                  activationDateTime: parts[1]?.trim() || new Date().toLocaleString(),
-                  validity: extractedValidity || validity || "Unknown",
-                  mrp: mrp || targetMRP,
-                  activationMode: parts[4]?.trim() || "Unknown",
-                  currentCoreBalance: coreBalance || "0.00",
-                  etopupTransactionId: parts[6]?.trim() || `ET-${Date.now()}`,
-                  retailerMsisdn: parts[7]?.trim() || this.currentMsisdn || "",
-                  name: extractedName || "Recharge Plan",
-                  category: extractedCategory || "Recharge",
-                  benefits: extractedBenefits || "Standard Benefits",
-                  detailValidity: extractedDetailValidity || validity || "Unknown",
-                };
-                results.push(offer);
-                console.log(
-                  `[RechargePage] ✅ Found matching offer in fallback scan: ${offer.transactionId}`
-                );
-                break;
-              }
-            }
-          } catch (_) {}
-        }
-      }
-
-      // ─── FALLBACK 2: Use extracted data from the first row ──────────────
-      if (results.length === 0) {
-        console.log(
-          "[RechargePage] No matching offers found, using the extracted row data"
-        );
-        
-        const firstRow = rows[0];
-        if (firstRow) {
-          try {
-            let cells = await firstRow.$$(".offerHistData1, .offerHistData, td");
-            if (cells.length === 0) {
-              cells = await firstRow.$$("div, td");
-            }
-            
-            const cellTexts: string[] = [];
-            for (const cell of cells) {
-              const text = await cell.getText().catch(() => "");
-              if (text && text.trim() && !text.includes("Core Balance :") && 
-                  !text.includes("Additions") && !text.includes("Complain") &&
-                  !text.includes("Previous Page") && !text.includes("Next") &&
-                  !text.includes("Deductions") && !text.includes("View Historical Data") &&
-                  !text.includes("Online Recharge Invoice") && !text.includes("MVIVA")) {
-                cellTexts.push(text.trim());
-              }
-            }
-            
-            if (cellTexts.length >= 8) {
-              const mrp = cellTexts[3] || targetMRP;
-              const validity = cellTexts[2] || "";
-              
-              results.push({
-                transactionId: cellTexts[0] || `TXN-${Date.now()}`,
-                activationDateTime: cellTexts[1] || new Date().toLocaleString(),
-                validity: extractedValidity || validity || "Unknown",
-                mrp: mrp,
-                activationMode: cellTexts[4] || "Unknown",
-                currentCoreBalance: cellTexts[5] || "0.00",
-                etopupTransactionId: cellTexts[6] || `ET-${Date.now()}`,
-                retailerMsisdn: cellTexts[7] || this.currentMsisdn || "",
-                name: extractedName || "Recharge Plan",
-                category: extractedCategory || "Recharge",
-                benefits: extractedBenefits || "See details",
-                detailValidity: extractedDetailValidity || validity || "Unknown",
-              });
-            } else {
-              const rowText = await firstRow.getText().catch(() => "");
-              const parts = rowText.split("\n").filter((s) => s.trim() && 
-                !s.includes("Core Balance :") && !s.includes("Additions") && 
-                !s.includes("Complain") && !s.includes("Previous Page") && 
-                !s.includes("Next") && !s.includes("Deductions") && 
-                !s.includes("View Historical Data") && !s.includes("Online Recharge Invoice") &&
-                !s.includes("MVIVA"));
-              
-              if (parts.length >= 8) {
-                const mrp = parts[3]?.trim() || targetMRP;
-                const validity = parts[2]?.trim() || "";
-                
-                results.push({
-                  transactionId: parts[0]?.trim() || `TXN-${Date.now()}`,
-                  activationDateTime: parts[1]?.trim() || new Date().toLocaleString(),
-                  validity: extractedValidity || validity || "Unknown",
-                  mrp: mrp,
-                  activationMode: parts[4]?.trim() || "Unknown",
-                  currentCoreBalance: parts[5]?.trim() || "0.00",
-                  etopupTransactionId: parts[6]?.trim() || `ET-${Date.now()}`,
-                  retailerMsisdn: parts[7]?.trim() || this.currentMsisdn || "",
-                  name: extractedName || "Recharge Plan",
-                  category: extractedCategory || "Recharge",
-                  benefits: extractedBenefits || "See details",
-                  detailValidity: extractedDetailValidity || validity || "Unknown",
-                });
-              }
-            }
-          } catch (err) {
-            console.log("[RechargePage] Error extracting from first row:", err);
+          } catch (rowError) {
+            console.error(`[RechargePage] Error processing row ${i}:`, rowError);
           }
         }
-        
-        // ─── FALLBACK 3: Use target MRP as last resort ─────────────────────
-        if (results.length === 0) {
-          console.log("[RechargePage] Using target MRP as last resort");
-          results.push({
-            transactionId: `TXN-${Date.now()}`,
-            activationDateTime: new Date().toLocaleString(),
-            validity: extractedValidity || extractedDetailValidity || "30 days",
-            mrp: targetMRP,
-            activationMode: "EtopUp",
-            currentCoreBalance: "0.00",
-            etopupTransactionId: `ET-${Date.now()}`,
-            retailerMsisdn: this.currentMsisdn || "",
-            name: extractedName || "Recharge Plan",
-            category: extractedCategory || "Recharge",
-            benefits: extractedBenefits || "See details",
-            detailValidity: extractedDetailValidity || "30 days",
-          });
-        }
-      }
 
-      // ─── FINAL LOG OUTPUT WITH ALL FIELDS ──────────────────────────────
-      console.log(`[RechargePage] ✅ FINAL RESULTS: ${results.length} offers`);
-      results.forEach((offer, idx) => {
-        console.log(`[RechargePage] Result ${idx + 1}:`);
-        console.log(`  ├─ Transaction ID: ${offer.transactionId}`);
-        console.log(`  ├─ MRP: ${offer.mrp}`);
-        console.log(`  ├─ Name: ${offer.name}`);
-        console.log(`  ├─ Category: ${offer.category}`);
-        console.log(`  ├─ Benefits: ${offer.benefits}`);
-        console.log(`  ├─ Validity: ${offer.validity}`);
-        console.log(`  └─ Detail Validity: ${offer.detailValidity}`);
-      });
-      
-      return results;
-      
-    } catch (error) {
-      console.error("[RechargePage] Error scraping offer history:", error);
-      return [{
-        transactionId: `TXN-${Date.now()}`,
-        activationDateTime: new Date().toLocaleString(),
-        validity: extractedValidity || extractedDetailValidity || "30 days",
-        mrp: targetMRP,
-        activationMode: "Unknown",
-        currentCoreBalance: "0.00",
-        etopupTransactionId: `ET-${Date.now()}`,
-        retailerMsisdn: this.currentMsisdn || "",
-        name: extractedName || "Recharge Plan",
-        category: extractedCategory || "Recharge",
-        benefits: extractedBenefits || "See details",
-        detailValidity: extractedDetailValidity || "30 days",
-      }];
+        const passCount = results.filter(r => r.matchStatus === "Pass").length;
+        const dateMismatchCount = results.filter(r => r.matchStatus === "Fail-DateMismatch").length;
+        const unparsableCount = results.filter(r => r.matchStatus === "Fail-UnparsableDate").length;
+        const unmatchedCount = results.filter(r => r.matchStatus === "Unmatched").length;
+
+        console.log(
+          `[RechargePage] Offer history summary → Total: ${results.length}, Pass: ${passCount}, ` +
+          `Fail-DateMismatch: ${dateMismatchCount}, Fail-UnparsableDate: ${unparsableCount}, Unmatched: ${unmatchedCount}`
+        );
+
+        return results;
+
+      } catch (error) {
+        console.error("[RechargePage] Error scraping offer history:", error);
+        return results;
+      }
     }
-  }
 
   getScreenshots(): Array<{
     srNo: number;

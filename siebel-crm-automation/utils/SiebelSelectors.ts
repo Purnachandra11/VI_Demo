@@ -60,14 +60,24 @@ export const SiebelSelectors = {
 
   //  Invoice / Bill Details
   invoice: {
+  detailedViewButton: '//*[@id="s_5_1_0_0_Ctrl"]',
+  invoiceDateHeader: '//*[@id="jqgh_s_5_l_Invoice_Date"]',
+  invoiceRows: '//*[@id="s_5_l"]/tbody/tr',
+
+  // Suffix-match so we don't depend on row index == tr id
+  invoiceIdCellInRow: 'td[id$="_s_5_l_Invoice_Id"]',
+  invoiceDateCellInRow: 'td[id$="_s_5_l_Invoice_Date"]',
+  dueDateCellInRow: 'td[id$="_s_5_l_Due_Date"]',
+  amountCellInRow: 'td[id$="_s_5_l_Amount"]',
+  statusCellInRow: 'td[id$="_s_5_l_Invoice_Status"]',
     // Detailed view button
-    detailedViewButton: '//*[@id="s_5_1_0_0_Ctrl"]',
+    // detailedViewButton: '//*[@id="s_5_1_0_0_Ctrl"]',
     
     // Invoice date column for sorting
-    invoiceDateHeader: '//*[@id="jqgh_s_5_l_Statement_Date"]',
+    // invoiceDateHeader: '//*[@id="jqgh_s_5_l_Statement_Date"]',
     
     // Invoice rows
-    invoiceRows: '//*[@id="s_5_l"]/tbody/tr',
+    // invoiceRows: '//*[@id="s_5_l"]/tbody/tr',
     invoiceDateCell: (rowIndex: number) => `//*[@id="s_5_l"]/tbody/tr[${rowIndex}]/td[@aria-describedby="s_5_l_Statement_Date"]`,
     invoiceLinkCell: (rowIndex: number) => `//*[@id="s_5_l"]/tbody/tr[${rowIndex}]/td[@aria-describedby="s_5_l_Invoice_Number"]/a`,
   },

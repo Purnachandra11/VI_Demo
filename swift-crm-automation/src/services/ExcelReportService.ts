@@ -75,6 +75,7 @@ interface UATResult {
   inStatus: string;
   swiftStatus: string;
   viAppStatus: string;
+  reason?: string;    
   screenshots: string[];
   accountStatus?: string;
   userType?: string;
@@ -102,6 +103,16 @@ interface InputRow {
   rechargeNotification: string;
 }
 
+export interface UpssPromoHistoryItem {
+  msisdn: string;
+  applied_date: string;
+  start_date: string;
+  promotion_name: string;
+  description: string;
+  mode_of_activation: string;
+  promotion_status: string;
+}
+
 // ─── Service Class ────────────────────────────────────────────────────────
 
 export class ExcelReportService {
@@ -111,6 +122,8 @@ export class ExcelReportService {
   private inputRows: InputRow[] = [];
   private rowScreenshots: Map<string, string[]> = new Map();
   private viAppResults: ViAppResult[] = [];
+  private reportFileCache = new Map<string, { excelPath: string; htmlPath: string; pdfPath: string }>();
+  private upssPromoHistory: UpssPromoHistoryItem[] = [];
 
   // ── UAT Results ──────────────────────────────────────────────────────────
 
@@ -130,6 +143,28 @@ export class ExcelReportService {
   getINResultCount(): number {
     return this.inResults.length;
   }
+
+  // ── UPSS Promotional History ─────────────────────────────────────────────
+
+addUpssPromoHistory(msisdn: string, items: any[]): void {
+  if (!items || items.length === 0) return;
+  items.forEach((item) => {
+    this.upssPromoHistory.push({
+      msisdn,
+      applied_date: item.applied_date || 'N/A',
+      start_date: item.start_date || 'N/A',
+      promotion_name: item.promotion_name || 'N/A',
+      description: item.description || 'N/A',
+      mode_of_activation: item.mode_of_activation || 'N/A',
+      promotion_status: item.promotion_status || 'N/A',
+    });
+  });
+  console.log(`[ExcelReportService] Added ${items.length} UPSS promo history entries for MSISDN: ${msisdn}`);
+}
+
+getUpssPromoHistoryCount(): number {
+  return this.upssPromoHistory.length;
+}
 
   // ── VI App Results ───────────────────────────────────────────────────────
 
@@ -363,7 +398,7 @@ export class ExcelReportService {
     if (uatResultsForRow.length === 0) {
       html += `<p style="color: #888;">No SWIFT UAT results found for this MSISDN.</p>`;
     } else {
-      html += `
+     html += `
     <table>
       <thead>
         <tr>
@@ -374,6 +409,7 @@ export class ExcelReportService {
           <th>IN</th>
           <th>SWIFT</th>
           <th>Vi App</th>
+          <th>Reason</th>
         </tr>
       </thead>
       <tbody>
@@ -392,6 +428,7 @@ export class ExcelReportService {
             <td><span class="badge ${inBadge}">${result.inStatus || 'Skip'}</span></td>
             <td><span class="badge ${swiftBadge}">${result.swiftStatus || 'Skip'}</span></td>
             <td>${result.viAppStatus || 'Skip'}</td>
+            <td><small>${result.reason || 'N/A'}</small></td>
           </tr>
         `;
       });
@@ -689,6 +726,7 @@ function switchTab(tabName) {
           <th>IN</th>
           <th>SWIFT</th>
           <th>Vi App</th>
+          <th>Reason</th>
         </tr>
       </thead>
       <tbody>
@@ -707,6 +745,7 @@ function switchTab(tabName) {
           <td><span class="badge ${inBadge}">${result.inStatus || 'Skip'}</span></td>
           <td><span class="badge ${swiftBadge}">${result.swiftStatus || 'Skip'}</span></td>
           <td>${result.viAppStatus || 'Skip'}</td>
+          <td><small>${result.reason || 'N/A'}</small></td>
         </tr>`;
       });
       html += `
@@ -1043,29 +1082,33 @@ function switchTab(tabName) {
     if (this.viAppResults.length === 0) {
       html += `<p style="color: #888;">No VI App results found.</p>`;
     } else {
-      html += `
+     html += `
+  <div class="section page-break">
+    <h2>UAT Execution Results (SWIFT)</h2>
     <table>
       <thead>
-        <tr><th>#</th><th>MSISDN</th><th>Circle</th><th>MRP</th><th>Status</th><th>MRP Matched</th><th>Benefit Matched</th><th>Remarks</th></tr>
+        <tr><th>#</th><th>MSISDN</th><th>Circle</th><th>MRP</th><th>IN Status</th><th>SWIFT Status</th><th>Vi App</th><th>Reason</th></tr>
       </thead>
       <tbody>
-      `;
-      this.viAppResults.forEach((result, idx) => {
-        const statusBadge = result.status === 'Pass' ? 'badge-pass' : 
-                           (result.status === 'Fail' ? 'badge-fail' : 
-                           (result.status === 'Mismatch' ? 'badge-mismatch' : 'badge-error'));
-        html += `
+`;
+
+    this.uatResults.forEach((result) => {
+      const inBadge = result.inStatus === 'Pass' ? 'badge-pass' : (result.inStatus === 'Fail' ? 'badge-fail' : 'badge-skip');
+      const swiftBadge = result.swiftStatus === 'Pass' ? 'badge-pass' : 
+                   (result.swiftStatus === 'Mismatch' ? 'badge-mismatch' : 
+                   (result.swiftStatus === 'Fail' ? 'badge-fail' : 'badge-skip'));
+      html += `
         <tr>
-          <td>${idx + 1}</td>
+          <td>${result.srNo}</td>
           <td><strong>${result.msisdn}</strong></td>
           <td>${result.circle}</td>
-          <td>&#8377;${result.rechargeMRP}</td>
-          <td><span class="badge ${statusBadge}">${result.status}</span></td>
-          <td>${result.mrpMatched ? '&#10003; Yes' : '&#10007; No'}</td>
-          <td>${result.benefitMatched ? '&#10003; Yes' : '&#10007; No'}</td>
-          <td>${result.remarks || 'N/A'}</td>
+          <td>&#8377;${result.mrp}</td>
+          <td><span class="badge ${inBadge}">${result.inStatus || 'Skip'}</span></td>
+          <td><span class="badge ${swiftBadge}">${result.swiftStatus || 'Skip'}</span></td>
+          <td>${result.viAppStatus || 'Skip'}</td>
+          <td><small>${result.reason || 'N/A'}</small></td>
         </tr>`;
-      });
+    });
       html += `
       </tbody>
     </table>`;
@@ -1085,18 +1128,75 @@ function switchTab(tabName) {
     return html;
   }
 
+  private getSingleReportPaths(reportKey: string, reportBaseName: string, reportsDir: string): { excelPath: string; htmlPath: string; pdfPath: string } {
+    const cachedPaths = this.reportFileCache.get(reportKey);
+    if (cachedPaths) {
+      return cachedPaths;
+    }
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const baseName = `${reportBaseName}_${timestamp}`;
+    const excelPath = path.join(reportsDir, `${baseName}.xlsx`);
+    const htmlPath = path.join(reportsDir, `${baseName}.html`);
+    const pdfPath = path.join(reportsDir, `${baseName}.pdf`);
+
+    // Avoid deleting prior report files when they may still be open/locked by Excel or another process.
+    // Each run writes a fresh timestamped file, so cleanup is not required for correctness.
+
+    const paths = { excelPath, htmlPath, pdfPath };
+    this.reportFileCache.set(reportKey, paths);
+    return paths;
+  }
+
+  private safeDeleteFile(filePath: string): void {
+    if (!fs.existsSync(filePath)) {
+      return;
+    }
+
+    try {
+      fs.unlinkSync(filePath);
+    } catch (error: any) {
+      const message = error && error.message ? error.message : String(error);
+      console.warn(`[ExcelReportService] Could not remove previous report file ${filePath}: ${message}`);
+    }
+  }
+
+  private async createZipBundle(files: string[], zipPath: string): Promise<void> {
+    const JSZip = require('jszip');
+    const zip = new JSZip();
+
+    files.filter((filePath) => fs.existsSync(filePath)).forEach((filePath) => {
+      const fileName = path.basename(filePath);
+      zip.file(fileName, fs.readFileSync(filePath));
+    });
+
+    const buffer = await zip.generateAsync({ type: 'nodebuffer' });
+    fs.writeFileSync(zipPath, buffer);
+    console.log(`[ExcelReportService] ZIP bundle created: ${zipPath}`);
+  }
+
   // ─── Generate Individual Excel + HTML + PDF Report for a Single Row ─────
 
-  async writeIndividualReport(row: InputRow): Promise<{ excelPath: string; htmlPath: string; pdfPath: string }> {
+  async writeIndividualReport(row: InputRow): Promise<{ excelPath: string; htmlPath: string; pdfPath: string; zipPath: string }> {
     const reportsDir = path.resolve('./reports');
     if (!fs.existsSync(reportsDir)) {
       fs.mkdirSync(reportsDir, { recursive: true });
     }
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const finalReportsDir = path.resolve('./finalreports');
+    if (!fs.existsSync(finalReportsDir)) {
+      fs.mkdirSync(finalReportsDir, { recursive: true });
+    }
+
     const msisdn = row.msisdn || 'unknown';
     const circle = row.circle || 'unknown';
     const rechargeMRP = row.rechargeMRP || 'unknown';
+    const reportBaseName = `SIM_Recharge_Report_${msisdn}_${circle}_MRP${rechargeMRP}`;
+    const { excelPath: excelFilepath, htmlPath: htmlFilepath, pdfPath: pdfFilepath } = this.getSingleReportPaths(
+      `individual:${msisdn}:${circle}:${rechargeMRP}`,
+      reportBaseName,
+      reportsDir
+    );
     
     // Get results for this specific MSISDN
     const rowUatResults = this.uatResults.filter(r => r.msisdn === msisdn);
@@ -1105,9 +1205,6 @@ function switchTab(tabName) {
     const rowScreenshots = this.screenshotIndex.filter(s => s.msisdn === msisdn);
 
     // ── Generate Excel file ──────────────────────────────────────────────
-    const excelFilename = `SIM_Recharge_Report_${msisdn}_${circle}_MRP${rechargeMRP}_${timestamp}.xlsx`;
-    const excelFilepath = path.join(reportsDir, excelFilename);
-
     const inputSheetData = [{
       'MSISDN': row.msisdn,
       'CIRCLE': row.circle,
@@ -1137,7 +1234,8 @@ function switchTab(tabName) {
       'IN Status': result.inStatus || 'Skip',
       'SWIFT Status': result.swiftStatus || 'Skip',
       'Vi App Status': result.viAppStatus || 'Skip',
-      'Screenshots': (result.screenshots || []).join(', ')
+      // 'Screenshots': (result.screenshots || []).join(', ')
+      'Reason': result.reason || 'N/A'
     }));
 
     const inSheetData = rowInResults.map((result) => ({
@@ -1198,6 +1296,18 @@ function switchTab(tabName) {
       }
     });
 
+    const rowUpssPromoHistory = this.upssPromoHistory.filter(u => u.msisdn === msisdn);
+
+      const upssPromoSheetData = rowUpssPromoHistory.map((item, idx) => ({
+        'Sr No.': idx + 1,
+        'Applied Date': item.applied_date,
+        'Start Date': item.start_date,
+        'Promotion Name': item.promotion_name,
+        'Description': item.description,
+        'Mode of Activation': item.mode_of_activation,
+        'Promotion Status': item.promotion_status
+      }));
+
     const viAppSheetData = rowViAppResults.map((result) => ({
       'Status': result.status,
       'MRP Matched': result.mrpMatched ? 'Yes' : 'No',
@@ -1209,6 +1319,7 @@ function switchTab(tabName) {
       'Screenshot Count': result.screenshotCount,
       'Remarks': result.remarks || 'N/A'
     }));
+    
 
     const screenshotSheetData = rowScreenshots.map((screenshot) => ({
       'Sr. No.': screenshot.srNo,
@@ -1236,6 +1347,9 @@ function switchTab(tabName) {
     if (daSheetData.length > 0) {
       xlsx.utils.book_append_sheet(workbook, xlsx.utils.json_to_sheet(daSheetData), 'IN Dedicated Accounts');
     }
+    if (upssPromoSheetData.length > 0) {
+  xlsx.utils.book_append_sheet(workbook, xlsx.utils.json_to_sheet(upssPromoSheetData), 'UPSS Promotional History');
+}
     if (offersSheetData.length > 0) {
       xlsx.utils.book_append_sheet(workbook, xlsx.utils.json_to_sheet(offersSheetData), 'IN Offers');
     }
@@ -1247,17 +1361,11 @@ function switchTab(tabName) {
     console.log(`[ExcelReportService] Individual Excel report: ${excelFilepath}`);
 
     // ── Generate Interactive HTML report ─────────────────────────────────
-    const htmlFilename = `SIM_Recharge_Report_${msisdn}_${circle}_MRP${rechargeMRP}_${timestamp}.html`;
-    const htmlFilepath = path.join(reportsDir, htmlFilename);
-    
     const htmlContent = this.generateIndividualHTMLReport(row);
     fs.writeFileSync(htmlFilepath, htmlContent, 'utf8');
     console.log(`[ExcelReportService] Individual HTML report: ${htmlFilepath}`);
 
     // ── Generate PDF report ──────────────────────────────────────────────
-    const pdfFilename = `SIM_Recharge_Report_${msisdn}_${circle}_MRP${rechargeMRP}_${timestamp}.pdf`;
-    const pdfFilepath = path.join(reportsDir, pdfFilename);
-
     try {
       const pdfHTMLContent = this.generateIndividualPDFHTMLReport(row);
       await this.convertHTMLToPDF(pdfHTMLContent, pdfFilepath);
@@ -1268,13 +1376,20 @@ function switchTab(tabName) {
       // The caller can decide to retry
     }
 
-    return { excelPath: excelFilepath, htmlPath: htmlFilepath, pdfPath: pdfFilepath };
+    const zipPath = path.join(finalReportsDir, `${path.basename(excelFilepath, '.xlsx')}.zip`);
+    await this.createZipBundle([excelFilepath, htmlFilepath, pdfFilepath], zipPath);
+
+    try {
+      (global as any).setSwiftLatestReport?.(zipPath);
+    } catch (_) {}
+
+    return { excelPath: excelFilepath, htmlPath: htmlFilepath, pdfPath: pdfFilepath, zipPath };
   }
 
   // ─── Generate All Individual Reports ─────────────────────────────────────
 
-  async writeAllIndividualReports(): Promise<Array<{ row: InputRow; excelPath: string; htmlPath: string; pdfPath: string }>> {
-    const results: Array<{ row: InputRow; excelPath: string; htmlPath: string; pdfPath: string }> = [];
+  async writeAllIndividualReports(): Promise<Array<{ row: InputRow; excelPath: string; htmlPath: string; pdfPath: string; zipPath: string }>> {
+    const results: Array<{ row: InputRow; excelPath: string; htmlPath: string; pdfPath: string; zipPath: string }> = [];
 
     for (const row of this.inputRows) {
       const report = await this.writeIndividualReport(row);
@@ -1294,9 +1409,11 @@ function switchTab(tabName) {
       fs.mkdirSync(reportsDir, { recursive: true });
     }
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const excelFilename = `SIM_Recharge_Report_Consolidated_${timestamp}.xlsx`;
-    const excelFilepath = path.join(reportsDir, excelFilename);
+    const { excelPath: excelFilepath, htmlPath: htmlFilepath, pdfPath: pdfFilepath } = this.getSingleReportPaths(
+      'consolidated',
+      'SIM_Recharge_Report_Consolidated',
+      reportsDir
+    );
 
     // ── Build Excel sheets ───────────────────────────────────────────────
     const inputSheetData = this.inputRows.map((row, idx) => ({
@@ -1333,7 +1450,19 @@ function switchTab(tabName) {
       'IN Status': result.inStatus || 'Skip',
       'SWIFT Status': result.swiftStatus || 'Skip',
       'Vi App Status': result.viAppStatus || 'Skip',
-      'Screenshots': (result.screenshots || []).join(', ')
+      // 'Screenshots': (result.screenshots || []).join(', ')
+      'Reason': result.reason || 'N/A'
+    }));
+
+    const upssPromoSheetData = this.upssPromoHistory.map((item, idx) => ({
+      'Sr No.': idx + 1,
+      'MSISDN': item.msisdn,
+      'Applied Date': item.applied_date,
+      'Start Date': item.start_date,
+      'Promotion Name': item.promotion_name,
+      'Description': item.description,
+      'Mode of Activation': item.mode_of_activation,
+      'Promotion Status': item.promotion_status
     }));
 
     const inSheetData = this.inResults.map((result, idx) => ({
@@ -1439,6 +1568,9 @@ function switchTab(tabName) {
     if (daSheetData.length > 0) {
       xlsx.utils.book_append_sheet(workbook, xlsx.utils.json_to_sheet(daSheetData), 'IN Dedicated Accounts');
     }
+    if (upssPromoSheetData.length > 0) {
+      xlsx.utils.book_append_sheet(workbook, xlsx.utils.json_to_sheet(upssPromoSheetData), 'UPSS Promotional History');
+    }
     if (offersSheetData.length > 0) {
       xlsx.utils.book_append_sheet(workbook, xlsx.utils.json_to_sheet(offersSheetData), 'IN Offers');
     }
@@ -1450,9 +1582,6 @@ function switchTab(tabName) {
     console.log(`[ExcelReportService] Consolidated Excel report: ${excelFilepath}`);
 
     // ── Generate consolidated interactive HTML ───────────────────────────
-    const htmlFilename = `SIM_Recharge_Report_Consolidated_${timestamp}.html`;
-    const htmlFilepath = path.join(reportsDir, htmlFilename);
-    
     let html = this.getHTMLHead('UAT Recharge Report - Consolidated', false) + `
 <body>
 <div class="container">
@@ -1573,9 +1702,6 @@ function switchTab(tabName) {
     console.log(`[ExcelReportService] Consolidated HTML report: ${htmlFilepath}`);
 
     // ── Generate consolidated PDF ────────────────────────────────────────
-    const pdfFilename = `SIM_Recharge_Report_Consolidated_${timestamp}.pdf`;
-    const pdfFilepath = path.join(reportsDir, pdfFilename);
-
     try {
       const pdfHTMLContent = this.generateConsolidatedPDFHTMLReport();
       await this.convertHTMLToPDF(pdfHTMLContent, pdfFilepath);

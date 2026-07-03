@@ -1,4 +1,4 @@
-// test/pages/SiebelSubscriptionsPage.ts (UPDATED)
+// test/pages/SiebelSubscriptionsPage.ts (UPDATED with parse methods)
 
 import { browser, $, $$ } from '@wdio/globals';
 import { expect } from 'chai';
@@ -21,6 +21,15 @@ const SEL = {
   gridTable     : '#s_1_l',
   noDataMessage : '//div[contains(text(), "No records to display")]',
   loadingOverlay: '//div[contains(@class, "loading") or contains(@class, "wait")]',
+  // Account Summary fields
+  assetInput    : 'input[name="s_3_1_30_0"]',
+  subscriberLabels: '.mceGridLabel .siebui-label span',
+  subscriberValues: '.mceGridField .siebui-ctrl-text label, .mceGridField .siebui-ctrl-text',
+  gridRows      : 'table.GridBack tbody tr',
+  gridLabel     : '.mceGridLabel .siebui-label span',
+  gridValue     : '.mceGridField .siebui-ctrl-text label, .mceGridField .siebui-ctrl-text',
+  gridFieldInput: '.mceGridField .siebui-ctrl-input',
+  bodyText      : 'body',
 } as const;
 
 export interface SubscriptionRecord {
@@ -40,6 +49,53 @@ export interface SubscriptionRecord {
   activationDate: string;
   modifyDeactivationDate: string;
   crmInstance: string;
+}
+
+export interface AssetDetails {
+  asset_number: string;
+  msisdn: string;
+  status: string;
+  subscriber: string;
+  prepost: string;
+  circle_name: string;
+  sim_number: string;
+  activation_date: string;
+  account_number: string;
+  fa_id: string;
+  service_bundle: string;
+  tariff_plan: string;
+  account_summary_verified: boolean;
+  parsed_at: string;
+  [key: string]: string | boolean | number | undefined;
+}
+
+export interface SubscriberDetails {
+  subscriber: string;
+  aon: string;
+  company_name: string;
+  activation_date: string;
+  fa_id: string;
+  type_of_family: string;
+  operating_status: string;
+  tariff_plan: string;
+  status: string;
+  category: string;
+  billing_media: string;
+  subscriber_type: string;
+  payment_mode: string;
+  segment: string;
+  bill_date: string;
+  customer_class: string;
+  credit_limit: string;
+  enterprise_code: string;
+  credit_status: string;
+  postpaid_activation_date: string;
+  alternate_number: string;
+  postpaid_aging: string;
+  email: string;
+  gst_flag: string;
+  bill_format: string;
+  [key: string]: string | undefined;
 }
 
 export class SiebelSubscriptionsPage {
@@ -265,6 +321,294 @@ export class SiebelSubscriptionsPage {
     }
   }
 
+  /**
+   * Parse Asset Details from Account Summary page
+   * Extracts all asset-related fields from the page
+   */
+  async parseAssetDetails(): Promise<AssetDetails> {
+    console.log('📊 Parsing Asset Details from Account Summary...');
+    
+    const assetData: AssetDetails = {
+      asset_number: '',
+      msisdn: '',
+      status: '',
+      subscriber: '',
+      prepost: '',
+      circle_name: '',
+      sim_number: '',
+      activation_date: '',
+      account_number: '',
+      fa_id: '',
+      service_bundle: '',
+      tariff_plan: '',
+      account_summary_verified: false,
+      parsed_at: new Date().toISOString()
+    };
+
+    try {
+      // Wait for the asset input to be available
+      await this.waitForAccountSummaryToLoad();
+      
+      // Get the asset number from the input field
+      try {
+        const assetInput = await $(SEL.assetInput);
+        if (await assetInput.isExisting()) {
+          const assetNumber = await assetInput.getValue();
+          if (assetNumber && assetNumber.trim()) {
+            assetData.asset_number = assetNumber.trim();
+            console.log(`   ✅ Asset Number: ${assetData.asset_number}`);
+          }
+        }
+      } catch (error) {
+        console.log('   ⚠️ Could not get asset number from input field');
+      }
+
+      // Get the container text to extract all information
+      try {
+        const bodyText = await (await $(SEL.bodyText)).getText();
+        const cleanText = bodyText.replace(/\s+/g, ' ').trim();
+        
+        // Extract verification status
+        const verificationMatch = cleanText.match(/Account\s+Summary\s+verified/i);
+        assetData.account_summary_verified = !!verificationMatch;
+        
+        // Extract asset number if not found in input
+        if (!assetData.asset_number) {
+          const assetMatch = cleanText.match(/\b(\d{10})\b/);
+          if (assetMatch) {
+            assetData.asset_number = assetMatch[1];
+          }
+        }
+        
+        // Extract prepaid/postpaid status
+        const prepostMatch = cleanText.match(/(Prepaid|Postpaid)/i);
+        if (prepostMatch) {
+          assetData.prepost = prepostMatch[1];
+        }
+        
+        // Extract circle/location
+        const circleMatch = cleanText.match(/(Gujarat|Maharashtra|Karnataka|Tamil Nadu|Delhi|Mumbai|Kolkata|Andhra Pradesh|Uttar Pradesh|Rajasthan|Madhya Pradesh|Punjab|Haryana|Kerala|Odisha|Assam|Bihar|Jammu & Kashmir|Himachal Pradesh|North East|West Bengal)/i);
+        if (circleMatch) {
+          assetData.circle_name = circleMatch[1];
+        }
+        
+        // Extract Tariff Plan
+        const tariffMatch = cleanText.match(/Tariff\s+Plan[:\s]+([A-Za-z0-9\s_]+)/i);
+        if (tariffMatch) {
+          assetData.tariff_plan = tariffMatch[1].trim();
+        }
+        
+        // Extract Status
+        const statusMatch = cleanText.match(/Operating\s+Status[:\s]+([A-Za-z\s]+)/i);
+        if (statusMatch) {
+          assetData.status = statusMatch[1].trim();
+        }
+        
+        // Extract FA ID
+        const faMatch = cleanText.match(/Rltshp\s+No\.\/\s+FA\s+ID[:\s]+([A-Z0-9]+)/i);
+        if (faMatch) {
+          assetData.fa_id = faMatch[1].trim();
+        }
+        
+        // Extract Activation Date
+        const dateMatch = cleanText.match(/Activation\s+Date[:\s]+([\d\-A-Za-z]+)/i);
+        if (dateMatch) {
+          assetData.activation_date = dateMatch[1].trim();
+        }
+        
+        // Extract Subscriber
+        const subMatch = cleanText.match(/Subscriber[:\s]+([A-Za-z\s]+)/i);
+        if (subMatch) {
+          assetData.subscriber = subMatch[1].trim();
+        }
+        
+        // Extract Account Number
+        const accMatch = cleanText.match(/Account\s+Number[:\s]+([A-Z0-9\-]+)/i);
+        if (accMatch) {
+          assetData.account_number = accMatch[1].trim();
+        }
+        
+        // Extract SIM Number
+        const simMatch = cleanText.match(/SIM[:\s]+([0-9]+)/i);
+        if (simMatch) {
+          assetData.sim_number = simMatch[1].trim();
+        }
+        
+        // Extract Service Bundle
+        const bundleMatch = cleanText.match(/Service\s+Bundle[:\s]+([A-Za-z\s]+)/i);
+        if (bundleMatch) {
+          assetData.service_bundle = bundleMatch[1].trim();
+        }
+        
+      } catch (error) {
+        console.log('   ⚠️ Could not parse text from page:', error);
+      }
+
+      // Get all input fields in the same row/area
+      try {
+        const inputFields = await $$('input[type="text"][readonly]');
+        
+        for (const input of inputFields) {
+          const name = await input.getAttribute('name') || '';
+          const value = await input.getValue() || '';
+          const ariaLabel = await input.getAttribute('aria-label') || '';
+          
+          if (value && value.trim()) {
+            // Map field names based on name attribute or aria-label
+            if (name && name.includes('s_3_1_30')) {
+              assetData.asset_number = value.trim();
+            } else if (name && name.includes('s_3_1_31')) {
+              assetData.msisdn = value.trim();
+            } else if (name && name.includes('s_3_1_32')) {
+              assetData.status = value.trim();
+            } else if (name && name.includes('s_3_1_33')) {
+              assetData.subscriber = value.trim();
+            } else if (ariaLabel) {
+              const key = ariaLabel.toLowerCase().replace(/ /g, '_');
+              (assetData as any)[key] = value.trim();
+            }
+          }
+        }
+      } catch (error) {
+        console.log('   ⚠️ Could not parse input fields:', error);
+      }
+
+      console.log(`   ✅ Asset Details parsed successfully`);
+      console.log(`      - Asset: ${assetData.asset_number}`);
+      console.log(`      - MSISDN: ${assetData.msisdn}`);
+      console.log(`      - Status: ${assetData.status}`);
+      console.log(`      - Circle: ${assetData.circle_name}`);
+      
+      return assetData;
+      
+    } catch (error) {
+      console.error('Error parsing asset details:', error);
+      return assetData;
+    }
+  }
+
+  /**
+   * Parse Subscriber Details from Account Summary page
+   * Extracts all subscriber-related fields from the grid
+   */
+  async parseSubscriberDetails(): Promise<SubscriberDetails> {
+    console.log('📊 Parsing Subscriber Details from Account Summary...');
+    
+    const subscriberData: SubscriberDetails = {
+      subscriber: '',
+      aon: '',
+      company_name: '',
+      activation_date: '',
+      fa_id: '',
+      type_of_family: '',
+      operating_status: '',
+      tariff_plan: '',
+      status: '',
+      category: '',
+      billing_media: '',
+      subscriber_type: '',
+      payment_mode: '',
+      segment: '',
+      bill_date: '',
+      customer_class: '',
+      credit_limit: '',
+      enterprise_code: '',
+      credit_status: '',
+      postpaid_activation_date: '',
+      alternate_number: '',
+      postpaid_aging: '',
+      email: '',
+      gst_flag: '',
+      bill_format: ''
+    };
+
+    try {
+      // Wait for the page to load
+      await this.waitForAccountSummaryToLoad();
+
+      // Get all rows from the grid
+      const rows = await $$(SEL.gridRows);
+      console.log(`   Found ${await rows.length} rows in the grid`);
+
+      // Key mapping for field names
+      const keyMap: { [key: string]: string } = {
+        'Subscriber': 'subscriber',
+        'AON': 'aon',
+        'Company Name': 'company_name',
+        'Activation Date': 'activation_date',
+        'Rltshp No./ FA ID': 'fa_id',
+        'Type of Family': 'type_of_family',
+        'Operating Status': 'operating_status',
+        'Tariff Plan': 'tariff_plan',
+        'Status': 'status',
+        'Category': 'category',
+        'Billing Media': 'billing_media',
+        'Subscriber Type': 'subscriber_type',
+        'Payment Mode': 'payment_mode',
+        'Segment': 'segment',
+        'Bill Date': 'bill_date',
+        'Customer Class': 'customer_class',
+        'Credit Limit': 'credit_limit',
+        'Enterprise Code': 'enterprise_code',
+        'Credit Status': 'credit_status',
+        'Postpaid Activation Date': 'postpaid_activation_date',
+        'Alt Number': 'alternate_number',
+        'Postpaid Aging': 'postpaid_aging',
+        'Email': 'email',
+        'GST Flag': 'gst_flag',
+        'Bill Format': 'bill_format'
+      };
+
+      // Process each row
+      for (const row of rows) {
+        try {
+          // Get label and value from the row
+          const labelElement = await row.$(SEL.gridLabel);
+          const valueElement = await row.$(SEL.gridValue);
+          
+          if (await labelElement.isExisting() && await valueElement.isExisting()) {
+            const label = (await labelElement.getText()).replace(':', '').trim();
+            const value = (await valueElement.getText()).trim();
+            
+            if (label && value) {
+              // Map to appropriate key
+              const mappedKey = keyMap[label] || label.toLowerCase().replace(/ /g, '_');
+              (subscriberData as any)[mappedKey] = value;
+              console.log(`      ${label}: ${value}`);
+            }
+          }
+        } catch (rowError) {
+          // Skip rows that can't be parsed
+          continue;
+        }
+      }
+
+      console.log(`   ✅ Subscriber Details parsed successfully`);
+      console.log(`      - Subscriber: ${subscriberData.subscriber}`);
+      console.log(`      - Operating Status: ${subscriberData.operating_status}`);
+      console.log(`      - Tariff Plan: ${subscriberData.tariff_plan}`);
+      
+      return subscriberData;
+      
+    } catch (error) {
+      console.error('Error parsing subscriber details:', error);
+      return subscriberData;
+    }
+  }
+
+  /**
+   * Parse both Asset and Subscriber details in one call
+   */
+  async parseAccountSummaryDetails(): Promise<{ asset: AssetDetails; subscriber: SubscriberDetails }> {
+    console.log('\n📊 Parsing complete Account Summary details...');
+    
+    const asset = await this.parseAssetDetails();
+    const subscriber = await this.parseSubscriberDetails();
+    
+    console.log('\n   ✅ Account Summary parsing completed');
+    return { asset, subscriber };
+  }
+
   private async getCellText(cell: any): Promise<string> {
     try {
       // Try to get title attribute first (often has the actual value)
@@ -353,7 +697,9 @@ export class SiebelSubscriptionsPage {
             'input[aria-labelledby="AssetNumTitle_Label"]',
             '//*[@id="a_3"]',
             '//span[contains(text(), "Account")]',
-            '//div[contains(@class, "applet")]'
+            '//div[contains(@class, "applet")]',
+            'input[name="s_3_1_30_0"]',
+            'table.GridBack'
           ];
           
           for (const selector of elementSelectors) {
@@ -409,7 +755,8 @@ export class SiebelSubscriptionsPage {
       '//*[contains(@aria-label, "Mobile Number")]',
       '//input[contains(@aria-label, "Mobile")]',
       '//*[@id="s_3_l_Asset_Number"]',
-      '//*[@id="s_3_r_0_Asset_Number"]'
+      '//*[@id="s_3_r_0_Asset_Number"]',
+      'input[name="s_3_1_30_0"]'
     ];
 
     for (const sel of selectors) {

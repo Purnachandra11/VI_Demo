@@ -203,27 +203,203 @@ async function waitForLoginPage(): Promise<boolean> {
 }
 
 // ─── Helper: Handle login with CAPTCHA ──────────────────────────────────────
-async function handleLoginWithCaptcha(): Promise<boolean> {
-  console.log('[Recharge UAT]  Handling login with CAPTCHA...');
+// async function handleLoginWithCaptcha(): Promise<boolean> {
+//   console.log('[Recharge UAT]  Handling login with CAPTCHA...');
   
+//   try {
+//     const profileTab = await browser.$('a#ac_agent_profile');
+//     const isProfileDisplayed = await profileTab.isDisplayed();
+//     if (isProfileDisplayed) {
+//       console.log('[Recharge UAT] ✅ Already logged in!');
+//       fs.writeFileSync(LOGIN_STATE_FILE, JSON.stringify({ 
+//         isLoggedIn: true, 
+//         timestamp: Date.now() 
+//       }, null, 2));
+//       return true;
+//     }
+    
+//     const captchaImg = await browser.$('img#LoginCaptcha');
+//     const hasCaptcha = await captchaImg.isDisplayed();
+    
+//     if (hasCaptcha) {
+//       console.log('[Recharge UAT] 📸 CAPTCHA detected - waiting for user input...');
+      
+//       const timestamp = Date.now();
+//       const filename = `captcha_${timestamp}.png`;
+//       const captchaDir = path.resolve('./captcha_screenshots');
+//       if (!fs.existsSync(captchaDir)) {
+//         fs.mkdirSync(captchaDir, { recursive: true });
+//       }
+//       const filepath = path.join(captchaDir, filename);
+//       await captchaImg.saveScreenshot(filepath);
+      
+//       fs.mkdirSync(COMM_DIR, { recursive: true });
+//       fs.writeFileSync(CAPTCHA_REQUEST_FILE, JSON.stringify({
+//         timestamp: timestamp,
+//         filename: filename,
+//         imageUrl: `/captcha-images/${filename}`,
+//         requiresCredentials: true
+//       }, null, 2));
+      
+//       console.log(`[Recharge UAT] CAPTCHA saved: ${filename}`);
+//       console.log('[Recharge UAT] Please enter your credentials and CAPTCHA via the frontend popup');
+      
+//       const maxWait = 5 * 60 * 1000;
+//       const start = Date.now();
+//       let response = null;
+      
+//       while (!response && Date.now() - start < maxWait) {
+//         if (fs.existsSync(CAPTCHA_RESPONSE_FILE)) {
+//           try {
+//             const raw = fs.readFileSync(CAPTCHA_RESPONSE_FILE, 'utf8');
+//             const data = JSON.parse(raw);
+//             if (data.answer) {
+//               response = data;
+//               console.log(`[Recharge UAT] ✅ CAPTCHA response received: ${data.answer}`);
+//               if (fs.existsSync(CAPTCHA_REQUEST_FILE)) fs.unlinkSync(CAPTCHA_REQUEST_FILE);
+//               if (fs.existsSync(CAPTCHA_RESPONSE_FILE)) fs.unlinkSync(CAPTCHA_RESPONSE_FILE);
+//             }
+//           } catch (_e) {}
+//         }
+        
+//         const profileCheck = await browser.$('a#ac_agent_profile');
+//         const isProfileCheckDisplayed = await profileCheck.isDisplayed();
+//         if (isProfileCheckDisplayed) {
+//           console.log('[Recharge UAT] ✅ Manual login detected!');
+//           fs.writeFileSync(LOGIN_STATE_FILE, JSON.stringify({ 
+//             isLoggedIn: true, 
+//             timestamp: Date.now() 
+//           }, null, 2));
+//           return true;
+//         }
+        
+//         await browser.pause(500);
+//       }
+      
+//       if (!response) {
+//         console.log('[Recharge UAT] ⚠️ CAPTCHA response timeout');
+//         return false;
+//       }
+      
+//       const captchaInput = await browser.$('//*[@id="captcha"]');
+//       await captchaInput.waitForDisplayed({ timeout: 10000 });
+//       await captchaInput.clearValue();
+//       await captchaInput.setValue(response.answer);
+//       console.log('[Recharge UAT] ✅ CAPTCHA entered');
+      
+//       if (response.username) {
+//         const usernameInput = await browser.$('//*[@id="tempusername"]');
+//         await usernameInput.waitForDisplayed({ timeout: 5000 });
+//         await usernameInput.clearValue();
+//         await usernameInput.setValue(response.username);
+//         console.log(`[Recharge UAT] ✅ Username entered: ${response.username}`);
+//       }
+      
+//       if (response.password) {
+//         const passwordInput = await browser.$('//*[@id="temppassword"]');
+//         await passwordInput.waitForDisplayed({ timeout: 5000 });
+//         await browser.execute((el: any) => {
+//           el.removeAttribute('readonly');
+//         }, passwordInput);
+//         await passwordInput.clearValue();
+//         await passwordInput.setValue(response.password);
+//         console.log('[Recharge UAT] ✅ Password entered');
+//       }
+      
+//       const loginBtn = await browser.$('//*[@id="loginForm"]/div[2]/div[2]/form/button');
+//       await loginBtn.click();
+//       console.log('[Recharge UAT] ✅ Login button clicked');
+      
+//       await browser.pause(5000);
+      
+//       const profileTabAfter = await browser.$('a#ac_agent_profile');
+//       const isProfileAfterDisplayed = await profileTabAfter.isDisplayed();
+//       if (isProfileAfterDisplayed) {
+//         console.log('[Recharge UAT] ✅ Login successful!');
+//         fs.writeFileSync(LOGIN_STATE_FILE, JSON.stringify({ 
+//           isLoggedIn: true, 
+//           timestamp: Date.now() 
+//         }, null, 2));
+//         return true;
+//       }
+      
+//       console.log('[Recharge UAT] ⚠️ Login may have failed');
+//       return false;
+//     }
+    
+//     const usernameField = await browser.$('//*[@id="tempusername"]');
+//     const isUsernameDisplayed = await usernameField.isDisplayed();
+//     if (isUsernameDisplayed) {
+//       console.log('[Recharge UAT] ⚠️ On login page but no CAPTCHA - waiting for manual login...');
+      
+//       const maxWait = 5 * 60 * 1000;
+//       const start = Date.now();
+//       while (Date.now() - start < maxWait) {
+//         const profileTabCheck = await browser.$('a#ac_agent_profile');
+//         const isProfileCheckDisplayed = await profileTabCheck.isDisplayed();
+//         if (isProfileCheckDisplayed) {
+//           console.log('[Recharge UAT] ✅ Manual login detected!');
+//           fs.writeFileSync(LOGIN_STATE_FILE, JSON.stringify({ 
+//             isLoggedIn: true, 
+//             timestamp: Date.now() 
+//           }, null, 2));
+//           return true;
+//         }
+        
+//         const captchaCheck = await browser.$('img#LoginCaptcha');
+//         const isCaptchaCheckDisplayed = await captchaCheck.isDisplayed();
+//         if (isCaptchaCheckDisplayed) {
+//           console.log('[Recharge UAT] CAPTCHA appeared - restarting login flow');
+//           return await handleLoginWithCaptcha();
+//         }
+        
+//         await browser.pause(1000);
+//       }
+//       return false;
+//     }
+    
+//     const profileFinal = await browser.$('a#ac_agent_profile');
+//     const isProfileFinalDisplayed = await profileFinal.isDisplayed();
+//     if (isProfileFinalDisplayed) {
+//       console.log('[Recharge UAT] ✅ Already logged in (final check)!');
+//       fs.writeFileSync(LOGIN_STATE_FILE, JSON.stringify({ 
+//         isLoggedIn: true, 
+//         timestamp: Date.now() 
+//       }, null, 2));
+//       return true;
+//     }
+    
+//     return false;
+    
+//   } catch (error) {
+//     console.error('[Recharge UAT] Login error:', error);
+//     return false;
+//   }
+// }
+
+type LoginResult = { success: boolean; reason?: 'invalid_credentials' | 'timeout' | 'error' };
+
+async function handleLoginWithCaptcha(): Promise<LoginResult> {
+  console.log('[Recharge UAT]  Handling login with CAPTCHA...');
+
   try {
     const profileTab = await browser.$('a#ac_agent_profile');
     const isProfileDisplayed = await profileTab.isDisplayed();
     if (isProfileDisplayed) {
       console.log('[Recharge UAT] ✅ Already logged in!');
-      fs.writeFileSync(LOGIN_STATE_FILE, JSON.stringify({ 
-        isLoggedIn: true, 
-        timestamp: Date.now() 
+      fs.writeFileSync(LOGIN_STATE_FILE, JSON.stringify({
+        isLoggedIn: true,
+        timestamp: Date.now()
       }, null, 2));
-      return true;
+      return { success: true };
     }
-    
+
     const captchaImg = await browser.$('img#LoginCaptcha');
     const hasCaptcha = await captchaImg.isDisplayed();
-    
+
     if (hasCaptcha) {
       console.log('[Recharge UAT] 📸 CAPTCHA detected - waiting for user input...');
-      
+
       const timestamp = Date.now();
       const filename = `captcha_${timestamp}.png`;
       const captchaDir = path.resolve('./captcha_screenshots');
@@ -232,7 +408,7 @@ async function handleLoginWithCaptcha(): Promise<boolean> {
       }
       const filepath = path.join(captchaDir, filename);
       await captchaImg.saveScreenshot(filepath);
-      
+
       fs.mkdirSync(COMM_DIR, { recursive: true });
       fs.writeFileSync(CAPTCHA_REQUEST_FILE, JSON.stringify({
         timestamp: timestamp,
@@ -240,14 +416,14 @@ async function handleLoginWithCaptcha(): Promise<boolean> {
         imageUrl: `/captcha-images/${filename}`,
         requiresCredentials: true
       }, null, 2));
-      
+
       console.log(`[Recharge UAT] CAPTCHA saved: ${filename}`);
       console.log('[Recharge UAT] Please enter your credentials and CAPTCHA via the frontend popup');
-      
+
       const maxWait = 5 * 60 * 1000;
       const start = Date.now();
-      let response = null;
-      
+      let response: any = null;
+
       while (!response && Date.now() - start < maxWait) {
         if (fs.existsSync(CAPTCHA_RESPONSE_FILE)) {
           try {
@@ -261,32 +437,32 @@ async function handleLoginWithCaptcha(): Promise<boolean> {
             }
           } catch (_e) {}
         }
-        
+
         const profileCheck = await browser.$('a#ac_agent_profile');
         const isProfileCheckDisplayed = await profileCheck.isDisplayed();
         if (isProfileCheckDisplayed) {
           console.log('[Recharge UAT] ✅ Manual login detected!');
-          fs.writeFileSync(LOGIN_STATE_FILE, JSON.stringify({ 
-            isLoggedIn: true, 
-            timestamp: Date.now() 
+          fs.writeFileSync(LOGIN_STATE_FILE, JSON.stringify({
+            isLoggedIn: true,
+            timestamp: Date.now()
           }, null, 2));
-          return true;
+          return { success: true };
         }
-        
+
         await browser.pause(500);
       }
-      
+
       if (!response) {
         console.log('[Recharge UAT] ⚠️ CAPTCHA response timeout');
-        return false;
+        return { success: false, reason: 'timeout' };
       }
-      
+
       const captchaInput = await browser.$('//*[@id="captcha"]');
       await captchaInput.waitForDisplayed({ timeout: 10000 });
       await captchaInput.clearValue();
       await captchaInput.setValue(response.answer);
       console.log('[Recharge UAT] ✅ CAPTCHA entered');
-      
+
       if (response.username) {
         const usernameInput = await browser.$('//*[@id="tempusername"]');
         await usernameInput.waitForDisplayed({ timeout: 5000 });
@@ -294,7 +470,7 @@ async function handleLoginWithCaptcha(): Promise<boolean> {
         await usernameInput.setValue(response.username);
         console.log(`[Recharge UAT] ✅ Username entered: ${response.username}`);
       }
-      
+
       if (response.password) {
         const passwordInput = await browser.$('//*[@id="temppassword"]');
         await passwordInput.waitForDisplayed({ timeout: 5000 });
@@ -305,33 +481,41 @@ async function handleLoginWithCaptcha(): Promise<boolean> {
         await passwordInput.setValue(response.password);
         console.log('[Recharge UAT] ✅ Password entered');
       }
-      
+
       const loginBtn = await browser.$('//*[@id="loginForm"]/div[2]/div[2]/form/button');
       await loginBtn.click();
       console.log('[Recharge UAT] ✅ Login button clicked');
-      
+
       await browser.pause(5000);
-      
+
       const profileTabAfter = await browser.$('a#ac_agent_profile');
       const isProfileAfterDisplayed = await profileTabAfter.isDisplayed();
       if (isProfileAfterDisplayed) {
         console.log('[Recharge UAT] ✅ Login successful!');
-        fs.writeFileSync(LOGIN_STATE_FILE, JSON.stringify({ 
-          isLoggedIn: true, 
-          timestamp: Date.now() 
+        fs.writeFileSync(LOGIN_STATE_FILE, JSON.stringify({
+          isLoggedIn: true,
+          timestamp: Date.now()
         }, null, 2));
-        return true;
+        return { success: true };
       }
-      
-      console.log('[Recharge UAT] ⚠️ Login may have failed');
-      return false;
+
+      // ── Login button was clicked, waited 5s, still no profile tab ──
+      // If the login form is STILL visible, that's a real "wrong creds/CAPTCHA" signal.
+      const stillOnLoginForm = await browser.$('//*[@id="tempusername"]').isDisplayed().catch(() => false);
+      if (stillOnLoginForm) {
+        console.log('[Recharge UAT] ⚠️ Login failed — invalid credentials or CAPTCHA');
+        return { success: false, reason: 'invalid_credentials' };
+      }
+
+      console.log('[Recharge UAT] ⚠️ Login may have failed (unknown state)');
+      return { success: false, reason: 'error' };
     }
-    
+
     const usernameField = await browser.$('//*[@id="tempusername"]');
     const isUsernameDisplayed = await usernameField.isDisplayed();
     if (isUsernameDisplayed) {
       console.log('[Recharge UAT] ⚠️ On login page but no CAPTCHA - waiting for manual login...');
-      
+
       const maxWait = 5 * 60 * 1000;
       const start = Date.now();
       while (Date.now() - start < maxWait) {
@@ -339,42 +523,81 @@ async function handleLoginWithCaptcha(): Promise<boolean> {
         const isProfileCheckDisplayed = await profileTabCheck.isDisplayed();
         if (isProfileCheckDisplayed) {
           console.log('[Recharge UAT] ✅ Manual login detected!');
-          fs.writeFileSync(LOGIN_STATE_FILE, JSON.stringify({ 
-            isLoggedIn: true, 
-            timestamp: Date.now() 
+          fs.writeFileSync(LOGIN_STATE_FILE, JSON.stringify({
+            isLoggedIn: true,
+            timestamp: Date.now()
           }, null, 2));
-          return true;
+          return { success: true };
         }
-        
+
         const captchaCheck = await browser.$('img#LoginCaptcha');
         const isCaptchaCheckDisplayed = await captchaCheck.isDisplayed();
         if (isCaptchaCheckDisplayed) {
           console.log('[Recharge UAT] CAPTCHA appeared - restarting login flow');
           return await handleLoginWithCaptcha();
         }
-        
+
         await browser.pause(1000);
       }
-      return false;
+      return { success: false, reason: 'timeout' };
     }
-    
+
     const profileFinal = await browser.$('a#ac_agent_profile');
     const isProfileFinalDisplayed = await profileFinal.isDisplayed();
     if (isProfileFinalDisplayed) {
       console.log('[Recharge UAT] ✅ Already logged in (final check)!');
-      fs.writeFileSync(LOGIN_STATE_FILE, JSON.stringify({ 
-        isLoggedIn: true, 
-        timestamp: Date.now() 
+      fs.writeFileSync(LOGIN_STATE_FILE, JSON.stringify({
+        isLoggedIn: true,
+        timestamp: Date.now()
       }, null, 2));
-      return true;
+      return { success: true };
     }
-    
-    return false;
-    
+
+    return { success: false, reason: 'error' };
+
   } catch (error) {
     console.error('[Recharge UAT] Login error:', error);
-    return false;
+    return { success: false, reason: 'error' };
   }
+}
+
+async function handleLoginWithRetries(maxAttempts = 3): Promise<boolean> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    console.log(`[Recharge UAT] Login attempt ${attempt}/${maxAttempts}`);
+
+    const result = await handleLoginWithCaptcha();
+    if (result.success) return true;
+
+    if (result.reason === 'timeout' || result.reason === 'error') {
+      console.log(`[Recharge UAT] ❌ Login stopped — reason: ${result.reason} (not retrying)`);
+      return false;
+    }
+
+    // reason === 'invalid_credentials'
+    if (attempt < maxAttempts) {
+      console.log(`[Recharge UAT] ⚠️ Attempt ${attempt} failed — invalid credentials/CAPTCHA. Retrying (${attempt + 1}/${maxAttempts})...`);
+
+      fs.mkdirSync(COMM_DIR, { recursive: true });
+      fs.writeFileSync(path.join(COMM_DIR, 'login_retry.json'), JSON.stringify({
+        attempt,
+        maxAttempts,
+        reason: 'Invalid credentials or CAPTCHA — please try again',
+        timestamp: Date.now()
+      }, null, 2));
+
+      // Refresh the page so a fresh CAPTCHA image loads
+      await browser.refresh();
+      await browser.pause(2000);
+      await waitForLoginPage(); // your existing helper
+    } else {
+      console.error(`[Recharge UAT] ❌ Login failed after ${maxAttempts} attempts — giving up`);
+      fs.writeFileSync(path.join(COMM_DIR, 'login_failed.json'), JSON.stringify({
+        maxAttempts,
+        timestamp: Date.now()
+      }, null, 2));
+    }
+  }
+  return false;
 }
 
 // ─── Helper: Ensure we're on the recharge page ──────────────────────────────
@@ -543,29 +766,41 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
     console.log(`[Recharge UAT] Recharge-Yes rows: ${matchedRows.filter(r => r.recharge?.toLowerCase() === 'yes').length}`);
   });
 
+
+
   after(async () => {
-  if (excelReportService.getResultCount() > 0) {
-    const excelPath = await excelReportService.writeReport();
-    const pdfPath = await excelReportService.writePDFReport();
-    
-    console.log(`[Reports] Excel: ${excelPath}`);
-    console.log(`[Reports] HTML: ${pdfPath}`);
-      try {
-        const reportPath = await excelReportService.writeReport();
-        console.log(`[Recharge UAT] Excel Report generated: ${reportPath}`);
+    // Reports are generated per-row inside the row loop via excelReportService.writeIndividualReport().
+    // This after-hook must NOT re-generate them, otherwise we get duplicate Excel/PDF/ZIP outputs.
+    if (excelReportService.getResultCount() > 0) {
+      console.log(`[Recharge UAT] Total rows processed: ${matchedRows.length}`);
+      console.log(
+        `[Recharge UAT] Total screenshots: ${excelReportService.getScreenshotCount()}`
+      );
+
+      // Consolidated generation only (optional). Row-level generation is already done.
+      if (matchedRows.length > 1) {
         try {
+          const excelPath = await excelReportService.writeReport();
+          console.log(`[Recharge UAT] Consolidated Excel Report: ${excelPath}`);
+
           const pdfPath = await excelReportService.writePDFReport();
-          console.log(`[Recharge UAT] HTML Report generated: ${pdfPath}`);
-        } catch (pdfErr: any) {
-          console.warn(`[Recharge UAT] HTML report generation: ${pdfErr.message}`);
+          console.log(`[Recharge UAT] Consolidated PDF Report: ${pdfPath}`);
+        } catch (reportErr: any) {
+          console.warn(
+            `[Recharge UAT] Consolidated report generation skipped: ${reportErr?.message || reportErr}`
+          );
         }
-      } catch (reportErr: any) {
-        console.error(`[Recharge UAT] Report generation failed: ${reportErr.message}`);
+      } else {
+        console.log(
+          '[Recharge UAT] Single-row run detected; individual row reports already generated. Skipping consolidated report.'
+        );
       }
     }
   });
 
   it('should process all matched recharge UAT rows in one session', async function () {
+
+
     const batchTimeoutMs = Math.max(30 * 60 * 1000, (matchedRows.length || 1) * 10 * 60 * 1000);
     this.timeout(batchTimeoutMs);
     console.log(`[Recharge UAT] Overall batch timeout: ${Math.round(batchTimeoutMs / 60000)} minute(s)`);
@@ -602,7 +837,7 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
     }
 
     // ── STEP 4: Handle login ──────────────────────────────────────────────────
-    const loginSuccess = await handleLoginWithCaptcha();
+    const loginSuccess = await handleLoginWithRetries(3);
     
     if (loginSuccess) {
       isLoggedIn = true;
@@ -676,7 +911,7 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
             // 🔁 STEP 1: RECHARGE CONFIRMATION WAIT (BEFORE ANYTHING ELSE)
             // ════════════════════════════════════════════════════════════════════
             if (rechargeFlag === 'yes') {
-              console.log(`[Recharge UAT] ✉️ Recharge=Yes — waiting for email confirmation for ${row.msisdn} BEFORE any tests...`);
+              console.log(`[Recharge UAT]  Recharge=Yes — will pause and wait for the Smart Connect Application confirmation ${row.msisdn} BEFORE any tests...`);
               const txnId = `TXN-${row.msisdn}-${Date.now()}`;
               
               reportRowEvent('row_waiting_confirm', rowIndex, row.msisdn, { 
@@ -685,7 +920,7 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
               });
               
               // Wait for recharge confirmation via file
-              const result = await waitForRechargeConfirmation(row.msisdn, 300000);
+              const result = await waitForRechargeConfirmation(row.msisdn, 1600000);
               
               if (result.confirmed) {
                 console.log(`[Recharge UAT] ✅ Recharge confirmed for ${row.msisdn} — proceeding with tests...`);
@@ -725,7 +960,7 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
         console.log(`[Recharge UAT] Subscriber: ${subscriberInfo.customerName || 'N/A'}, Circle: ${subscriberInfo.circle || 'N/A'}`);
         console.log(`[Recharge UAT] Core Balance: ${subscriberInfo.coreBalance || 'N/A'}, Validity: ${subscriberInfo.serviceValidity || 'N/A'}`);
         
-        // --- IN Test ---
+        // --- IN yes case ---
         if (inFlag === 'yes') {
           console.log(`[Recharge UAT] 🔄 Running IN test for ${row.msisdn}`);
           reportColStatus(rowIndex, row.msisdn, 'in', 'running', 'IN test in progress');
@@ -793,179 +1028,135 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
           reportColStatus(rowIndex, row.msisdn, 'in', 'skipped', 'IN not required');
         }
 
-        // --- SWIFT Test ---
+        
+        // --- SWIFT Yes case ---
         if (swiftFlag === 'yes') {
           console.log(`[Recharge UAT] 🔄 Running SWIFT test for ${row.msisdn}`);
           reportColStatus(rowIndex, row.msisdn, 'swift', 'running', 'SWIFT test in progress');
-          
+
           // Re-enter MSISDN and search for SWIFT test
           await rechargePage.enterMSISDN(row.msisdn);
           await rechargePage.clickSearchButton();
           await browser.pause(2000);
-          
-          // const swiftResults = await rechargePage.runSwiftTest(row.msisdn, row.rechargeMRP);
-          // const swiftStatus = swiftResults.success ? 'completed' : 'failed';
-          // reportColStatus(rowIndex, row.msisdn, 'swift', swiftStatus, swiftResults.success ? 'SWIFT test passed' : 'SWIFT test failed');
+
           const swiftResults = await rechargePage.runSwiftTest(row.msisdn, row.rechargeMRP);
 
-          // Check if MRP matches EITHER core balance OR offer MRP
-          const offerHistoryItems = swiftResults.offerHistory || [];
-          const offerHistoryData = offerHistoryItems.length > 0 ? offerHistoryItems[0] : null;
-
-          const expectedMRP = String(row.rechargeMRP).trim();
-          const actualMRP = offerHistoryData?.mrp ? String(offerHistoryData.mrp).trim() : 'N/A';
-          const currentBalance = subscriberInfo?.coreBalance ? String(subscriberInfo.coreBalance).trim() : 'N/A';
-
-          const mrpMatches = (actualMRP === expectedMRP) || (currentBalance === expectedMRP);
-
-          // Set status: Pass if MRP matches AND test succeeded
-          let swiftStatus = 'Fail';
-          if (mrpMatches && swiftResults.success) {
-            swiftStatus = 'Pass';
-          } else if (!mrpMatches && swiftResults.success) {
-            swiftStatus = 'Mismatch';
+          if (swiftResults.upssPromotional && swiftResults.upssPromotional.length > 0) {
+            excelReportService.addUpssPromoHistory(row.msisdn, swiftResults.upssPromotional);
+            console.log(`[Recharge UAT] Added ${swiftResults.upssPromotional.length} UPSS promo history row(s) for ${row.msisdn}`);
           }
 
-          console.log(`[Recharge UAT] Expected: ₹${expectedMRP}, Offer MRP: ₹${actualMRP}, Balance: ₹${currentBalance}, Match: ${mrpMatches}`);
-          reportColStatus(rowIndex, row.msisdn, 'swift', swiftStatus, swiftResults.success ? 'SWIFT test passed' : 'SWIFT test failed');
-          
-          const screenshots = rechargePage.getScreenshotsForMSISDN(row.msisdn);
-          
-          // Get ALL offer history data from swiftResults
-          // const offerHistoryItems = swiftResults.offerHistory || [];
-          // const offerHistoryData = offerHistoryItems.length > 0 ? offerHistoryItems[0] : null;
-          
-          console.log('swiftResults:', swiftResults);
-          console.log(`Found ${offerHistoryItems.length} offer history items`);
-          console.log('offerHistoryData (first):', offerHistoryData);
-          console.log('subscriberInfo:', subscriberInfo);
-          
-          // Store ALL offer history items for reference
-          const allOfferHistory = offerHistoryItems.map((item: any, index: number) => ({
-            index: index,
-            transactionId: item.transactionId,
-            activationDateTime: item.activationDateTime,
-            validity: item.validity,
-            mrp: item.mrp,
-            activationMode: item.activationMode,
-            currentCoreBalance: item.currentCoreBalance,
-            etopupTransactionId: item.etopupTransactionId,
-            retailerMsisdn: item.retailerMsisdn,
-            name: item.name,
-            category: item.category,
-            benefits: item.benefits,
-            detailValidity: item.detailValidity
-          }));
-          
-          console.log('[Recharge UAT] All offer history:', JSON.stringify(allOfferHistory, null, 2));
-          
-          const existingResult = (excelReportService as any)['uatResults']?.find((r: any) => r.msisdn === row.msisdn);
-          
-          // ============================================================
-          // COMBINE DATA FROM BOTH SOURCES
-          // ============================================================
-          // Priority: OfferHistoryItem data FIRST, then subscriberInfo as fallback
-          const transactionId = offerHistoryData?.transactionId || `SWIFT-${row.msisdn}-${Date.now()}`;
-          const activationDateTime = offerHistoryData?.activationDateTime || new Date().toLocaleString();
-          const activationMode = offerHistoryData?.activationMode || 'SWIFT Portal';
-          const etopupTransactionId = offerHistoryData?.etopupTransactionId || `ET-${Date.now()}`;
-          const retailerMsisdn = offerHistoryData?.retailerMsisdn || row.msisdn;
-          
-          // Use subscriberInfo for user-related data
-          const name = subscriberInfo.customerName || offerHistoryData?.name || 'N/A';
-          const circle = subscriberInfo.circle || row.circle || 'N/A';
-          
-          // Use offer history for plan/offer related data
-          const mrp = offerHistoryData?.mrp || 'N/A';
-          const validity = offerHistoryData?.validity || subscriberInfo.serviceValidity || '30 days';
-          const detailValidity = offerHistoryData?.detailValidity || subscriberInfo.serviceValidity || '30 days';
-          const currentCoreBalance = subscriberInfo.coreBalance || '0.00';
-          const category = offerHistoryData?.category || 'SWIFT Recharge';
-          const benefits = offerHistoryData?.benefits || row.planBenefit || 'N/A';
-          
-          // Account status from subscriberInfo
-          const accountStatus = subscriberInfo.accountStatus || 'N/A';
-          const userType = subscriberInfo.userType || 'N/A';
-          
-         // Log combined data with better formatting
-         // In swift_recharge_spec.ts, add this debug log before calling runSwiftTest:
-console.log(`[Recharge UAT] 📊 Row ${srNo} - rechargeMRP from data: "${row.rechargeMRP}" (type: ${typeof row.rechargeMRP})`);
-            console.log('[Recharge UAT] 📊 Combined Data:');
-            console.log(`  ✅ Core Balance: ${currentCoreBalance} (from subscriberInfo)`); 
-            console.log(`  Transaction ID: ${transactionId}`);
-            console.log(`  Activation DateTime: ${activationDateTime}`);
-            console.log(`  Activation Mode: ${activationMode}`);
-            console.log(`  eTOPUP Transaction ID: ${etopupTransactionId}`);
-            console.log(`  Retailer MSISDN: ${retailerMsisdn}`);
-            console.log(`  Customer Name: ${name}`);
-            console.log(`  Circle: ${circle}`);
-            console.log(`  MRP: ${mrp}`);
-            console.log(`  Validity: ${validity}`);
-            console.log(`  Detail Validity: ${detailValidity}`);
-            console.log(`  Category: ${category}`);
-            console.log(`  Benefits: ${benefits}`);
-            console.log(`  Account Status: ${accountStatus}`);
-            console.log(`  User Type: ${userType}`);
-            console.log(`  Total Offer History Items: ${offerHistoryItems.length}`);
+          const offerHistoryItems = swiftResults.offerHistory || [];
 
-            // Also log the raw data for debugging
-            console.log('[Recharge UAT] Raw offer history data:', JSON.stringify(offerHistoryData, null, 2));
-          
-          if (existingResult) {
-            existingResult.swiftStatus = swiftStatus;
-            existingResult.screenshots = [...(existingResult.screenshots || []), ...screenshots];
-            existingResult.transactionId = transactionId;
-            existingResult.activationDateTime = activationDateTime;
-            existingResult.validity = validity;
-            existingResult.activationMode = activationMode;
-            existingResult.currentCoreBalance = currentCoreBalance;
-            existingResult.etopupTransactionId = etopupTransactionId;
-            existingResult.retailerMsisdn = retailerMsisdn;
-            existingResult.name = name;
-            existingResult.category = category;
-            existingResult.benefits = benefits;
-            existingResult.detailValidity = detailValidity;
-            existingResult.circle = circle;
-            existingResult.accountStatus = accountStatus;
-            existingResult.userType = userType;
-            existingResult.allOfferHistory = allOfferHistory; // Store all offer history items
-          } else {
+          console.log(`[Recharge UAT] Found ${offerHistoryItems.length} offer history item(s) for ${row.msisdn}`);
+          console.log('[Recharge UAT] All offer history:', JSON.stringify(offerHistoryItems, null, 2));
+
+          const screenshots = rechargePage.getScreenshotsForMSISDN(row.msisdn);
+          const screenshotEntries = rechargePage.getScreenshots().filter(s => s.msisdn === row.msisdn);
+
+          // ── Determine an overall row-level status for orchestrator reporting ──
+          const hasPass = offerHistoryItems.some((item: any) => item.matchStatus === 'Pass');
+          const hasMatchedButFailed = offerHistoryItems.some((item: any) => item.isMatched && item.matchStatus !== 'Pass');
+
+          let overallSwiftStatus = 'Fail';
+          if (hasPass && swiftResults.success) {
+            overallSwiftStatus = 'Pass';
+          } else if (hasMatchedButFailed && swiftResults.success) {
+            overallSwiftStatus = 'Fail'; // matched MRP/balance somewhere but date mismatch or unparsable date
+          } else if (offerHistoryItems.length > 0 && swiftResults.success) {
+            overallSwiftStatus = 'Mismatch'; // nothing matched at all
+          }
+
+          reportColStatus(rowIndex, row.msisdn, 'swift', overallSwiftStatus, swiftResults.success ? 'SWIFT test passed' : 'SWIFT test failed');
+
+          if (offerHistoryItems.length === 0) {
+            // ── No offer history rows found at all — add a single explanatory row ──
             excelReportService.addUATResult({
               msisdn: row.msisdn,
-              circle: circle,
-              mrp: mrp,
+              circle: subscriberInfo.circle || row.circle || 'N/A',
+              mrp: row.rechargeMRP,
               planName: row.planBenefit || 'N/A',
               rechargeNotification: row.rechargeNotification || 'N/A',
               inStatus: 'Skip',
-              swiftStatus: swiftStatus,
+              swiftStatus: 'Fail',
               viAppStatus: viAppFlag === 'yes' ? 'Pending' : 'Skip',
-              transactionId: transactionId,
-              activationDateTime: activationDateTime,
-              validity: validity,
-              activationMode: activationMode,
-              currentCoreBalance: currentCoreBalance,
-              etopupTransactionId: etopupTransactionId,
-              retailerMsisdn: retailerMsisdn,
-              name: name,
-              category: category,
-              benefits: benefits,
-              detailValidity: detailValidity,
-              accountStatus: accountStatus,
-              userType: userType,
-              allOfferHistory: allOfferHistory, // Store all offer history items
+              transactionId: `SWIFT-${row.msisdn}-${Date.now()}`,
+              activationDateTime: new Date().toLocaleString(),
+              validity: subscriberInfo.serviceValidity || 'N/A',
+              activationMode: 'SWIFT Portal',
+              currentCoreBalance: subscriberInfo.coreBalance || '0.00',
+              etopupTransactionId: 'N/A',
+              retailerMsisdn: row.msisdn,
+              name: subscriberInfo.customerName || 'N/A',
+              category: 'SWIFT Recharge',
+              benefits: row.planBenefit || 'N/A',
+              detailValidity: subscriberInfo.serviceValidity || 'N/A',
+              accountStatus: subscriberInfo.accountStatus || 'N/A',
+              userType: subscriberInfo.userType || 'N/A',
+              reason: 'No offer history rows found in SWIFT offer history tab',
+              
+              allOfferHistory: [],
               screenshots: screenshots
             });
+          } else {
+            // ── Add ONE UAT result row PER offer history item — matched AND unmatched, all shown ──
+            offerHistoryItems.forEach((item: any, idx: number) => {
+              const itemSwiftStatus = mapMatchStatusToSwiftStatus(item.matchStatus);
+
+              excelReportService.addUATResult({
+                msisdn: row.msisdn,
+                circle: subscriberInfo.circle || row.circle || 'N/A',
+                mrp: item.mrp || row.rechargeMRP,
+                planName: row.planBenefit || 'N/A',
+                rechargeNotification: row.rechargeNotification || 'N/A',
+                inStatus: 'Skip',
+                swiftStatus: itemSwiftStatus,
+                viAppStatus: viAppFlag === 'yes' ? 'Pending' : 'Skip',
+                transactionId: item.transactionId || `SWIFT-${row.msisdn}-${idx}-${Date.now()}`,
+                activationDateTime: item.activationDateTime || 'N/A',
+                validity: item.validity || 'N/A',
+                activationMode: item.activationMode || 'N/A',
+                currentCoreBalance: item.currentCoreBalance || subscriberInfo.coreBalance || '0.00',
+                etopupTransactionId: item.etopupTransactionId || 'N/A',
+                retailerMsisdn: item.retailerMsisdn || row.msisdn,
+                name: item.name || subscriberInfo.customerName || 'N/A',
+                category: item.category || 'SWIFT Recharge',
+                benefits: item.benefits || row.planBenefit || 'N/A',
+                detailValidity: item.detailValidity || 'N/A',
+                accountStatus: subscriberInfo.accountStatus || 'N/A',
+                userType: subscriberInfo.userType || 'N/A',
+                reason: item.matchReason || 'N/A',
+                allOfferHistory: offerHistoryItems,
+                screenshots: screenshots
+              });
+
+              console.log(
+                `[Recharge UAT]   Row ${idx + 1}/${offerHistoryItems.length} — TXN: ${item.transactionId}, ` +
+                `Status: ${itemSwiftStatus}, Reason: ${item.matchReason}`
+              );
+            });
           }
-          
-          const screenshotEntries = rechargePage.getScreenshots().filter(s => s.msisdn === row.msisdn);
+
           excelReportService.addScreenshots(screenshotEntries);
-          
-          
+
           console.log(`[Recharge UAT] ✅ SWIFT test completed: ${swiftResults.success ? 'PASS' : 'FAIL'}`);
         } else {
           reportColStatus(rowIndex, row.msisdn, 'swift', 'skipped', 'SWIFT not required');
         }
-
+        
+        function mapMatchStatusToSwiftStatus(matchStatus: string): string {
+          switch (matchStatus) {
+            case 'Pass':
+              return 'Pass';
+            case 'Fail-DateMismatch':
+            case 'Fail-UnparsableDate':
+              return 'Fail';
+            case 'Unmatched':
+              return 'Mismatch';
+            default:
+              return 'Fail';
+          }
+        }
         // --- Vi App Test ---
         if (viAppFlag === 'yes') {
           console.log(`[Vi App] ✅ Running Vi App flow for ${row.msisdn}`);
@@ -1036,6 +1227,7 @@ console.log(`[Recharge UAT] 📊 Row ${srNo} - rechargeMRP from data: "${row.rec
             benefits: row.planBenefit || 'N/A',
             detailValidity: subscriberInfo.serviceValidity || '30 days',
             screenshots: screenshots
+            
           });
           
           const screenshotEntries = rechargePage.getScreenshots().filter(s => s.msisdn === row.msisdn);
@@ -1046,6 +1238,12 @@ console.log(`[Recharge UAT] 📊 Row ${srNo} - rechargeMRP from data: "${row.rec
         reportRowEvent('row_completed', rowIndex, row.msisdn, {
           message: 'Row processed successfully'
         });
+
+        const rowReportInput = inputRowsForReport[index];
+        if (rowReportInput) {
+          const rowBundle = await excelReportService.writeIndividualReport(rowReportInput);
+          console.log(`[Recharge UAT] ✅ Row ${srNo} report bundle created: ${rowBundle.zipPath}`);
+        }
         
         console.log(`[Recharge UAT] ✅ Row ${srNo} completed successfully\n`);
         
@@ -1078,6 +1276,12 @@ console.log(`[Recharge UAT] 📊 Row ${srNo} - rechargeMRP from data: "${row.rec
           detailValidity: 'N/A',
           screenshots: screenshots
         });
+
+        const rowReportInput = inputRowsForReport[index];
+        if (rowReportInput) {
+          const rowBundle = await excelReportService.writeIndividualReport(rowReportInput);
+          console.log(`[Recharge UAT] ⚠️ Row ${srNo} error report bundle created: ${rowBundle.zipPath}`);
+        }
       }
     }
 

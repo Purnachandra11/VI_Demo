@@ -41,59 +41,110 @@ export class SiebelBillingPage {
         }
     }
 
+    // async getLatestInvoiceRow(): Promise<{ invoiceId: string; date: string } | null> {
+    //     console.log('🔍 Getting latest invoice...');
+    //     try {
+    //         // Look for invoice rows
+    //         const invoiceRows = await $$('//*[@id="s_5_l"]/tbody/tr');
+            
+    //         for (const row of invoiceRows) {
+    //             const rowClass = await row.getAttribute('class');
+    //             if (rowClass?.includes('jqgfirstrow')) continue;
+                
+    //             const dateCell = await row.$('td[@aria-describedby="s_5_l_Statement_Date"]');
+    //             const date = await dateCell.getText();
+                
+    //             const invoiceCell = await row.$('td[@aria-describedby="s_5_l_Invoice_Number"]');
+    //             const invoiceId = await invoiceCell.getText();
+                
+    //             if (invoiceId && invoiceId.trim()) {
+    //                 console.log(`   ✅ Found invoice: ${invoiceId} | Date: ${date}`);
+    //                 return { invoiceId: invoiceId.trim(), date: date.trim() };
+    //             }
+    //         }
+            
+    //         console.log('   ⚠️ No invoices found');
+    //         return null;
+    //     } catch (error) {
+    //         console.log('   ⚠️ Could not fetch invoices:', error);
+    //         return null;
+    //     }
+    // }
     async getLatestInvoiceRow(): Promise<{ invoiceId: string; date: string } | null> {
-        console.log('🔍 Getting latest invoice...');
-        try {
-            // Look for invoice rows
-            const invoiceRows = await $$('//*[@id="s_5_l"]/tbody/tr');
-            
-            for (const row of invoiceRows) {
-                const rowClass = await row.getAttribute('class');
-                if (rowClass?.includes('jqgfirstrow')) continue;
-                
-                const dateCell = await row.$('td[@aria-describedby="s_5_l_Statement_Date"]');
-                const date = await dateCell.getText();
-                
-                const invoiceCell = await row.$('td[@aria-describedby="s_5_l_Invoice_Number"]');
-                const invoiceId = await invoiceCell.getText();
-                
-                if (invoiceId && invoiceId.trim()) {
-                    console.log(`   ✅ Found invoice: ${invoiceId} | Date: ${date}`);
-                    return { invoiceId: invoiceId.trim(), date: date.trim() };
-                }
-            }
-            
-            console.log('   ⚠️ No invoices found');
-            return null;
-        } catch (error) {
-            console.log('   ⚠️ Could not fetch invoices:', error);
-            return null;
-        }
-    }
+    console.log('🔍 Getting latest invoice...');
+    try {
+        const invoiceRows = await $$('//*[@id="s_5_l"]/tbody/tr');
 
-    async selectLatestInvoice(): Promise<void> {
-        console.log('📄 Selecting latest invoice...');
-        try {
-            const invoiceRows = await $$('//*[@id="s_5_l"]/tbody/tr');
-            
-            for (const row of invoiceRows) {
-                const rowClass = await row.getAttribute('class');
-                if (rowClass?.includes('jqgfirstrow')) continue;
-                
-                const checkbox = await row.$('input[type="checkbox"]');
-                if (await checkbox.isExisting()) {
-                    await checkbox.click();
-                    console.log('   ✅ Invoice selected');
-                    await browser.pause(1000);
-                    return;
-                }
+        for (const row of invoiceRows) {
+            const rowClass = await row.getAttribute('class');
+            if (rowClass?.includes('jqgfirstrow')) continue;
+
+            const dateCell = await row.$('td[id$="_s_5_l_Invoice_Date"]');
+            const date = await dateCell.getText();
+
+            const idCell = await row.$('td[id$="_s_5_l_Invoice_Id"]');
+            const invoiceId = await idCell.getText();
+
+            if (invoiceId && invoiceId.trim()) {
+                console.log(`   ✅ Found invoice: ${invoiceId} | Date: ${date}`);
+                return { invoiceId: invoiceId.trim(), date: date.trim() };
             }
-            
-            console.log('   ⚠️ Could not select invoice (no checkbox found)');
-        } catch (error) {
-            console.log('   ⚠️ Could not select invoice:', error);
         }
+
+        console.log('   ⚠️ No invoices found');
+        return null;
+    } catch (error) {
+        console.log('   ⚠️ Could not fetch invoices:', error);
+        return null;
     }
+}
+
+    // async selectLatestInvoice(): Promise<void> {
+    //     console.log('📄 Selecting latest invoice...');
+    //     try {
+    //         const invoiceRows = await $$('//*[@id="s_5_l"]/tbody/tr');
+            
+    //         for (const row of invoiceRows) {
+    //             const rowClass = await row.getAttribute('class');
+    //             if (rowClass?.includes('jqgfirstrow')) continue;
+                
+    //             const checkbox = await row.$('input[type="checkbox"]');
+    //             if (await checkbox.isExisting()) {
+    //                 await checkbox.click();
+    //                 console.log('   ✅ Invoice selected');
+    //                 await browser.pause(1000);
+    //                 return;
+    //             }
+    //         }
+            
+    //         console.log('   ⚠️ Could not select invoice (no checkbox found)');
+    //     } catch (error) {
+    //         console.log('   ⚠️ Could not select invoice:', error);
+    //     }
+    // }
+    async selectLatestInvoice(): Promise<void> {
+    console.log('📄 Selecting latest invoice...');
+    try {
+        const invoiceRows = await $$('//*[@id="s_5_l"]/tbody/tr');
+
+        for (const row of invoiceRows) {
+            const rowClass = await row.getAttribute('class');
+            if (rowClass?.includes('jqgfirstrow')) continue;
+
+            const idCell = await row.$('td[id$="_s_5_l_Invoice_Id"]');
+            if (await idCell.isExisting()) {
+                await idCell.click(); // selects the jqGrid row via cell click
+                console.log('   ✅ Invoice selected');
+                await browser.pause(1000);
+                return;
+            }
+        }
+
+        console.log('   ⚠️ Could not select invoice (no row found)');
+    } catch (error) {
+        console.log('   ⚠️ Could not select invoice:', error);
+    }
+}
 
     async clickDetailedButton(): Promise<void> {
         console.log('🔍 Clicking Detailed button...');
