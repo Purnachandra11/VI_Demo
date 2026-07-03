@@ -1136,7 +1136,7 @@
       .captcha-image-wrap {
         background: var(--cream-dk);
         border-radius: var(--radius-sm);
-        padding: 07px;
+        padding: 05px;
         margin-bottom: 18px;
         border: 1px solid var(--border);
         height: 70px;
@@ -1146,13 +1146,14 @@
         border-radius: 4px;
         display: block;
         margin: 0 auto;
+        width: 180px;
       }
       .form-control {
         width: 100%;
         padding: 11px 14px;
         border: 1.5px solid var(--border);
         border-radius: var(--radius-sm);
-        font-size: 13px;
+        font-size: 15px;
         font-family: "Poppins", sans-serif;
         color: var(--text);
         background: var(--bg);
@@ -1160,7 +1161,8 @@
         transition: border 0.2s;
         margin-bottom: 20px;
         text-align: center;
-        letter-spacing: 2px;
+        letter-spacing: 7px;
+       
       }
       .form-control:focus {
         border-color: var(--orange);
@@ -1345,7 +1347,7 @@
       .test-card-body {
         padding: 16px 20px 16px 24px;
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns:  1fr 1fr 2.5fr;
         gap: 12px;
       }
       .test-info-item {
@@ -1779,7 +1781,7 @@
         <div class="log-panel" id="logPanel">
           <div class="log-line log-info">
             <span class="log-timestamp">[--:--:--]</span>
-            System ready. Upload test file to begin UAT.
+            System ready. Upload test file to begin UAT SIM Recharge process.
           </div>
         </div>
 
@@ -1883,9 +1885,9 @@
         />
 
         <div class="action-buttons" style="justify-content: center">
-          <button class="btn btn-primary" onclick="submitCaptcha()">
+          <!-- <button class="btn btn-primary" onclick="submitCaptcha()">
             <i class="bi bi-box-arrow-in-right"></i> Login
-          </button>
+          </button> -->
           <button class="btn btn-muted" onclick="closeCaptcha()">Cancel</button>
         </div>
       </div>
@@ -1929,13 +1931,16 @@
       </div>
     </footer>
 
+   
+
+
     <!-- SCRIPTS -->
     <script>
       /* ============================================================
          STATE
       ============================================================ */
       let selectedFile = null;
-      let selectedFileName = null; // FIXED: Added this variable
+      let selectedFileName = null;
       let ws = null;
       let isRunning = false;
       let sessionId = null;
@@ -1956,9 +1961,7 @@
       const progressAction = document.getElementById("progressAction");
       const progressStatus = document.getElementById("progressStatus");
       const logPanel = document.getElementById("logPanel");
-      const screenshotsContainer = document.getElementById(
-        "screenshotsContainer",
-      );
+      const screenshotsContainer = document.getElementById("screenshotsContainer");
       const downloadReportBtn = document.getElementById("downloadReportBtn");
       const reportDownloadContainer = document.getElementById("reportDownloadContainer");
       const captchaOverlay = document.getElementById("captchaOverlay");
@@ -1974,9 +1977,103 @@
       const testCardsContainer = document.getElementById("testCardsContainer");
 
       /* ============================================================
+         FIXED: FILE HANDLING
+      ============================================================ */
+      
+      // FIX 1: Properly attach the change event listener
+      fileInput.addEventListener('change', function(e) {
+        const f = e.target.files[0];
+        if (f) {
+          console.log(`[File] Selected: ${f.name}, size: ${f.size} bytes, type: ${f.type}`);
+          handleFile(f);
+        }
+        // Reset the input so the same file can be re-uploaded
+        fileInput.value = '';
+      });
+
+      // FIX 2: Better drop zone handling
+      const dropZone = document.getElementById("dropZone");
+      
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.style.borderColor = "var(--orange)";
+        dropZone.style.background = "#fff5ef";
+      });
+      
+      // dropZone.addEventListener('dragleave', (e) => {
+      //   e.preventDefault();
+      //   e.stopPropagation();
+      //   dropZone.style.borderColor = "";
+      //   dropZone.style.background = "";
+      // });
+      
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.style.borderColor = "";
+        dropZone.style.background = "";
+        
+        const file = e.dataTransfer.files[0];
+        if (file) {
+          const ext = file.name.split('.').pop().toLowerCase();
+          if (ext === 'xlsx' || ext === 'xls') {
+            console.log(`[File] Dropped: ${file.name}, size: ${file.size} bytes`);
+            handleFile(file);
+          } else {
+            addLog("Invalid file type. Please upload .xlsx or .xls.", "error");
+          }
+        }
+      });
+
+      // FIX 3: Click handler for the upload area
+      dropZone.addEventListener('click', function(e) {
+        // Don't trigger if the click was on the download button
+        if (e.target.closest('.btn-download-sample')) return;
+        // fileInput.click();
+      });
+
+      // FIX 4: Handle file selection via the drop zone's click
+      function handleFile(file) {
+        selectedFile = file;
+        selectedFileName = file.name;
+        
+        // Update the display
+        fileNameDisplay.innerHTML = `<span class="file-name">📄 ${file.name}</span>`;
+        addLog(`File selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`, "success");
+
+        // Reset stats
+        document.getElementById("statTotal").textContent = "—";
+        document.getElementById("statExecuted").textContent = "0";
+        document.getElementById("statPassed").textContent = "0";
+        document.getElementById("statFailed").textContent = "0";
+
+        // Hide preview sections
+        document.getElementById("previewSection").classList.remove("visible");
+        document.getElementById("validationLoader").style.display = "none";
+        document.getElementById("tablesContainer").style.display = "none";
+        document.getElementById("pvMatched").textContent = "—";
+        document.getElementById("pvUnmatched").textContent = "—";
+        rowStatusPanel.style.display = "none";
+        rowCardsList.innerHTML = "";
+        rowCardMap = {};
+        testCardsData = [];
+
+        // Parse the file
+        parseExcelPreview(file);
+      }
+
+      // FIX 5: Download sample button - prevent event bubbling
+      function downloadSample(e) {
+        if (e) e.stopPropagation();
+        window.location.href = "/api/swift/download-sample";
+      }
+
+      /* ============================================================
          LOGIN STATUS BADGE
       ============================================================ */
       function setLoginBadge(state, label) {
+        if (!loginBadge || !loginBadgeText) return;
         loginBadge.className = `login-badge ${state}`;
         loginBadgeText.textContent = label;
       }
@@ -2004,70 +2101,6 @@
       setInterval(() => {
         if (!isRunning) pollLoginStatus();
       }, 5000);
-
-      /* ============================================================
-         FILE HANDLING - FIXED
-      ============================================================ */
-      fileInput.onchange = (e) => {
-        const f = e.target.files[0];
-        if (f) {
-          console.log(
-            `[File] Selected: ${f.name}, size: ${f.size} bytes, type: ${f.type}`,
-          );
-          handleFile(f);
-        }
-        fileInput.value = "";
-      };
-
-      const dropZone = document.getElementById("dropZone");
-      dropZone.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        dropZone.style.borderColor = "var(--orange)";
-      });
-      dropZone.addEventListener("dragleave", () => {
-        dropZone.style.borderColor = "";
-      });
-      dropZone.addEventListener("drop", (e) => {
-        e.preventDefault();
-        dropZone.style.borderColor = "";
-        const file = e.dataTransfer.files[0];
-        if (
-          file &&
-          (file.name.endsWith(".xlsx") || file.name.endsWith(".xls"))
-        ) {
-          console.log(`[File] Dropped: ${file.name}, size: ${file.size} bytes`);
-          handleFile(file);
-        } else {
-          addLog("Invalid file type. Please upload .xlsx or .xls.", "error");
-        }
-      });
-
-      function handleFile(file) {
-        selectedFile = file;
-        selectedFileName = file.name;
-        fileNameDisplay.innerHTML = `<span class="file-name">📄 ${file.name}</span>`;
-        addLog(
-          `File selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`,
-          "success",
-        );
-
-        document.getElementById("statTotal").textContent = "—";
-        document.getElementById("statExecuted").textContent = "0";
-        document.getElementById("statPassed").textContent = "0";
-        document.getElementById("statFailed").textContent = "0";
-
-        document.getElementById("previewSection").classList.remove("visible");
-        document.getElementById("validationLoader").style.display = "none";
-        document.getElementById("tablesContainer").style.display = "none";
-        document.getElementById("pvMatched").textContent = "—";
-        document.getElementById("pvUnmatched").textContent = "—";
-        rowStatusPanel.style.display = "none";
-        rowCardsList.innerHTML = "";
-        rowCardMap = {};
-        testCardsData = [];
-
-        parseExcelPreview(file);
-      }
 
       /* ============================================================
          PARSE EXCEL + BULK API
@@ -2188,46 +2221,92 @@
               `${matched.length} record${matched.length !== 1 ? "s" : ""}`;
             document.getElementById("unmatchedCountBadge").textContent =
               `${unmatched.length} record${unmatched.length !== 1 ? "s" : ""}`;
+              testCardsData = matched.map((r, idx) => {
+                const inp = r.input;
+                const rechargeVal = String(inp["Recharge"] || "").trim().toLowerCase();
+                const swiftVal = String(inp["SWIFT"] || "").trim().toLowerCase();
+                const inVal = String(inp["IN"] || "").trim().toLowerCase();
+                const viAppVal = String(inp["Vi App"] || "").trim().toLowerCase();
 
+                // build actualCircle dynamically from THIS row's own api result
+                const apiRes = r.apiRes || {};
+                const circleText = apiRes.actualCircleText || "";
+                const circleCode = apiRes.actualCircleCode || "";
+                const actualCircle =
+                  circleText && circleCode
+                    ? `${circleText} - ${circleCode}`
+                    : circleText || circleCode || "—";
+
+                return {
+                  rowIndex: idx,
+                  msisdn: String(inp["MSISDN"] || "").trim(),
+                  rechargeMRP: inp["Recharge MRP"],
+                  circle: String(inp["CIRCLE"] || "").trim(),
+                  actualCircle,                 // ✅ now per-row, not results[0]
+                  benefit:
+                    (r.plan && (r.plan["Benefit (Open)"] ?? r.plan.benefit)) || "—",
+                  viStatus: apiRes.isValid
+                    ? (apiRes.message || "Valid VI Number")
+                    : (apiRes.message || "Invalid VI Number"),   // bonus: this was hardcoded too
+                  recharge: rechargeVal,
+                  swift: swiftVal,
+                  in: inVal,
+                  viApp: viAppVal,
+                  colStatus: {
+                    recharge: rechargeVal === "yes" ? "pending" : "skipped",
+                    swift: "pending",
+                    in: inVal === "yes" ? "pending" : "skipped",
+                    viApp: viAppVal === "yes" ? "pending" : "skipped",
+                  },
+                  overallStatus: "pending",
+                  startedAt: null,
+                  completedAt: null,
+                };
+              });
+              
             // Build test-card data from matched rows
-            testCardsData = matched.map((r, idx) => {
-              const inp = r.input;
-              const rechargeVal = String(inp["Recharge"] || "")
-                .trim()
-                .toLowerCase();
-              const swiftVal = String(inp["SWIFT"] || "")
-                .trim()
-                .toLowerCase();
-              const inVal = String(inp["IN"] || "")
-                .trim()
-                .toLowerCase();
-              const viAppVal = String(inp["Vi App"] || "")
-                .trim()
-                .toLowerCase();
-              return {
-                rowIndex: idx,
-                msisdn: String(inp["MSISDN"] || "").trim(),
-                rechargeMRP: inp["Recharge MRP"],
-                circle: String(inp["CIRCLE"] || "").trim(),
-                benefit:
-                  (r.plan && (r.plan["Benefit (Open)"] ?? r.plan.benefit)) ||
-                  "—",
-                viStatus: "Valid VI Number",
-                recharge: rechargeVal,
-                swift: swiftVal,
-                in: inVal,
-                viApp: viAppVal,
-                colStatus: {
-                  recharge: rechargeVal === "yes" ? "pending" : "skipped",
-                  swift: "pending",
-                  in: inVal === "yes" ? "pending" : "skipped",
-                  viApp: viAppVal === "yes" ? "pending" : "skipped",
-                },
-                overallStatus: "pending",
-                startedAt: null,
-                completedAt: null,
-              };
-            });
+            // testCardsData = matched.map((r, idx) => {
+            //   const inp = r.input;
+            //   const rechargeVal = String(inp["Recharge"] || "")
+            //     .trim()
+            //     .toLowerCase();
+            //   const swiftVal = String(inp["SWIFT"] || "")
+            //     .trim()
+            //     .toLowerCase();
+            //   const inVal = String(inp["IN"] || "")
+            //     .trim()
+            //     .toLowerCase();
+            //   const viAppVal = String(inp["Vi App"] || "")
+            //     .trim()
+            //     .toLowerCase();
+
+                
+            //   return {
+            //     rowIndex: idx,
+            //     msisdn: String(inp["MSISDN"] || "").trim(),
+            //     rechargeMRP: inp["Recharge MRP"],
+            //     circle: String(inp["CIRCLE"] || "").trim(),
+            //     // actualCircle : bulkResult?.results[0]?.actualCircleText  + " - " +  bulkResult?.results[0]?.actualCircleCode,
+            //     benefit:
+            //       (r.plan && (r.plan["Benefit (Open)"] ?? r.plan.benefit)) ||
+            //       "—",
+            //     viStatus: "Valid VI Number",
+            //     recharge: rechargeVal,
+            //     swift: swiftVal,
+            //     in: inVal,
+            //     viApp: viAppVal,
+            //     colStatus: {
+            //       recharge: rechargeVal === "yes" ? "pending" : "skipped",
+            //       swift: "pending",
+            //       in: inVal === "yes" ? "pending" : "skipped",
+            //       viApp: viAppVal === "yes" ? "pending" : "skipped",
+            //     },
+            //     overallStatus: "pending",
+            //     startedAt: null,
+            //     completedAt: null,
+            //   };
+            // });
+           
             renderTestCards();
             renderUnmatchedTable(unmatched);
 
@@ -2253,6 +2332,7 @@
                   benefit: vm.benefit || "N/A",
                   circle: vm.circle || "N/A",
                   planName: vm.planName || "",
+                  actualCircle : r?.actualCircleText  + " - " +  r?.actualCircleCode,
                 };
               });
               if (
@@ -2271,63 +2351,42 @@
       }
 
       async function callBulkValidationAPI(inputRows) {
-        const numbers = inputRows
+  const numbers = inputRows
           .map((row) => String(row["MSISDN"] || "").trim())
           .filter((n) => n);
-        if (!numbers.length) {
-          addLog("No MSISDN values found.", "warning");
-          return null;
-        }
-        addLog(
-          `Sending ${numbers.length} number${numbers.length !== 1 ? "s" : ""} for bulk validation…`,
-          "info",
-        );
-        try {
-          const response = await fetch(
-            "http://localhost:5174/api/validate/bulk",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
+  if (!numbers.length) {
+    addLog("No MSISDN values found.", "warning");
+    return null;
+  }
+  addLog(
+    `Sending ${numbers.length} number${numbers.length !== 1 ? "s" : ""} for bulk validation…`,
+    "info",
+  );
+  try {
+    const response = await fetch(
+      "http://localhost:5174/api/validate/bulk",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ numbers }),
-            },
-          );
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          const result = await response.json();
-          addLog(
-            `Validation complete — ✅ ${result.processed_valid ?? 0} valid, ❌ ${result.processed_invalid ?? 0} invalid.`,
-            "success",
-          );
-          return result;
-        } catch (err) {
-          addLog(`Validation API Error: ${err.message}`, "error");
-          return null;
-        }
-      }
+      },
+    );
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const result = await response.json();
+    addLog(
+      `Validation complete — ✅ ${result.processed_valid ?? 0} valid, ❌ ${result.processed_invalid ?? 0} invalid.`,
+      "success",
+    );
+    return result;
+  } catch (err) {
+    addLog(`Validation API Error: ${err.message}`, "error");
+    return null;
+  }
+}
 
-      //   if (!selectedFile || isRunning) return;
-
-      //   if (!testCardsData || testCardsData.length === 0) {
-      //     addLog(
-      //       "⚠️ No matched rows to run. Re-check your Excel — nothing passed Vi validation / plan matching.",
-      //       "warning",
-      //     );
-      //     return;
-      //   }
-
-      //   isRunning = true;
-      //   startBtn.disabled = true;
-      //   stopBtn.disabled = false;
-      //   setStatus("UAT in progress…", "info");
-      //   progressSection.classList.add("active");
-      //   progressBar.style.width = "0%";
-      //   progressPercent.textContent = "0%";
-      //   progressAction.textContent = "Uploading file…";
-      //   progressStatus.textContent = "";
-
-      //   addLog(
-      //     `🚀 Starting UAT with ${testCardsData.length} matched row(s)`,
-      //     "info",
-      //   );
+      /* ============================================================
+         START UAT
+      ============================================================ */
       async function startUAT() {
         if (!selectedFile || isRunning) return;
 
@@ -2479,7 +2538,7 @@
       }
 
       /* ============================================================
-         RESET UI - FIXED
+         RESET UI
       ============================================================ */
       function resetUI() {
         isRunning = false;
@@ -2517,9 +2576,7 @@
       }
 
       function buildTestCardHTML(t, serialNo) {
-        console.log(t.colStatus.swift,"t.colStatus.swift")
         const colHtml = (label, key, status) => {
-          console.log(status,"hhhhhhhhhhhhhh")
           const cfg = colStatusConfig(status);
           return `<div class="status-col ${cfg.cssClass}">
             <div class="status-col-label">${label}</div>
@@ -2535,7 +2592,21 @@
           <span class="test-card-vi-status"><i class="bi bi-check-circle-fill"></i> ${t.viStatus || "Valid Vi"}</span>
         </div>
         <div class="test-card-body">
-          <div class="test-info-item"><span class="test-info-label">Circle</span><span class="test-info-value">${t.circle || "—"}</span></div>
+   <div style="display:flex;">
+  <div class="test-info-item">
+    <span class="test-info-label">Circle</span>
+    <span class="test-info-value">${t.circle || "—"}</span>
+  </div>
+
+  <div style="margin-left:10px; border-left:2px solid #dc3545; height:50px;"></div>
+
+  <div class="test-info-item" style="margin-left:10px; background:#f8d7da; padding:2px 6px; border-radius:4px; height:50px;">
+    <span class="test-info-label" style="color:#b71c1c;">
+      Actual Circle
+    </span>
+    <span class="test-info-value mrp" style="color:#b71c1c;">${t.actualCircle || "—"}</span>
+  </div>
+</div>
           <div class="test-info-item"><span class="test-info-label">Recharge MRP</span><span class="test-info-value mrp">₹${t.rechargeMRP || "—"}</span></div>
           <div class="test-info-item"><span class="test-info-label">Benefit</span><span class="test-info-value benefit">${t.benefit || "—"}</span></div>
         </div>
@@ -2639,8 +2710,8 @@
       }
 
       /* ============================================================
-          STATS MANAGEMENT - UPDATED WITH REAL-TIME COUNTERS
-        ============================================================ */
+          STATS MANAGEMENT
+      ============================================================ */
 
       function resetStats() {
         document.getElementById("statTotal").textContent =
@@ -2672,7 +2743,7 @@
       }
 
       /* ============================================================
-         ROW STATUS CARDS - SINGLE INTEGRATED VERSION
+         ROW STATUS CARDS
       ============================================================ */
       function renderRowPlan(rows) {
         rowCardMap = {};
@@ -2711,14 +2782,18 @@
               <span class="rc-spinner"></span>
               <span class="rc-status-badge pending" id="rcbadge-${row.rowIndex}">Pending</span>
             </div>
-            <div class="rc-meta">
-              <span>Recharge MRP ₹${row.rechargeMRP || row["Recharge MRP"] || "—"}</span>
-              <span>Circle ${row.circle || row.CIRCLE || "—"}</span>
-              ${isRechargeYes ? `<span class="rc-recharge-yes">🔁 Recharge: Yes</span>` : `<span>🔁 Recharge: No</span>`}
-              <span style="font-size:10px; color:#999;">
-                SWIFT: ${colStatuses.swift || "pending"} · IN: ${colStatuses.in || "pending"} · Vi App: ${colStatuses.viApp || "pending"}
-              </span>
-            </div>
+           <div class="rc-meta">
+            <span>Recharge MRP ₹${row.rechargeMRP || row["Recharge MRP"] || "—"}</span>
+            <span>Circle ${row.circle || row.CIRCLE || "—"}</span>
+
+            ${isRechargeYes
+              ? `<span class="rc-recharge-yes">🔁 Recharge: Yes</span>`
+              : `<span>🔁 Recharge: No</span>`}
+
+            <span class="rc-recharge-yes">⚡ SWIFT: ${colStatuses.swift || "Pending"}</span>
+            <span class="rc-recharge-yes">⚡ IN: ${colStatuses.in || "Pending"}</span>
+            <span class="rc-recharge-yes">📱 Vi App: ${colStatuses.viApp || "Pending"}</span>
+          </div>
             <div class="rc-msg" id="rcmsg-${row.rowIndex}"></div>
           `;
           rowCardsList.appendChild(card);
@@ -2834,6 +2909,18 @@
                 currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1);
             }
             break;
+
+            case "login_retry":
+              addLog(` Attempt ${data.attempt}/${data.maxAttempts}: ${data.reason}`, "warning");
+              document.querySelector(".captcha-box p").textContent =
+                `Attempt ${data.attempt}/${data.maxAttempts} — ${data.reason}`;
+              break;
+
+            case "login_exhausted":
+              addLog(` Login failed after ${data.maxAttempts} attempts. Please verify your credentials and restart.`, "error");
+              closeCaptcha();
+              setStatus("Login failed — please check your credentials and try again", "error");
+              break;
 
           default:
             badge.classList.add("pending");
@@ -3195,6 +3282,7 @@
           document.getElementById("statFailed").textContent = data.failed;
       }
 
+
       /* ============================================================
          SCREENSHOTS
       ============================================================ */
@@ -3260,7 +3348,7 @@
           (r) => r.isValid === false,
         ).length;
         addLog(
-          ` Sending emails: ${validCount} valid (2 emails each), ${invalidCount} invalid (1 email each)…`,
+          ` Sending emails: ${validCount} valid, ${invalidCount} invalid …`,
           "info",
         );
         try {
@@ -3271,15 +3359,15 @@
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 validationResults,
-                recipients: ['kalidindi.chandra@qdegrees.org'],
-                // recipients: ['kalidindi.chandra@qdegrees.org', 'sunil.kumar1@qdegrees.com','amit.kumar1@qdegrees.org'],
+                // recipients: ['kalidindi.chandra@qdegrees.org'],
+                // recipients: ['kalidindi.chandra@qdegrees.org', 'sunil.kumar1@qdegrees.com'],
               }),
             },
           );
           const data = await response.json();
           if (data.success) {
             addLog(
-              `✅ Emails sent: ${data.summary.emailsSuccessful}/${data.summary.emailsSent} successful.`,
+              `Emails sent: ${data.summary.emailsSuccessful}/${data.summary.emailsSent} successful.`,
               "success",
             );
             if (data.summary.validCount)
@@ -3325,6 +3413,9 @@
 
       function addLoginButton() {
         const loginBtn = document.createElement("button");
+        // loginBtn.className = "btn btn-muted btn-sm";
+        // loginBtn.innerHTML = '<i class="bi bi-key"></i> Login';
+        loginBtn.onclick = triggerManualLogin;
 
         const navRight = document.querySelector(".nav-right");
         if (navRight) {
@@ -3340,9 +3431,11 @@
       /* ============================================================
          MISC
       ============================================================ */
-      function downloadSample() {
+      // Make downloadSample globally available
+      window.downloadSample = function(e) {
+        if (e) e.stopPropagation();
         window.location.href = "/api/swift/download-sample";
-      }
+      };
 
       async function fetchReportFiles() {
         try {
