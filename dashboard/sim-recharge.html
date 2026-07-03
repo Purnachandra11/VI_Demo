@@ -1347,7 +1347,7 @@
       .test-card-body {
         padding: 16px 20px 16px 24px;
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns:  1fr 1fr 2fr;
         gap: 12px;
       }
       .test-info-item {
@@ -2030,7 +2030,7 @@
       dropZone.addEventListener('click', function(e) {
         // Don't trigger if the click was on the download button
         if (e.target.closest('.btn-download-sample')) return;
-        fileInput.click();
+        // fileInput.click();
       });
 
       // FIX 4: Handle file selection via the drop zone's click
@@ -2221,46 +2221,91 @@
               `${matched.length} record${matched.length !== 1 ? "s" : ""}`;
             document.getElementById("unmatchedCountBadge").textContent =
               `${unmatched.length} record${unmatched.length !== 1 ? "s" : ""}`;
+              testCardsData = matched.map((r, idx) => {
+  const inp = r.input;
+  const rechargeVal = String(inp["Recharge"] || "").trim().toLowerCase();
+  const swiftVal = String(inp["SWIFT"] || "").trim().toLowerCase();
+  const inVal = String(inp["IN"] || "").trim().toLowerCase();
+  const viAppVal = String(inp["Vi App"] || "").trim().toLowerCase();
 
+  // build actualCircle dynamically from THIS row's own api result
+  const apiRes = r.apiRes || {};
+  const circleText = apiRes.actualCircleText || "";
+  const circleCode = apiRes.actualCircleCode || "";
+  const actualCircle =
+    circleText && circleCode
+      ? `${circleText} - ${circleCode}`
+      : circleText || circleCode || "—";
+
+  return {
+    rowIndex: idx,
+    msisdn: String(inp["MSISDN"] || "").trim(),
+    rechargeMRP: inp["Recharge MRP"],
+    circle: String(inp["CIRCLE"] || "").trim(),
+    actualCircle,                 // ✅ now per-row, not results[0]
+    benefit:
+      (r.plan && (r.plan["Benefit (Open)"] ?? r.plan.benefit)) || "—",
+    viStatus: apiRes.isValid
+      ? (apiRes.message || "Valid VI Number")
+      : (apiRes.message || "Invalid VI Number"),   // bonus: this was hardcoded too
+    recharge: rechargeVal,
+    swift: swiftVal,
+    in: inVal,
+    viApp: viAppVal,
+    colStatus: {
+      recharge: rechargeVal === "yes" ? "pending" : "skipped",
+      swift: "pending",
+      in: inVal === "yes" ? "pending" : "skipped",
+      viApp: viAppVal === "yes" ? "pending" : "skipped",
+    },
+    overallStatus: "pending",
+    startedAt: null,
+    completedAt: null,
+  };
+});
             // Build test-card data from matched rows
-            testCardsData = matched.map((r, idx) => {
-              const inp = r.input;
-              const rechargeVal = String(inp["Recharge"] || "")
-                .trim()
-                .toLowerCase();
-              const swiftVal = String(inp["SWIFT"] || "")
-                .trim()
-                .toLowerCase();
-              const inVal = String(inp["IN"] || "")
-                .trim()
-                .toLowerCase();
-              const viAppVal = String(inp["Vi App"] || "")
-                .trim()
-                .toLowerCase();
-              return {
-                rowIndex: idx,
-                msisdn: String(inp["MSISDN"] || "").trim(),
-                rechargeMRP: inp["Recharge MRP"],
-                circle: String(inp["CIRCLE"] || "").trim(),
-                benefit:
-                  (r.plan && (r.plan["Benefit (Open)"] ?? r.plan.benefit)) ||
-                  "—",
-                viStatus: "Valid VI Number",
-                recharge: rechargeVal,
-                swift: swiftVal,
-                in: inVal,
-                viApp: viAppVal,
-                colStatus: {
-                  recharge: rechargeVal === "yes" ? "pending" : "skipped",
-                  swift: "pending",
-                  in: inVal === "yes" ? "pending" : "skipped",
-                  viApp: viAppVal === "yes" ? "pending" : "skipped",
-                },
-                overallStatus: "pending",
-                startedAt: null,
-                completedAt: null,
-              };
-            });
+            // testCardsData = matched.map((r, idx) => {
+            //   const inp = r.input;
+            //   const rechargeVal = String(inp["Recharge"] || "")
+            //     .trim()
+            //     .toLowerCase();
+            //   const swiftVal = String(inp["SWIFT"] || "")
+            //     .trim()
+            //     .toLowerCase();
+            //   const inVal = String(inp["IN"] || "")
+            //     .trim()
+            //     .toLowerCase();
+            //   const viAppVal = String(inp["Vi App"] || "")
+            //     .trim()
+            //     .toLowerCase();
+
+                
+            //   return {
+            //     rowIndex: idx,
+            //     msisdn: String(inp["MSISDN"] || "").trim(),
+            //     rechargeMRP: inp["Recharge MRP"],
+            //     circle: String(inp["CIRCLE"] || "").trim(),
+            //     // actualCircle : bulkResult?.results[0]?.actualCircleText  + " - " +  bulkResult?.results[0]?.actualCircleCode,
+            //     benefit:
+            //       (r.plan && (r.plan["Benefit (Open)"] ?? r.plan.benefit)) ||
+            //       "—",
+            //     viStatus: "Valid VI Number",
+            //     recharge: rechargeVal,
+            //     swift: swiftVal,
+            //     in: inVal,
+            //     viApp: viAppVal,
+            //     colStatus: {
+            //       recharge: rechargeVal === "yes" ? "pending" : "skipped",
+            //       swift: "pending",
+            //       in: inVal === "yes" ? "pending" : "skipped",
+            //       viApp: viAppVal === "yes" ? "pending" : "skipped",
+            //     },
+            //     overallStatus: "pending",
+            //     startedAt: null,
+            //     completedAt: null,
+            //   };
+            // });
+            
             renderTestCards();
             renderUnmatchedTable(unmatched);
 
@@ -2286,6 +2331,7 @@
                   benefit: vm.benefit || "N/A",
                   circle: vm.circle || "N/A",
                   planName: vm.planName || "",
+                  actualCircle : r?.actualCircleText  + " - " +  r?.actualCircleCode,
                 };
               });
               if (
@@ -2545,7 +2591,21 @@
           <span class="test-card-vi-status"><i class="bi bi-check-circle-fill"></i> ${t.viStatus || "Valid Vi"}</span>
         </div>
         <div class="test-card-body">
-          <div class="test-info-item"><span class="test-info-label">Circle</span><span class="test-info-value">${t.circle || "—"}</span></div>
+   <div style="display:flex;">
+  <div class="test-info-item">
+    <span class="test-info-label">Circle</span>
+    <span class="test-info-value">${t.circle || "—"}</span>
+  </div>
+
+  <div style="margin-left:10px; border-left:2px solid #dc3545; height:50px;"></div>
+
+  <div class="test-info-item" style="margin-left:10px; background:#f8d7da; padding:2px 6px; border-radius:4px; height:50px;">
+    <span class="test-info-label" style="color:#b71c1c;">
+      Actual Circle
+    </span>
+    <span class="test-info-value mrp" style="color:#b71c1c;">${t.actualCircle || "—"}</span>
+  </div>
+</div>
           <div class="test-info-item"><span class="test-info-label">Recharge MRP</span><span class="test-info-value mrp">₹${t.rechargeMRP || "—"}</span></div>
           <div class="test-info-item"><span class="test-info-label">Benefit</span><span class="test-info-value benefit">${t.benefit || "—"}</span></div>
         </div>
@@ -3287,7 +3347,7 @@
           (r) => r.isValid === false,
         ).length;
         addLog(
-          ` Sending emails: ${validCount} valid (2 emails each), ${invalidCount} invalid (1 email each)…`,
+          ` Sending emails: ${validCount} valid, ${invalidCount} invalid …`,
           "info",
         );
         try {
