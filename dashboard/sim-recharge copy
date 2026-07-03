@@ -1114,7 +1114,8 @@
       }
       .captcha-box {
         background: var(--white);
-        padding: 32px 28px;
+        /* padding: 32px 28px; */
+        padding: 20px 20px;
         border-radius: var(--radius);
         width: 420px;
         max-width: 90%;
@@ -1384,7 +1385,7 @@
 
       .test-status-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(5, 1fr);
         gap: 10px;
         padding: 0 20px 16px 24px;
       }
@@ -1509,6 +1510,73 @@
       .test-timestamp {
         font-size: 11px;
         color: var(--muted);
+      }
+      .discrepancy-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+        font-size: 12.5px;
+      }
+      .discrepancy-row:last-child {
+        border-bottom: none;
+      }
+      .discrepancy-row.mismatch {
+        background: var(--danger-bg);
+      }
+      .discrepancy-row.match {
+        background: var(--success-bg);
+      }
+      .discrepancy-msisdn {
+        font-family: "Courier New", monospace;
+        font-weight: 700;
+        color: var(--text);
+        min-width: 100px;
+      }
+      .discrepancy-circles {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: 1;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+      }
+      .discrepancy-circles .arrow {
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .discrepancy-header,
+      .discrepancy-row {
+         text-align: center;
+          display: grid;
+          grid-template-columns: 0.5fr 1.6fr 1fr 1.6fr 1.4fr;
+          gap: 5px;
+          align-items: center;
+          padding: 10px 12px;
+      }
+
+      .discrepancy-header {
+        font-weight: 700;
+        background: #f5f5f5;
+        border-bottom: 2px solid #ccc;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        font-size: 13px;
+      }
+
+      .discrepancy-row {
+        border-bottom: 1px solid #e5e5e5;
+      }
+
+      .discrepancy-row.mismatch {
+        background: #fff5f5;
+      }
+
+      .discrepancy-row.match {
+        background: #f4fff4;
       }
     </style>
   </head>
@@ -1700,7 +1768,23 @@
             </div>
           </div>
 
-          <!-- STEP 3: Execution -->
+          <!-- Unmatched -->
+          <div class="card">
+            <div class="card-title">
+              Unmatched Test Cases
+              <span class="tag-badge tag-orange" id="unmatchedCountBadge"
+                >0 records</span
+              >
+            </div>
+            <div class="ptable-wrap" id="unmatchedTableWrap">
+              <div class="empty-preview">
+                <span class="ep-icon">📋</span>
+                <p>No unmatched records.</p>
+              </div>
+            </div>
+          </div>
+          
+            <!-- STEP 3: Execution -->
           <div class="card">
             <div class="card-title">
               <span class="step-pill">STEP 3</span>
@@ -1746,23 +1830,10 @@
             </div>
           </div>
 
-          <!-- Unmatched -->
-          <div class="card">
-            <div class="card-title">
-              Unmatched Test Cases
-              <span class="tag-badge tag-orange" id="unmatchedCountBadge"
-                >0 records</span
-              >
-            </div>
-            <div class="ptable-wrap" id="unmatchedTableWrap">
-              <div class="empty-preview">
-                <span class="ep-icon">📋</span>
-                <p>No unmatched records.</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
+
+      
 
       <!-- STEP 4: Logs -->
       <div class="card">
@@ -1911,6 +1982,41 @@
             Submit OTP
           </button>
           <button class="btn btn-muted" onclick="closeOTP()">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <!-- CIRCLE CONFIRMATION -->
+    <div class="overlay-wrap" id="circleDiscrepancyOverlay">
+      <div class="captcha-box" style="width: 860px; text-align: left;">
+       <h3 style="text-align:center; color:#b71c1c;">
+          Circle Discrepancy Found
+      </h3>
+        <p style="text-align:center;">
+          Some numbers' <strong>Actual Circle</strong> (from Vi) doesn't match the
+          <strong>Circle</strong> given in your Excel. Please review before starting.
+        </p>
+
+       <div
+        id="circleDiscrepancyList"
+        style="
+          max-height:320px;
+          overflow-y:auto;
+          overflow-x:hidden;
+          border:1px solid var(--border);
+          border-radius:var(--radius-sm);
+          margin-bottom:18px;
+        "
+      >
+        <!-- rows injected via JS -->
+      </div>
+
+        <div class="action-buttons" style="justify-content: center">
+          <button class="btn btn-primary" onclick="confirmStartAfterDiscrepancy()">
+            <i class="bi bi-play-circle-fill"></i> Start Validation
+          </button>
+          <button class="btn btn-muted" onclick="closeCircleDiscrepancyModal()">
+            Cancel
+          </button>
         </div>
       </div>
     </div>
@@ -2221,92 +2327,93 @@
               `${matched.length} record${matched.length !== 1 ? "s" : ""}`;
             document.getElementById("unmatchedCountBadge").textContent =
               `${unmatched.length} record${unmatched.length !== 1 ? "s" : ""}`;
-              testCardsData = matched.map((r, idx) => {
-                const inp = r.input;
-                const rechargeVal = String(inp["Recharge"] || "").trim().toLowerCase();
-                const swiftVal = String(inp["SWIFT"] || "").trim().toLowerCase();
-                const inVal = String(inp["IN"] || "").trim().toLowerCase();
-                const viAppVal = String(inp["Vi App"] || "").trim().toLowerCase();
+              // testCardsData = matched.map((r, idx) => {
+          //   const inp = r.input;
+          //   const rechargeVal = String(inp["Recharge"] || "").trim().toLowerCase();
+          //   const swiftVal = String(inp["SWIFT"] || "").trim().toLowerCase();
+          //   const inVal = String(inp["IN"] || "").trim().toLowerCase();
+          //   const viAppVal = String(inp["Vi App"] || "").trim().toLowerCase();
 
-                // build actualCircle dynamically from THIS row's own api result
-                const apiRes = r.apiRes || {};
-                const circleText = apiRes.actualCircleText || "";
-                const circleCode = apiRes.actualCircleCode || "";
-                const actualCircle =
-                  circleText && circleCode
-                    ? `${circleText} - ${circleCode}`
-                    : circleText || circleCode || "—";
+          //   // build actualCircle dynamically from THIS row's own api result
+          //   const apiRes = r.apiRes || {};
+          //   const circleText = apiRes.actualCircleText || "";
+          //   const circleCode = apiRes.actualCircleCode || "";
+          //   const actualCircle =
+          //     circleText && circleCode
+          //       ? `${circleText} - ${circleCode}`
+          //       : circleText || circleCode || "—";
 
-                return {
-                  rowIndex: idx,
-                  msisdn: String(inp["MSISDN"] || "").trim(),
-                  rechargeMRP: inp["Recharge MRP"],
-                  circle: String(inp["CIRCLE"] || "").trim(),
-                  actualCircle,                 // ✅ now per-row, not results[0]
-                  benefit:
-                    (r.plan && (r.plan["Benefit (Open)"] ?? r.plan.benefit)) || "—",
-                  viStatus: apiRes.isValid
-                    ? (apiRes.message || "Valid VI Number")
-                    : (apiRes.message || "Invalid VI Number"),   // bonus: this was hardcoded too
-                  recharge: rechargeVal,
-                  swift: swiftVal,
-                  in: inVal,
-                  viApp: viAppVal,
-                  colStatus: {
-                    recharge: rechargeVal === "yes" ? "pending" : "skipped",
-                    swift: "pending",
-                    in: inVal === "yes" ? "pending" : "skipped",
-                    viApp: viAppVal === "yes" ? "pending" : "skipped",
-                  },
-                  overallStatus: "pending",
-                  startedAt: null,
-                  completedAt: null,
-                };
-              });
-              
-            // Build test-card data from matched rows
-            // testCardsData = matched.map((r, idx) => {
-            //   const inp = r.input;
-            //   const rechargeVal = String(inp["Recharge"] || "")
-            //     .trim()
-            //     .toLowerCase();
-            //   const swiftVal = String(inp["SWIFT"] || "")
-            //     .trim()
-            //     .toLowerCase();
-            //   const inVal = String(inp["IN"] || "")
-            //     .trim()
-            //     .toLowerCase();
-            //   const viAppVal = String(inp["Vi App"] || "")
-            //     .trim()
-            //     .toLowerCase();
+          //   return {
+          //     rowIndex: idx,
+          //     msisdn: String(inp["MSISDN"] || "").trim(),
+          //     rechargeMRP: inp["Recharge MRP"],
+          //     circle: String(inp["CIRCLE"] || "").trim(),
+          //     actualCircle,                 //  now per-row, not results[0]
+          //     benefit:
+          //       (r.plan && (r.plan["Benefit (Open)"] ?? r.plan.benefit)) || "—",
+          //     viStatus: apiRes.isValid
+          //       ? (apiRes.message || "Valid VI Number")
+          //       : (apiRes.message || "Invalid VI Number"),   // bonus: this was hardcoded too
+          //     recharge: rechargeVal,
+          //     swift: swiftVal,
+          //     in: inVal,
+          //     viApp: viAppVal,
+          //     colStatus: {
+          //       recharge: rechargeVal === "yes" ? "pending" : "skipped",
+          //       swift: "pending",
+          //       in: inVal === "yes" ? "pending" : "skipped",
+          //       viApp: viAppVal === "yes" ? "pending" : "skipped",
+          //     },
+          //     overallStatus: "pending",
+          //     startedAt: null,
+          //     completedAt: null,
+          //   };
+          // });
+          testCardsData = matched.map((r, idx) => {
+            const inp = r.input;
+            const rechargeVal = String(inp["Recharge"] || "").trim().toLowerCase();
+            const swiftVal = String(inp["SWIFT"] || "").trim().toLowerCase();
+            const inVal = String(inp["IN"] || "").trim().toLowerCase();
+            const viAppVal = String(inp["Vi App"] || "").trim().toLowerCase();
 
-                
-            //   return {
-            //     rowIndex: idx,
-            //     msisdn: String(inp["MSISDN"] || "").trim(),
-            //     rechargeMRP: inp["Recharge MRP"],
-            //     circle: String(inp["CIRCLE"] || "").trim(),
-            //     // actualCircle : bulkResult?.results[0]?.actualCircleText  + " - " +  bulkResult?.results[0]?.actualCircleCode,
-            //     benefit:
-            //       (r.plan && (r.plan["Benefit (Open)"] ?? r.plan.benefit)) ||
-            //       "—",
-            //     viStatus: "Valid VI Number",
-            //     recharge: rechargeVal,
-            //     swift: swiftVal,
-            //     in: inVal,
-            //     viApp: viAppVal,
-            //     colStatus: {
-            //       recharge: rechargeVal === "yes" ? "pending" : "skipped",
-            //       swift: "pending",
-            //       in: inVal === "yes" ? "pending" : "skipped",
-            //       viApp: viAppVal === "yes" ? "pending" : "skipped",
-            //     },
-            //     overallStatus: "pending",
-            //     startedAt: null,
-            //     completedAt: null,
-            //   };
-            // });
-           
+            const apiRes = r.apiRes || {};
+            const circleText = apiRes.actualCircleText || "";
+            const circleCode = apiRes.actualCircleCode || "";
+            const actualCircle =
+              circleText && circleCode
+                ? `${circleText} - ${circleCode}`
+                : circleText || circleCode || "—";
+
+            return {
+              rowIndex: idx,
+              msisdn: String(inp["MSISDN"] || "").trim(),
+              rechargeMRP: inp["Recharge MRP"],
+              circle: String(inp["CIRCLE"] || "").trim(),
+              actualCircle,
+              // NEW — server-computed match result (true/false/null)
+              circleMatched:
+                typeof apiRes.circleMatched === "boolean" ? apiRes.circleMatched : null,
+              benefit:
+                (r.plan && (r.plan["Benefit (Open)"] ?? r.plan.benefit)) || "—",
+              viStatus: apiRes.isValid
+                ? (apiRes.message || "Valid VI Number")
+                : (apiRes.message || "Invalid VI Number"),
+              recharge: rechargeVal,
+              swift: swiftVal,
+              in: inVal,
+              viApp: viAppVal,
+              colStatus: {
+                recharge: rechargeVal === "yes" ? "pending" : "skipped",
+                swift: "pending",
+                in: inVal === "yes" ? "pending" : "skipped",
+                viApp: viAppVal === "yes" ? "pending" : "skipped",
+              },
+              overallStatus: "pending",
+              startedAt: null,
+              completedAt: null,
+            };
+          }); 
+
             renderTestCards();
             renderUnmatchedTable(unmatched);
 
@@ -2352,8 +2459,11 @@
 
       async function callBulkValidationAPI(inputRows) {
   const numbers = inputRows
-          .map((row) => String(row["MSISDN"] || "").trim())
-          .filter((n) => n);
+    .map((row) => ({
+      number: String(row["MSISDN"] || "").trim(),
+      circle: String(row["CIRCLE"] || "").trim(),
+    }))
+    .filter((e) => e.number);
   if (!numbers.length) {
     addLog("No MSISDN values found.", "warning");
     return null;
@@ -2368,7 +2478,7 @@
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ numbers }),
+        body: JSON.stringify({ numbers }),   // now array of {number, circle}
       },
     );
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -2384,98 +2494,298 @@
   }
 }
 
+      // async function callBulkValidationAPI(inputRows) {
+      //   const numbers = inputRows
+      //     .map((row) => String(row["MSISDN"] || "").trim())
+      //     .filter((n) => n);
+      //   if (!numbers.length) {
+      //     addLog("No MSISDN values found.", "warning");
+      //     return null;
+      //   }
+      //   addLog(
+      //     `Sending ${numbers.length} number${numbers.length !== 1 ? "s" : ""} for bulk validation…`,
+      //     "info",
+      //   );
+      //   try {
+      //     const response = await fetch(
+      //       "http://localhost:5174/api/validate/bulk",
+      //       {
+      //         method: "POST",
+      //         headers: { "Content-Type": "application/json" },
+      //         body: JSON.stringify({ numbers }),
+      //       },
+      //     );
+      //     if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      //     const result = await response.json();
+      //     addLog(
+      //       `Validation complete — ✅ ${result.processed_valid ?? 0} valid, ❌ ${result.processed_invalid ?? 0} invalid.`,
+      //       "success",
+      //     );
+      //     return result;
+      //   } catch (err) {
+      //     addLog(`Validation API Error: ${err.message}`, "error");
+      //     return null;
+      //   }
+      // }
+
       /* ============================================================
          START UAT
       ============================================================ */
-      async function startUAT() {
-        if (!selectedFile || isRunning) return;
+      // async function startUAT() {
+      //   if (!selectedFile || isRunning) return;
 
-        if (!testCardsData || testCardsData.length === 0) {
-          addLog(
-            "No matched rows to run. Re-check your Excel — nothing passed Vi validation / plan matching.",
-            "warning",
-          );
-          return;
-        }
+      //   if (!testCardsData || testCardsData.length === 0) {
+      //     addLog(
+      //       "No matched rows to run. Re-check your Excel — nothing passed Vi validation / plan matching.",
+      //       "warning",
+      //     );
+      //     return;
+      //   }
 
-        isRunning = true;
-        startBtn.disabled = true;
-        stopBtn.disabled = false;
-        setStatus("UAT in progress…", "info");
-        progressSection.classList.add("active");
-        progressBar.style.width = "0%";
-        progressPercent.textContent = "0%";
-        progressAction.textContent = "Uploading file…";
-        progressStatus.textContent = "";
+      //   isRunning = true;
+      //   startBtn.disabled = true;
+      //   stopBtn.disabled = false;
+      //   setStatus("UAT in progress…", "info");
+      //   progressSection.classList.add("active");
+      //   progressBar.style.width = "0%";
+      //   progressPercent.textContent = "0%";
+      //   progressAction.textContent = "Uploading file…";
+      //   progressStatus.textContent = "";
 
-        // Reset stats when starting
-        resetStats();
-        document.getElementById("statTotal").textContent = testCardsData.length;
-        reportDownloadContainer.innerHTML = "";
-        reportDownloadContainer.style.display = "none";
+      //   // Reset stats when starting
+      //   resetStats();
+      //   document.getElementById("statTotal").textContent = testCardsData.length;
+      //   reportDownloadContainer.innerHTML = "";
+      //   reportDownloadContainer.style.display = "none";
 
-        addLog(
-          `🚀 Starting UAT with ${testCardsData.length} matched row(s)`,
-          "info",
-        );
+      //   addLog(
+      //     `🚀 Starting UAT with ${testCardsData.length} matched row(s)`,
+      //     "info",
+      //   );
 
-        const formData = new FormData();
-        formData.append(
-          "excel",
-          selectedFile,
-          selectedFileName || selectedFile.name,
-        );
-        addLog(
-          `📤 Uploading file: ${selectedFileName || selectedFile.name}`,
-          "info",
-        );
+      //   const formData = new FormData();
+      //   formData.append(
+      //     "excel",
+      //     selectedFile,
+      //     selectedFileName || selectedFile.name,
+      //   );
+      //   addLog(
+      //     `📤 Uploading file: ${selectedFileName || selectedFile.name}`,
+      //     "info",
+      //   );
 
-        const matchedRowsPayload = testCardsData.map((t) => ({
-          rowIndex: t.rowIndex,
-          msisdn: t.msisdn,
-          rechargeMRP: t.rechargeMRP,
-          circle: t.circle,
-          recharge: t.recharge,
-          viApp: t.viApp,
-          swift: t.swift || "yes",
-          inFlag: t.in || "yes",
-        }));
-        formData.append("matchedRows", JSON.stringify(matchedRowsPayload));
-        addLog(
-          `📋 Sending ${matchedRowsPayload.length} matched row(s)`,
-          "info",
-        );
+      //   const matchedRowsPayload = testCardsData.map((t) => ({
+      //     rowIndex: t.rowIndex,
+      //     msisdn: t.msisdn,
+      //     rechargeMRP: t.rechargeMRP,
+      //     circle: t.circle,
+      //     recharge: t.recharge,
+      //     viApp: t.viApp,
+      //     swift: t.swift || "yes",
+      //     inFlag: t.in || "yes",
+      //   }));
+      //   formData.append("matchedRows", JSON.stringify(matchedRowsPayload));
+      //   addLog(
+      //     `📋 Sending ${matchedRowsPayload.length} matched row(s)`,
+      //     "info",
+      //   );
 
-        try {
-          const res = await fetch("/api/swift/upload", {
-            method: "POST",
-            body: formData,
-          });
+      //   try {
+      //     const res = await fetch("/api/swift/upload", {
+      //       method: "POST",
+      //       body: formData,
+      //     });
 
-          if (!res.ok) {
-            const errorText = await res.text();
-            throw new Error(`Upload failed (${res.status}): ${errorText}`);
+      //     if (!res.ok) {
+      //       const errorText = await res.text();
+      //       throw new Error(`Upload failed (${res.status}): ${errorText}`);
+      //     }
+
+      //     const result = await res.json();
+      //     if (!result.success)
+      //       throw new Error(result.message || "Upload failed");
+
+      //     sessionId = result.sessionId;
+      //     addLog(
+      //       `✅ File uploaded — ${matchedRowsPayload.length} matched row(s) sent — connecting to automation server…`,
+      //       "success",
+      //     );
+      //     setStatus("Connected to automation server", "success");
+      //     progressAction.textContent = "Connected, starting tests…";
+
+      //     connectWebSocket(sessionId);
+      //   } catch (err) {
+      //     addLog(`❌ Error: ${err.message}`, "error");
+      //     setStatus(`Error: ${err.message}`, "error");
+      //     resetUI();
+      //   }
+      // }
+
+      // NEW: entry point wired to the button — checks discrepancies first
+          async function startUAT() {
+            if (!selectedFile || isRunning) return;
+
+            if (!testCardsData || testCardsData.length === 0) {
+              addLog(
+                "No matched rows to run. Re-check your Excel — nothing passed Vi validation / plan matching.",
+                "warning",
+              );
+              return;
+            }
+
+            const mismatches = testCardsData.filter((t) => t.circleMatched === false);
+
+            if (mismatches.length > 0) {
+              renderCircleDiscrepancyList(testCardsData);
+              document.getElementById("circleDiscrepancyOverlay").classList.add("visible");
+              addLog(
+                ` ${mismatches.length} circle discrepancy(ies) found — awaiting confirmation.`,
+                "warning",
+              );
+              return; // wait for user's decision in the popup
+            }
+
+            // no discrepancies — go straight ahead
+            await proceedStartUAT();
+          }
+         function renderCircleDiscrepancyList(rows) {
+  const container = document.getElementById("circleDiscrepancyList");
+
+  container.innerHTML = `
+    <div class="discrepancy-header">
+      <span>S.No</span>
+      <span>MSISDN</span>
+      <span>Circle</span>
+      <span>Actual Circle</span>
+      <span>Reason</span>
+    </div>
+
+    ${rows
+      .map((t, index) => {
+        const isMatch = t.circleMatched === true;
+        const isMismatch = t.circleMatched === false;
+        const rowClass = isMismatch ? "mismatch" : isMatch ? "match" : "";
+
+        const reason = isMismatch
+          ? "Circle Unmatched"
+          : isMatch
+          ? "Matched"
+          : "—";
+
+        return `
+          <div class="discrepancy-row ${rowClass}">
+            <span>${index + 1}</span>
+            <span class="discrepancy-msisdn">${t.msisdn || "—"}</span>
+            <span>${t.circle || "—"}</span>
+            <span style="font-weight:600; color:${isMismatch ? "#b71c1c" : "#198754"};">
+              ${t.actualCircle || "—"}
+            </span>
+            <span style="font-weight:600; color:${isMismatch ? "#b71c1c" : "#198754"};">
+              ${reason}
+            </span>
+          </div>
+        `;
+      })
+      .join("")}
+  `;
+}
+
+          // function renderCircleDiscrepancyList(rows) {
+          //   const container = document.getElementById("circleDiscrepancyList");
+          //   container.innerHTML = rows
+          //     .map((t) => {
+          //       const isMatch = t.circleMatched === true;
+          //       const isMismatch = t.circleMatched === false;
+          //       const rowClass = isMismatch ? "mismatch" : isMatch ? "match" : "";
+          //       const chip = isMismatch
+          //         ? `<span class="match-chip no"> Mismatch</span>`
+          //         : isMatch
+          //         ? `<span class="match-chip yes"> Matched</span>`
+          //         : `<span class="match-chip" style="background:#eee;color:#888;">— N/A</span>`;
+          //       return `
+          //         <div class="discrepancy-row ${rowClass}">
+          //           <span class="discrepancy-msisdn">${t.msisdn || "—"}</span>
+          //           <div class="discrepancy-circles">
+          //             <span>${t.circle || "—"}</span>
+          //             <span class="arrow">→</span>
+          //             <span style="font-weight:600;">${t.actualCircle || "—"}</span>
+          //             ${chip}
+          //           </div>
+          //         </div>`;
+          //     })
+          //     .join("");
+          // }
+
+          function closeCircleDiscrepancyModal() {
+            document.getElementById("circleDiscrepancyOverlay").classList.remove("visible");
+            addLog("Start cancelled by user due to circle discrepancy.", "warning");
           }
 
-          const result = await res.json();
-          if (!result.success)
-            throw new Error(result.message || "Upload failed");
+          async function confirmStartAfterDiscrepancy() {
+            document.getElementById("circleDiscrepancyOverlay").classList.remove("visible");
+            addLog("✅ User confirmed to proceed despite circle discrepancy.", "info");
+            await proceedStartUAT();
+          }
 
-          sessionId = result.sessionId;
-          addLog(
-            `✅ File uploaded — ${matchedRowsPayload.length} matched row(s) sent — connecting to automation server…`,
-            "success",
-          );
-          setStatus("Connected to automation server", "success");
-          progressAction.textContent = "Connected, starting tests…";
+          // RENAMED: this is your old startUAT() body, unchanged, just renamed
+          async function proceedStartUAT() {
+            isRunning = true;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            setStatus("UAT in progress…", "info");
+            progressSection.classList.add("active");
+            progressBar.style.width = "0%";
+            progressPercent.textContent = "0%";
+            progressAction.textContent = "Uploading file…";
+            progressStatus.textContent = "";
 
-          connectWebSocket(sessionId);
-        } catch (err) {
-          addLog(`❌ Error: ${err.message}`, "error");
-          setStatus(`Error: ${err.message}`, "error");
-          resetUI();
-        }
-      }
+            resetStats();
+            document.getElementById("statTotal").textContent = testCardsData.length;
+            reportDownloadContainer.innerHTML = "";
+            reportDownloadContainer.style.display = "none";
+
+            addLog(`🚀 Starting UAT with ${testCardsData.length} matched row(s)`, "info");
+
+            const formData = new FormData();
+            formData.append("excel", selectedFile, selectedFileName || selectedFile.name);
+            addLog(`📤 Uploading file: ${selectedFileName || selectedFile.name}`, "info");
+
+            const matchedRowsPayload = testCardsData.map((t) => ({
+              rowIndex: t.rowIndex,
+              msisdn: t.msisdn,
+              rechargeMRP: t.rechargeMRP,
+              circle: t.circle,
+              recharge: t.recharge,
+              viApp: t.viApp,
+              swift: t.swift || "yes",
+              inFlag: t.in || "yes",
+            }));
+            formData.append("matchedRows", JSON.stringify(matchedRowsPayload));
+            addLog(`📋 Sending ${matchedRowsPayload.length} matched row(s)`, "info");
+
+            try {
+              const res = await fetch("/api/swift/upload", { method: "POST", body: formData });
+              if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(`Upload failed (${res.status}): ${errorText}`);
+              }
+              const result = await res.json();
+              if (!result.success) throw new Error(result.message || "Upload failed");
+
+              sessionId = result.sessionId;
+              addLog(
+                `✅ File uploaded — ${matchedRowsPayload.length} matched row(s) sent — connecting to automation server…`,
+                "success",
+              );
+              setStatus("Connected to automation server", "success");
+              progressAction.textContent = "Connected, starting tests…";
+              connectWebSocket(sessionId);
+            } catch (err) {
+              addLog(`❌ Error: ${err.message}`, "error");
+              setStatus(`Error: ${err.message}`, "error");
+              resetUI();
+            }
+          }
 
       async function stopUAT() {
         try {
@@ -2614,6 +2924,7 @@
           ${colHtml("Recharge", "recharge", t.colStatus.recharge)}
           ${colHtml("SWIFT", "swift", t.colStatus.swift)}
           ${colHtml("IN", "in", t.colStatus.in)}
+          ${colHtml("UPSS", "in", t.colStatus.in)}
           ${colHtml("Vi App", "viApp", t.colStatus.viApp)}
         </div>
         <div class="test-card-footer">

@@ -996,29 +996,29 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
             remarks: inResults.success ? 'IN test completed successfully' : 'IN test failed'
           });
           
-          // ─── ALSO ADD TO UAT RESULTS (for backward compatibility) ──────────
-          excelReportService.addUATResult({
-            msisdn: row.msisdn,
-            circle: row.circle,
-            mrp: row.rechargeMRP,
-            planName: row.planBenefit || 'N/A',
-            rechargeNotification: row.rechargeNotification || 'N/A',
-            inStatus: inResults.success ? 'Pass' : 'Fail',
-            swiftStatus: 'Skip',
-            viAppStatus: viAppFlag === 'yes' ? 'Pending' : 'Skip',
-            transactionId: `IN-${row.msisdn}-${Date.now()}`,
-            activationDateTime: new Date().toLocaleString(),
-            validity: subscriberInfo.serviceValidity || '30 days',
-            activationMode: 'IN Portal',
-            currentCoreBalance: subscriberInfo.coreBalance || '0.00',
-            etopupTransactionId: `ET-${Date.now()}`,
-            retailerMsisdn: row.msisdn,
-            name: subscriberInfo.customerName || 'N/A',
-            category: 'IN Recharge',
-            benefits: row.planBenefit || 'N/A',
-            detailValidity: subscriberInfo.serviceValidity || '30 days',
-            screenshots: screenshots
-          });
+          // // ─── ALSO ADD TO UAT RESULTS (for backward compatibility) ──────────
+          // excelReportService.addUATResult({
+          //   msisdn: row.msisdn,
+          //   circle: row.circle,
+          //   mrp: row.rechargeMRP,
+          //   planName: row.planBenefit || 'N/A',
+          //   rechargeNotification: row.rechargeNotification || 'N/A',
+          //   inStatus: inResults.success ? 'Pass' : 'Fail',
+          //   swiftStatus: 'Skip',
+          //   viAppStatus: viAppFlag === 'yes' ? 'Pending' : 'Skip',
+          //   transactionId: `IN-${row.msisdn}-${Date.now()}`,
+          //   activationDateTime: new Date().toLocaleString(),
+          //   validity: subscriberInfo.serviceValidity || '30 days',
+          //   activationMode: 'IN Portal',
+          //   currentCoreBalance: subscriberInfo.coreBalance || '0.00',
+          //   etopupTransactionId: `ET-${Date.now()}`,
+          //   retailerMsisdn: row.msisdn,
+          //   name: subscriberInfo.customerName || 'N/A',
+          //   category: 'IN Recharge',
+          //   benefits: row.planBenefit || 'N/A',
+          //   detailValidity: subscriberInfo.serviceValidity || '30 days',
+          //   screenshots: screenshots
+          // });
           
           const screenshotEntries = rechargePage.getScreenshots().filter(s => s.msisdn === row.msisdn);
           excelReportService.addScreenshots(screenshotEntries);
@@ -1084,7 +1084,7 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
               activationDateTime: new Date().toLocaleString(),
               validity: subscriberInfo.serviceValidity || 'N/A',
               activationMode: 'SWIFT Portal',
-              currentCoreBalance: subscriberInfo.coreBalance || '0.00',
+              currentCoreBalance: subscriberInfo.coreBalance || 'N/A',
               etopupTransactionId: 'N/A',
               retailerMsisdn: row.msisdn,
               name: subscriberInfo.customerName || 'N/A',
@@ -1215,17 +1215,17 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
             inStatus: 'Skip',
             swiftStatus: 'Skip',
             viAppStatus: viAppFlag === 'yes' ? 'Pending' : 'Skip',
-            transactionId: `BASIC-${row.msisdn}-${Date.now()}`,
+            transactionId: `N/A`,
             activationDateTime: new Date().toLocaleString(),
-            validity: subscriberInfo.serviceValidity || '30 days',
-            activationMode: 'Manual',
-            currentCoreBalance: subscriberInfo.coreBalance || '0.00',
-            etopupTransactionId: `ET-${Date.now()}`,
+            validity: subscriberInfo.serviceValidity || 'N/A',
+            activationMode: 'N/A',
+            currentCoreBalance: subscriberInfo.coreBalance || 'N/A',
+            etopupTransactionId: `N/A`,
             retailerMsisdn: row.msisdn,
             name: subscriberInfo.customerName || 'N/A',
-            category: 'Basic',
+            category: 'N/A',
             benefits: row.planBenefit || 'N/A',
-            detailValidity: subscriberInfo.serviceValidity || '30 days',
+            detailValidity: subscriberInfo.serviceValidity || 'N/A',
             screenshots: screenshots
             
           });
