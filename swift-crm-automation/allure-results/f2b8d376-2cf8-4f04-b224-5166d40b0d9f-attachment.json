@@ -1,9 +1,0 @@
-{
-  "script": "<script> [17 bytes]",
-  "args": [
-    {
-      "package": "com.mventus.selfcare.activity",
-      "activity": "com.mventus.selfcare.activity.MainActivity"
-    }
-  ]
-}

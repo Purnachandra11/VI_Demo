@@ -1,4 +1,0 @@
-{
-  "using": "xpath",
-  "value": "//*[contains(@content-desc,\"Unlimited\") or contains(@text,\"Unlimited\")]"
-}

@@ -1,4 +1,0 @@
-{
-  "using": "css selector",
-  "value": "following-sibling::div[1][contains(@class, 'datarow')]"
-}
