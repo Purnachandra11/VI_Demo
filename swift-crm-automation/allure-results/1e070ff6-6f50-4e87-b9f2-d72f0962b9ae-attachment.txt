@@ -1,0 +1,2 @@
+element click intercepted: WebDriverError: element click intercepted: Element <input type="text" class="form-control" placeholder="Search Swift" name="search" id="mobforward" required="" value=""> is not clickable at point (1175, 24). Other element would receive the click: <div role="dialog" aria-modal="true" class="fade modal show" tabindex="-1" style="display: block;">...</div>
+  (Session info: chrome=149.0.7827.197) when running "element/f.4BF333AF0EA8DD9E719B90B67C212BA9.d.028863008AFED6D142F32EF016DDA64A.e.244/click" with method "POST"

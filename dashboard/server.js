@@ -862,7 +862,7 @@ function checkNetworkMatch(current, target) {
   return true;
 }
 
-// ========== ADB/Appium Control ==========
+//  ADB/Appium Control 
 
 app.get('/api/endpoint', (req, res) => {
       res.json({ success: true, message: 'backend server started' });
@@ -878,18 +878,18 @@ app.post('/api/adb/start', (req, res) => {
   });
 });
 
-// ===== Vi Number Validator APIs (migrated from vi-number-validator-api/server.ts) =====
+  /// Vi Number Validator 
 const { chromium } = require('playwright');
 
 const VI_URL = "https://www.myvi.in/prepaid/online-mobile-recharge";
 const SELECTORS = {
   mobileInput: 'input#mobileNumber',
-  errorMsg: '.ORCMobileInput_errorMsg__TecyC'
+  errorMsg: '.ORCMobileInput_errorMsg__TecyC',
+  circleText: '//div[contains(@class, \'layoutCSS_locationContainer\')]/p'
 };
 const WAIT_MS = 500;
-const CACHE_TTL = 3600000; // 1 hour cache
+const CACHE_TTL = 3600000; 
 
-// ===== Browser Pool for Reuse =====
 let browserInstance = null;
 let pageInstance = null;
 let lastUsed = Date.now();
@@ -904,11 +904,10 @@ async function closeBrowserPool() {
 }
 
 async function getBrowserPage() {
-  // Close if idle for more than 5 minutes
   if (lastUsed && Date.now() - lastUsed > 300000) {
     await closeBrowserPool();
   }
-  
+
   if (!browserInstance) {
     browserInstance = await chromium.launch({
       headless: true,
@@ -922,7 +921,7 @@ async function getBrowserPage() {
       ]
     });
   }
-  
+
   if (!pageInstance || pageInstance.isClosed()) {
     const context = await browserInstance.newContext({
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -942,7 +941,7 @@ async function getBrowserPage() {
     });
     await pageInstance.goto(VI_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
   }
-  
+
   lastUsed = Date.now();
   return pageInstance;
 }
@@ -951,131 +950,379 @@ async function getBrowserPage() {
 process.on('SIGTERM', closeBrowserPool);
 process.on('SIGINT', closeBrowserPool);
 
+let pageLock = Promise.resolve();
+function withPageLock(fn) {
+  const run = pageLock.then(fn, fn);
+  pageLock = run.catch(() => {});   
+  return run;
+}
+
 function isValidFormat(n) {
   return typeof n === 'string' && /^\d{10}$/.test(n);
 }
 
-async function validateOnPage(page, mobileNumber) {
-  // Check cache first
-  const cached = validationCache.get(mobileNumber);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    return cached.result;
+// Circle
+const CIRCLE_CODE_TO_NAMES = {
+  AP:   ['andhra pradesh', 'andhra pradesh & telangana', 'ap & telangana', 'ap'],
+  ASM:  ['assam'],
+  BHR:  ['bihar', 'bihar & jharkhand', 'bihar and jharkhand'],
+  CHN:  ['chennai'],
+  DEL:  ['delhi', 'delhi & ncr', 'delhi and ncr', 'ncr'],
+  GUJ:  ['gujarat'],
+  HAR:  ['haryana'],
+  HP:   ['himachal pradesh'],
+  KAR:  ['karnataka'],
+  KEL:  ['kerala'],
+  KOL:  ['kolkata'],
+  MNG:  ['maharashtra', 'maharashtra & goa', 'maharashtra and goa', 'goa'],
+  MP:   ['madhya pradesh', 'madhya pradesh & chhattisgarh', 'mp & chhattisgarh', 'chhattisgarh'],
+  MUM:  ['mumbai'],
+  NE:   ['north east', 'northeast', 'north-east'],
+  ORI:  ['odisha', 'orissa'],
+  PB:   ['punjab'],
+  RAJ:  ['rajasthan'],
+  ROB:  ['rest of bengal', 'rest of west bengal', 'west bengal'],
+  ROTN: ['rest of tamil nadu', 'tamil nadu'],
+  UPE:  ['up east', 'uttar pradesh east', 'up (east)'],
+  UPW:  ['up west', 'uttar pradesh west', 'up (west)'],
+  JNK:  ['jammu & kashmir', 'jammu and kashmir', 'j&k', 'jammu kashmir'],
+};
+
+// Reverse index: normalized full-name text → code, for fast lookup
+const CIRCLE_NAME_TO_CODE = new Map();
+for (const [code, names] of Object.entries(CIRCLE_CODE_TO_NAMES)) {
+  for (const name of names) {
+    CIRCLE_NAME_TO_CODE.set(name, code);
   }
-  
+}
+
+const EXCEL_CIRCLE_CODE_ALIASES = {
+  ODI: 'ORI',
+  WB: 'ROB',
+  TN: 'ROTN',
+  MAH: 'MNG',
+  JK: 'JNK',
+  MP_CG: 'MP',
+};
+
+function normalizeExcelCircleCode(rawCode) {
+  if (!rawCode) return '';
+  const upper = String(rawCode).trim().toUpperCase();
+  return EXCEL_CIRCLE_CODE_ALIASES[upper] || upper;
+}
+
+async function extractCircleFromPage(page) {
+  try {
+    const circleLocator = page.locator(SELECTORS.circleText);
+    const count = await circleLocator.count().catch(() => 0);
+
+    console.log(`[ExtractCircle] Circle element found: ${count > 0}`);
+
+    if (count === 0) {
+      return { rawText: '', code: 'UNKNOWN' };
+    }
+
+    const rawText = (await circleLocator.first().textContent().catch(() => '')).trim();
+    console.log(`[ExtractCircle] Raw text: "${rawText}"`);
+
+    if (!rawText) {
+      return { rawText: '', code: 'UNKNOWN' };
+    }
+
+    const normalized = rawText.toLowerCase();
+
+    const sortedNames = [...CIRCLE_NAME_TO_CODE.keys()].sort((a, b) => b.length - a.length);
+    for (const name of sortedNames) {
+      if (normalized.includes(name)) {
+        const code = CIRCLE_NAME_TO_CODE.get(name);
+        console.log(`[ExtractCircle] Matched: "${rawText}" -> ${code}`);
+        return { rawText, code };
+      }
+    }
+
+    console.warn(`[CircleCheck] ⚠️ Could not map circle text to a known code: "${rawText}"`);
+    return { rawText, code: 'UNKNOWN' };
+  } catch (err) {
+    console.warn('[CircleCheck] Error extracting circle text:', err instanceof Error ? err.message : err);
+    return { rawText: '', code: 'UNKNOWN' };
+  }
+}
+
+function checkCircleMatch(actualCircle, expectedCircleRaw) {
+  const expectedCode = normalizeExcelCircleCode(expectedCircleRaw);
+
+  if (!expectedCode) {
+    return {
+      expectedCircleCode: '',
+      actualCircleCode: actualCircle.code,
+      actualCircleText: actualCircle.rawText,
+      circleMatched: null,
+      circleMessage: 'No expected circle provided — skipped circle check',
+    };
+  }
+
+  if (actualCircle.code === 'UNKNOWN') {
+    return {
+      expectedCircleCode: expectedCode,
+      actualCircleCode: 'UNKNOWN',
+      actualCircleText: actualCircle.rawText,
+      circleMatched: false,
+      circleMessage: `Could not determine circle from page (raw text: "${actualCircle.rawText}") — cannot verify against expected "${expectedCode}"`,
+    };
+  }
+
+  const matched = actualCircle.code === expectedCode;
+
+  return {
+    expectedCircleCode: expectedCode,
+    actualCircleCode: actualCircle.code,
+    actualCircleText: actualCircle.rawText,
+    circleMatched: matched,
+    circleMessage: matched
+      ? `Circle matched (${actualCircle.code})`
+      : `Input number with circle is not matched — actual circle: ${actualCircle.rawText} (${actualCircle.code}), expected: ${expectedCode}`,
+  };
+}
+
+async function validateOnPage(page, mobileNumber, bypassCache = false) {
+  console.log(`[Validate] Starting validation for ${mobileNumber} (bypassCache: ${bypassCache})`);
+
+  if (!bypassCache) {
+    const cached = validationCache.get(mobileNumber);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      console.log(`[Validate] Cache hit for ${mobileNumber}`);
+      return cached.result;
+    }
+  }
+
   const input = page.locator(SELECTORS.mobileInput);
   await input.waitFor({ state: 'visible', timeout: 5000 });
+
+  let oldCircle = '';
+  try {
+    const circleLocator = page.locator(SELECTORS.circleText);
+    const count = await circleLocator.count().catch(() => 0);
+    if (count > 0) {
+      oldCircle = (await circleLocator.first().textContent().catch(() => '')).trim();
+      console.log(`[Validate] Old circle for ${mobileNumber}: "${oldCircle}"`);
+    }
+  } catch (error) {
+    console.log(`[Validate] No old circle found for ${mobileNumber}`);
+  }
+
   await input.click({ clickCount: 3 });
   await input.fill(mobileNumber);
-  await page.waitForTimeout(WAIT_MS);
-  
+
+  const typedValue = await input.inputValue().catch(() => '');
+  if (typedValue !== mobileNumber) {
+    console.warn(`[Validate] Fill mismatch for ${mobileNumber} (got "${typedValue}") — retrying once`);
+    await input.click({ clickCount: 3 });
+    await input.fill(mobileNumber);
+    const retryValue = await input.inputValue().catch(() => '');
+    if (retryValue !== mobileNumber) {
+      console.warn(`[Validate] Fill still mismatched for ${mobileNumber} after retry (got "${retryValue}")`);
+    }
+  }
+
+  await page.waitForTimeout(500);
+
+  if (oldCircle) {
+    try {
+      console.log(`[Validate] Waiting for circle to change from "${oldCircle}" for ${mobileNumber}`);
+      await page.waitForFunction(
+        (oldCircleText) => {
+          const el = document.querySelector('.layoutCSS_locationContainer__7HdTf p');
+          if (!el) return false;
+          const currentText = el.innerText?.trim() || '';
+          return currentText !== oldCircleText && currentText.length > 0;
+        },
+        oldCircle,
+        { timeout: 10000 }
+      );
+      console.log(`[Validate] Circle changed successfully for ${mobileNumber}`);
+    } catch (error) {
+      console.warn(`[Validate] Circle text didn't change within timeout for ${mobileNumber}`);
+    }
+  } else {
+    try {
+      console.log(`[Validate] Waiting for circle text to appear for ${mobileNumber}`);
+      await page.waitForSelector('.layoutCSS_locationContainer__7HdTf p', {
+        state: 'visible',
+        timeout: 10000
+      });
+      console.log(`[Validate] Circle text appeared for ${mobileNumber}`);
+    } catch (error) {
+      console.warn(`[Validate] No circle text found for ${mobileNumber}`);
+    }
+  }
+
+  await page.waitForTimeout(500);
+
+  const finalValue = await input.inputValue().catch(() => '');
+  if (finalValue !== mobileNumber) {
+    console.warn(`[Validate] Input no longer shows ${mobileNumber} (shows "${finalValue}") — aborting this validation`);
+    const result = {
+      number: mobileNumber,
+      isValid: false,
+      message: 'Validation aborted: input value changed mid-flight (concurrent request collision)',
+      actualCircleText: '',
+      actualCircleCode: 'UNKNOWN',
+      timestamp: new Date().toISOString()
+    };
+    return result;
+  }
+
   const errorLocator = page.locator(SELECTORS.errorMsg);
   const hasError = await errorLocator.count().then(count => count > 0).catch(() => false);
-  const errorText = hasError ? (await errorLocator.innerText()).trim() : '';
+  const errorText = hasError ? (await errorLocator.first().textContent()).trim() : '';
   const isNonViError = errorText.toLowerCase().includes('non vi number');
   const isValid = !hasError || !isNonViError;
-  
+
+  let actualCircle = { rawText: '', code: 'UNKNOWN' };
+  if (isValid) {
+    actualCircle = await extractCircleFromPage(page);
+  }
+
   const result = {
     number: mobileNumber,
     isValid,
     message: isValid ? 'Valid Vi number' : `Invalid Vi number – "${errorText}"`,
+    actualCircleText: actualCircle.rawText,
+    actualCircleCode: actualCircle.code,
     timestamp: new Date().toISOString()
   };
-  
-  // Cache the result
+
+  console.log(`[Validate] Result for ${mobileNumber}:`, result);
+
   validationCache.set(mobileNumber, { result, timestamp: Date.now() });
   return result;
 }
+
+// ===== Vi Validator API Endpoints =====
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', service: 'vi-number-validator', ts: new Date().toISOString() });
 });
 
 app.post('/api/validate', async (req, res) => {
-  const number = (req.body || {}).number;
+  const { number, circle, bypassCache = false } = req.body || {};
+
+  console.log(`[API] /api/validate called with number: ${number}, bypassCache: ${bypassCache}`);
+
   if (!isValidFormat(number)) {
     return res.status(400).json({ error: 'Invalid input', detail: '"number" must be a 10-digit string' });
   }
-  
+
   try {
     const page = await getBrowserPage();
-    const result = await validateOnPage(page, number);
-    res.json(result);
+    // NEW: serialized through the page lock
+    const result = await withPageLock(() => validateOnPage(page, number, bypassCache));
+
+    let circleCheck = null;
+    if (result.isValid) {
+      circleCheck = checkCircleMatch(
+        { rawText: result.actualCircleText, code: result.actualCircleCode },
+        circle,
+      );
+    }
+
+    const response = { ...result, ...(circleCheck || {}) };
+    console.log(`[API] Response for ${number}:`, response);
+    res.json(response);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    console.error(`[API] Error for ${number}:`, message);
     res.status(500).json({ error: 'Internal server error', detail: message });
   }
 });
 
 app.post('/api/validate/bulk', async (req, res) => {
-  const numbers = (req.body || {}).numbers;
-  if (!Array.isArray(numbers) || numbers.length === 0) {
-    return res.status(400).json({ error: 'Invalid input', detail: '"numbers" must be a non-empty array of strings' });
+  const rawNumbers = (req.body || {}).numbers;
+  const bypassCache = (req.body || {}).bypassCache || false;
+
+  console.log(`[API] /api/validate/bulk called with ${rawNumbers?.length || 0} numbers, bypassCache: ${bypassCache}`);
+
+  if (!Array.isArray(rawNumbers) || rawNumbers.length === 0) {
+    return res.status(400).json({ error: 'Invalid input', detail: '"numbers" must be a non-empty array' });
   }
 
-  // Partition into valid and invalid numbers
-  const invalid = numbers.filter((n) => !isValidFormat(n));
-  const validNumbers = numbers.filter((n) => isValidFormat(n));
-
-  if (validNumbers.length === 0) {
-    return res.status(400).json({ 
-      error: 'No valid numbers', 
-      detail: 'No valid 10-digit numbers to process', 
-      invalid: invalid.map(String) 
+  const MAX_BULK_SIZE = 50;
+  if (rawNumbers.length > MAX_BULK_SIZE) {
+    return res.status(400).json({
+      error: 'Limit exceeded',
+      detail: `Maximum ${MAX_BULK_SIZE} numbers per bulk request`
     });
   }
 
-  if (validNumbers.length > 50) {
-    return res.status(400).json({ 
-      error: 'Limit exceeded', 
-      detail: 'Maximum 50 numbers per bulk request (valid numbers)' 
+  const entries = rawNumbers.map((item) => {
+    if (item && typeof item === 'object') {
+      return { number: item.number, circle: item.circle };
+    }
+    return { number: item, circle: undefined };
+  });
+
+  const invalid = entries.filter((e) => !isValidFormat(e.number));
+  const validEntries = entries.filter((e) => isValidFormat(e.number));
+
+  if (validEntries.length === 0) {
+    return res.status(400).json({
+      error: 'No valid numbers',
+      detail: 'No valid 10-digit numbers to process',
+      invalid: invalid.map((e) => String(e.number)),
     });
   }
 
   const start = Date.now();
-  const BATCH_SIZE = 5; // Process 5 numbers concurrently
   const results = [];
 
   try {
     const page = await getBrowserPage();
-    
-    // Process valid numbers in parallel batches
     const validResults = [];
-    for (let i = 0; i < validNumbers.length; i += BATCH_SIZE) {
-      const batch = validNumbers.slice(i, i + BATCH_SIZE);
-      const batchResults = await Promise.allSettled(
-        batch.map(num => validateOnPage(page, num))
-      );
-      
-      batchResults.forEach((result) => {
-        if (result.status === 'fulfilled') {
-          validResults.push(result.value);
-        } else {
-          // Find which number failed
-          const idx = batchResults.indexOf(result);
-          const num = batch[idx] || 'unknown';
-          validResults.push({
-            number: num,
-            isValid: false,
-            message: `Validation error: ${result.reason}`,
-            timestamp: new Date().toISOString()
-          });
+
+    // NOTE: bulk is processed strictly sequentially, one number at a time,
+    // through the same page lock as /api/validate — this is intentional.
+    // The shared Playwright page can only ever hold one number's state at
+    // once, so "concurrency" here would just cause the same cross-talk bug
+    // this whole fix addresses. If you need real parallelism, you need
+    // multiple browser pages/contexts (one per concurrent slot), not one
+    // shared page.
+    for (let i = 0; i < validEntries.length; i++) {
+      const entry = validEntries[i];
+      console.log(`[API] Processing bulk item ${i + 1}/${validEntries.length}: ${entry.number}`);
+
+      try {
+        const result = await withPageLock(() => validateOnPage(page, entry.number, bypassCache));
+        let circleCheck = null;
+        if (result.isValid) {
+          circleCheck = checkCircleMatch(
+            { rawText: result.actualCircleText, code: result.actualCircleCode },
+            entry.circle,
+          );
         }
-      });
+        validResults.push({ ...result, ...(circleCheck || {}) });
+      } catch (error) {
+        console.error(`[API] Error processing ${entry.number}:`, error);
+        validResults.push({
+          number: entry.number,
+          isValid: false,
+          message: `Validation error: ${error.message}`,
+          timestamp: new Date().toISOString()
+        });
+      }
     }
-    
-    // Reconstruct results in original input order
+
     let validIndex = 0;
-    for (const num of numbers) {
-      if (!isValidFormat(num)) {
+    for (const entry of entries) {
+      if (!isValidFormat(entry.number)) {
         results.push({
-          number: String(num),
+          number: String(entry.number),
           isValid: false,
           message: 'Invalid MSISDN (must be 10 digits)',
           timestamp: new Date().toISOString()
         });
       } else {
         results.push(validResults[validIndex++] || {
-          number: num,
+          number: entry.number,
           isValid: false,
           message: 'Validation failed',
           timestamp: new Date().toISOString()
@@ -1085,66 +1332,59 @@ app.post('/api/validate/bulk', async (req, res) => {
 
     const validCount = results.filter((r) => r.isValid).length;
     const invalidProcessed = results.filter((r) => !r.isValid).length;
+    const circleMismatchCount = results.filter((r) => r.circleMatched === false).length;
 
-    const bulk = {
-      total_requested: numbers.length,
+    const response = {
+      total_requested: entries.length,
       processed: results.length,
       processed_valid: validCount,
       processed_invalid: invalidProcessed,
-      skipped_invalid_format: invalid.map(String),
+      circle_mismatches: circleMismatchCount,
+      skipped_invalid_format: invalid.map((e) => String(e.number)),
       duration_ms: Date.now() - start,
       results
     };
 
-    res.json(bulk);
+    console.log(`[API] Bulk response: ${validCount} valid, ${invalidProcessed} invalid, ${circleMismatchCount} mismatches`);
+    res.json(response);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    console.error('[API] Bulk error:', message);
     res.status(500).json({ error: 'Internal server error', detail: message });
   }
 });
 
-// Optional: Endpoint to clear cache (for testing)
+// Clear cache endpoint
 app.post('/api/validate/cache/clear', (req, res) => {
+  const size = validationCache.size;
   validationCache.clear();
-  res.json({ success: true, message: 'Validation cache cleared' });
+  console.log(`[API] Cache cleared (${size} entries)`);
+  res.json({ success: true, message: 'Validation cache cleared', entries_cleared: size });
 });
 
-// Backend endpoint hit when user clicks "OK" on the confirm popup.
-// In server.js, update the /api/recharge/confirm/:txnId endpoint
-app.post('/api/recharge/confirm/:txnId', (req, res) => {
-  const { txnId } = req.params;
-  const record = pendingRecharges.get(txnId);
+// Get cache stats endpoint
+app.get('/api/validate/cache/stats', (req, res) => {
+  const entries = [];
+  let totalAge = 0;
 
-  if (record) {
-    record.confirmed = true;
-    record.confirmedAt = new Date().toISOString();
-    console.log(`✅ Recharge confirmed for txn ${txnId} (mobile: ${record.mobileNumber})`);
-    
-    // Write confirmation to file for WDIO to detect - use the SWIFT comm directory
-    try {
-      const commDir = path.join(__dirname, '..', 'swift-crm-automation', 'comm');
-      fs.mkdirSync(commDir, { recursive: true });
-      fs.writeFileSync(
-        path.join(commDir, 'recharge_confirmed.json'),
-        JSON.stringify({ 
-          txnId, 
-          msisdn: record.mobileNumber, 
-          confirmed: true,
-          timestamp: Date.now() 
-        }, null, 2)
-      );
-      console.log(`[SWIFT] ✅ Recharge confirmed file written for ${record.mobileNumber}`);
-    } catch (fileErr) {
-      console.error(`[SWIFT] Failed to write confirm file: ${fileErr.message}`);
-    }
-  } else {
-    console.log(`⚠️ Recharge confirm called for unknown txn ${txnId}`);
+  for (const [number, data] of validationCache) {
+    const age = Date.now() - data.timestamp;
+    totalAge += age;
+    entries.push({
+      number,
+      age_ms: age,
+      age_seconds: Math.round(age / 1000),
+      result: data.result
+    });
   }
 
-  res.json({ success: true, txnId });
+  res.json({
+    total_entries: validationCache.size,
+    average_age_ms: validationCache.size > 0 ? Math.round(totalAge / validationCache.size) : 0,
+    entries: entries.slice(0, 10)
+  });
 });
 
-// ─── Skip recharge (user clicked Skip or Cancel) ──────────────────────────
 app.post('/api/recharge/skip/:txnId', (req, res) => {
   const { txnId } = req.params;
   const record = pendingRecharges.get(txnId);
@@ -1235,7 +1475,7 @@ app.post('/api/process-validation-and-send-emails', async (req, res) => {
 
     const emailRecipients = recipients.length > 0 
       ? recipients 
-      : ['kalidindi.chandra@qdegrees.org', 'amit.kumar1@qdegrees.org', 'testingqdegrees@gmail.com'];
+      : ['kalidindi.chandra@qdegrees.org'];
 
     // Separate valid and invalid numbers
     const validNumbers = validationResults.filter(r => r.isValid === true);
@@ -3002,11 +3242,13 @@ function executeWdioProcess(options, res, deviceId, testType = 'calling') {
 // Store active SWIFT sessions
 const swiftSessions = new Map();
 let latestReportPath = null;
+const swiftReportsDir = path.join(__dirname, '..', 'swift-crm-automation', 'reports');
+const swiftFinalReportsDir = path.join(__dirname, '..', 'swift-crm-automation', 'finalreports');
 
 // Global function to set latest report path from orchestrator
-global.setSwiftLatestReport = (path) => {
-  latestReportPath = path;
-  console.log(`[SWIFT] Report generated: ${path}`);
+global.setSwiftLatestReport = (pathValue) => {
+  latestReportPath = pathValue;
+  console.log(`[SWIFT] Report generated: ${pathValue}`);
 };
 
 // Configure multer for SWIFT CRM uploads
@@ -3068,13 +3310,15 @@ app.post('/api/swift/captcha-response', (req, res) => {
       if (!req.file) {
         return res.json({ success: false, message: 'No file uploaded' });
       }
- 
-      const sessionId = crypto.randomBytes(16).toString('hex');
- 
-      // Store file path keyed by sessionId
+
+      const requestedSessionId = req.body && req.body.sessionId
+        ? String(req.body.sessionId).trim()
+        : '';
+      const sessionId = requestedSessionId || crypto.randomBytes(16).toString('hex');
+
+      // Store the uploaded file path for this exact session.
       swiftUploadPaths.set(sessionId, req.file.path);
- 
-      // Point 2: parse + store the frontend's validated matched rows, if sent.
+
       let matchedRows = null;
       if (req.body && req.body.matchedRows) {
         try {
@@ -3091,9 +3335,9 @@ app.post('/api/swift/captcha-response', (req, res) => {
       if (!matchedRows) {
         console.warn('[SWIFT] ⚠️ No matchedRows received with upload — orchestrator will fall back to SWIFT=Yes Excel filtering.');
       }
- 
+
       console.log(`[SWIFT] 📄 File uploaded: ${req.file.originalname} (Session: ${sessionId})`);
- 
+
       res.json({
         success: true,
         sessionId,
@@ -3240,23 +3484,74 @@ app.get('/api/swift/download-sample', (req, res) => {
   }
 });
 
+// List generated report files
+app.get('/api/swift/report/files', (req, res) => {
+  const folders = [
+    { dir: swiftFinalReportsDir, type: 'zip' },
+    { dir: swiftReportsDir, type: 'xlsx' },
+    { dir: swiftReportsDir, type: 'html' },
+    { dir: swiftReportsDir, type: 'pdf' }
+  ];
+
+  const files = [];
+  folders.forEach(({ dir, type }) => {
+    if (!fs.existsSync(dir)) return;
+    fs.readdirSync(dir)
+      .filter((name) => name.toLowerCase().endsWith(`.${type}`))
+      .forEach((name) => {
+        const filePath = path.join(dir, name);
+        if (!fs.statSync(filePath).isFile()) return;
+        files.push({
+          name,
+          path: filePath,
+          type,
+          source: dir === swiftFinalReportsDir ? 'finalreports' : 'reports',
+          displayName: name.replace(/\.(xlsx|html|pdf|zip)$/i, '')
+        });
+      });
+  });
+
+  files.sort((a, b) => fs.statSync(b.path).mtime.getTime() - fs.statSync(a.path).mtime.getTime());
+  res.json({ success: true, reports: files.filter((item) => item.type === 'zip' || item.type === 'xlsx' || item.type === 'pdf' || item.type === 'html') });
+});
+
+// Download a specific report file by name
+app.get('/api/swift/report/file/:name', (req, res) => {
+  const requestedName = path.basename(req.params.name);
+  const candidates = [
+    path.join(swiftFinalReportsDir, requestedName),
+    path.join(swiftReportsDir, requestedName)
+  ];
+  const filePath = candidates.find((candidate) => fs.existsSync(candidate));
+
+  if (!requestedName || !filePath) {
+    return res.status(404).json({ success: false, message: 'Report file not found' });
+  }
+
+  res.download(filePath, requestedName);
+});
+
 // Download report endpoint
 app.get('/api/swift/download-report', (req, res) => {
   if (!latestReportPath || !fs.existsSync(latestReportPath)) {
-    // Try to find the latest report
-    const reportsDir = path.join(__dirname, '..', 'swift-crm-automation', 'reports');
-    if (fs.existsSync(reportsDir)) {
-      const files = fs.readdirSync(reportsDir).filter(f => f.endsWith('.xlsx')).sort((a, b) => {
-        return fs.statSync(path.join(reportsDir, b)).mtime - fs.statSync(path.join(reportsDir, a)).mtime;
-      });
-      if (files.length > 0) {
-        latestReportPath = path.join(reportsDir, files[0]);
-      }
+    const candidates = [];
+    if (fs.existsSync(swiftFinalReportsDir)) {
+      candidates.push(...fs.readdirSync(swiftFinalReportsDir).filter((name) => name.endsWith('.zip')).map((name) => path.join(swiftFinalReportsDir, name)));
+    }
+    if (fs.existsSync(swiftReportsDir)) {
+      candidates.push(...fs.readdirSync(swiftReportsDir).filter((name) => name.endsWith('.xlsx')).map((name) => path.join(swiftReportsDir, name)));
+      candidates.push(...fs.readdirSync(swiftReportsDir).filter((name) => name.endsWith('.pdf')).map((name) => path.join(swiftReportsDir, name)));
+    }
+
+    if (candidates.length > 0) {
+      candidates.sort((a, b) => fs.statSync(b).mtime.getTime() - fs.statSync(a).mtime.getTime());
+      latestReportPath = candidates[0];
     }
   }
 
   if (latestReportPath && fs.existsSync(latestReportPath)) {
-    res.download(latestReportPath, 'UAT_Recharge_Report.xlsx');
+    const fileName = path.basename(latestReportPath);
+    res.download(latestReportPath, fileName);
   } else {
     res.status(404).json({ success: false, message: 'No report found' });
   }

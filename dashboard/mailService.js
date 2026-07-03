@@ -1121,7 +1121,7 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
         throw new Error('No valid recharge details with benefit available to email.');
       }
 
-      const htmlContent = this.formatMatchedTableHtml(validDetails, userName, signToken, options);
+      const htmlContent = this.formatMatchedTableHtml(validDetails, userName, signToken, options,);
       const textContent = this.formatRechargeDetailsText(validDetails, userName, options);
 
       const senderEmail = process.env.MAIL_USERNAME || process.env.SMTP_USER || 'noreply-all@qdegrees.org';

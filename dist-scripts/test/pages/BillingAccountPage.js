@@ -8,7 +8,7 @@ class BillingAccountPage {
     async clickBillingAccountTab() {
         console.log('💰 Clicking Billing/Account tab...');
         try {
-            const billingTab = await (0, globals_1.$)('//*[@id="ui-id-535"]');
+            const billingTab = await $('//*[@id="ui-id-535" or @id="ui-id-258"]');
             await billingTab.waitForClickable({ timeout: 15000 });
             await billingTab.click();
             await globals_1.browser.pause(3000);

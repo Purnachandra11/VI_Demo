@@ -1,0 +1,4 @@
+{
+  "using": "xpath",
+  "value": "(//android.view.ViewGroup[count(android.view.ViewGroup)=4])[last()]/android.view.ViewGroup"
+}

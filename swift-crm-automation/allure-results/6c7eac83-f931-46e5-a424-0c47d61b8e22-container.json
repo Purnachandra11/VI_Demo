@@ -1,0 +1,1 @@
+{"uuid":"6c7eac83-f931-46e5-a424-0c47d61b8e22","name":"\"before all\" hook in \"{root}\"","children":["a00c504e-9af1-48ef-8a4d-630d8969752e"],"befores":[{"status":"passed","statusDetails":{},"stage":"finished","steps":[],"attachments":[],"parameters":[],"start":1782710263744,"name":"\"before all\" hook in \"{root}\"","stop":1782710263745}],"afters":[]}

@@ -19,7 +19,7 @@ export const SiebelSelectors = {
   // Application Shell 
   app: {
     homeTab: '//*[@id="ui-id-126"]',
-    billingAndAccountTab: '//*[@id="ui-id-535"]',
+    billingAndAccountTab: '//*[@id="ui-id-535" or @id="ui-id-258"]',
   },
 
   // Subscriptions / Search Applet

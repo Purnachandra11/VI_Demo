@@ -544,7 +544,12 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
   });
 
   after(async () => {
-    if (excelReportService.getResultCount() > 0) {
+  if (excelReportService.getResultCount() > 0) {
+    const excelPath = await excelReportService.writeReport();
+    const pdfPath = await excelReportService.writePDFReport();
+    
+    console.log(`[Reports] Excel: ${excelPath}`);
+    console.log(`[Reports] HTML: ${pdfPath}`);
       try {
         const reportPath = await excelReportService.writeReport();
         console.log(`[Recharge UAT] Excel Report generated: ${reportPath}`);
@@ -726,10 +731,37 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
           reportColStatus(rowIndex, row.msisdn, 'in', 'running', 'IN test in progress');
           
           const inResults = await rechargePage.runINTest(row.msisdn, row.rechargeMRP);
-          const inStatus = inResults.success ? 'completed' : 'failed';
+          const inStatus = inResults.success ? 'Pass' : 'Fail';
           reportColStatus(rowIndex, row.msisdn, 'in', inStatus, inResults.success ? 'IN test passed' : 'IN test failed');
           
           const screenshots = rechargePage.getScreenshotsForMSISDN(row.msisdn);
+        
+          // ─── ADD IN RESULT TO EXCEL REPORT SERVICE ──────────────────────────
+          excelReportService.addINResult({
+            msisdn: row.msisdn,
+            circle: row.circle,
+            rechargeMRP: row.rechargeMRP,
+            status: inStatus,
+            customerName: subscriberInfo.customerName || 'N/A',
+            coreBalance: subscriberInfo.coreBalance || 'N/A',
+            serviceValidity: subscriberInfo.serviceValidity || 'N/A',
+            accountStatus: subscriberInfo.accountStatus || 'N/A',
+            userType: subscriberInfo.userType || 'N/A',
+            activationDate: inResults.accountOverview?.activationDate || 'N/A',
+            serviceRemovalOn: inResults.accountOverview?.serviceRemovalOn || 'N/A',
+            supervisionExpiresOn: inResults.accountOverview?.supervisionExpiresOn || 'N/A',
+            mainBalance: inResults.accountOverview?.mainBalance || 'N/A',
+            serviceFeeExpiresOn: inResults.accountOverview?.serviceFeeExpiresOn || 'N/A',
+            subscriberStatus: inResults.accountOverview?.subscriberStatus || 'N/A',
+            creditClearanceOn: inResults.accountOverview?.creditClearanceOn || 'N/A',
+            dedicatedAccounts: inResults.dedicatedAccounts || [],
+            offers: inResults.offers || [],
+            screenshotCount: screenshots.length,
+            screenshots: screenshots,
+            remarks: inResults.success ? 'IN test completed successfully' : 'IN test failed'
+          });
+          
+          // ─── ALSO ADD TO UAT RESULTS (for backward compatibility) ──────────
           excelReportService.addUATResult({
             msisdn: row.msisdn,
             circle: row.circle,
@@ -771,45 +803,163 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
           await rechargePage.clickSearchButton();
           await browser.pause(2000);
           
+          // const swiftResults = await rechargePage.runSwiftTest(row.msisdn, row.rechargeMRP);
+          // const swiftStatus = swiftResults.success ? 'completed' : 'failed';
+          // reportColStatus(rowIndex, row.msisdn, 'swift', swiftStatus, swiftResults.success ? 'SWIFT test passed' : 'SWIFT test failed');
           const swiftResults = await rechargePage.runSwiftTest(row.msisdn, row.rechargeMRP);
-          const swiftStatus = swiftResults.success ? 'completed' : 'failed';
+
+          // Check if MRP matches EITHER core balance OR offer MRP
+          const offerHistoryItems = swiftResults.offerHistory || [];
+          const offerHistoryData = offerHistoryItems.length > 0 ? offerHistoryItems[0] : null;
+
+          const expectedMRP = String(row.rechargeMRP).trim();
+          const actualMRP = offerHistoryData?.mrp ? String(offerHistoryData.mrp).trim() : 'N/A';
+          const currentBalance = subscriberInfo?.coreBalance ? String(subscriberInfo.coreBalance).trim() : 'N/A';
+
+          const mrpMatches = (actualMRP === expectedMRP) || (currentBalance === expectedMRP);
+
+          // Set status: Pass if MRP matches AND test succeeded
+          let swiftStatus = 'Fail';
+          if (mrpMatches && swiftResults.success) {
+            swiftStatus = 'Pass';
+          } else if (!mrpMatches && swiftResults.success) {
+            swiftStatus = 'Mismatch';
+          }
+
+          console.log(`[Recharge UAT] Expected: ₹${expectedMRP}, Offer MRP: ₹${actualMRP}, Balance: ₹${currentBalance}, Match: ${mrpMatches}`);
           reportColStatus(rowIndex, row.msisdn, 'swift', swiftStatus, swiftResults.success ? 'SWIFT test passed' : 'SWIFT test failed');
           
           const screenshots = rechargePage.getScreenshotsForMSISDN(row.msisdn);
           
+          // Get ALL offer history data from swiftResults
+          // const offerHistoryItems = swiftResults.offerHistory || [];
+          // const offerHistoryData = offerHistoryItems.length > 0 ? offerHistoryItems[0] : null;
+          
+          console.log('swiftResults:', swiftResults);
+          console.log(`Found ${offerHistoryItems.length} offer history items`);
+          console.log('offerHistoryData (first):', offerHistoryData);
+          console.log('subscriberInfo:', subscriberInfo);
+          
+          // Store ALL offer history items for reference
+          const allOfferHistory = offerHistoryItems.map((item: any, index: number) => ({
+            index: index,
+            transactionId: item.transactionId,
+            activationDateTime: item.activationDateTime,
+            validity: item.validity,
+            mrp: item.mrp,
+            activationMode: item.activationMode,
+            currentCoreBalance: item.currentCoreBalance,
+            etopupTransactionId: item.etopupTransactionId,
+            retailerMsisdn: item.retailerMsisdn,
+            name: item.name,
+            category: item.category,
+            benefits: item.benefits,
+            detailValidity: item.detailValidity
+          }));
+          
+          console.log('[Recharge UAT] All offer history:', JSON.stringify(allOfferHistory, null, 2));
+          
           const existingResult = (excelReportService as any)['uatResults']?.find((r: any) => r.msisdn === row.msisdn);
+          
+          // ============================================================
+          // COMBINE DATA FROM BOTH SOURCES
+          // ============================================================
+          // Priority: OfferHistoryItem data FIRST, then subscriberInfo as fallback
+          const transactionId = offerHistoryData?.transactionId || `SWIFT-${row.msisdn}-${Date.now()}`;
+          const activationDateTime = offerHistoryData?.activationDateTime || new Date().toLocaleString();
+          const activationMode = offerHistoryData?.activationMode || 'SWIFT Portal';
+          const etopupTransactionId = offerHistoryData?.etopupTransactionId || `ET-${Date.now()}`;
+          const retailerMsisdn = offerHistoryData?.retailerMsisdn || row.msisdn;
+          
+          // Use subscriberInfo for user-related data
+          const name = subscriberInfo.customerName || offerHistoryData?.name || 'N/A';
+          const circle = subscriberInfo.circle || row.circle || 'N/A';
+          
+          // Use offer history for plan/offer related data
+          const mrp = offerHistoryData?.mrp || 'N/A';
+          const validity = offerHistoryData?.validity || subscriberInfo.serviceValidity || '30 days';
+          const detailValidity = offerHistoryData?.detailValidity || subscriberInfo.serviceValidity || '30 days';
+          const currentCoreBalance = subscriberInfo.coreBalance || '0.00';
+          const category = offerHistoryData?.category || 'SWIFT Recharge';
+          const benefits = offerHistoryData?.benefits || row.planBenefit || 'N/A';
+          
+          // Account status from subscriberInfo
+          const accountStatus = subscriberInfo.accountStatus || 'N/A';
+          const userType = subscriberInfo.userType || 'N/A';
+          
+         // Log combined data with better formatting
+         // In swift_recharge_spec.ts, add this debug log before calling runSwiftTest:
+console.log(`[Recharge UAT] 📊 Row ${srNo} - rechargeMRP from data: "${row.rechargeMRP}" (type: ${typeof row.rechargeMRP})`);
+            console.log('[Recharge UAT] 📊 Combined Data:');
+            console.log(`  ✅ Core Balance: ${currentCoreBalance} (from subscriberInfo)`); 
+            console.log(`  Transaction ID: ${transactionId}`);
+            console.log(`  Activation DateTime: ${activationDateTime}`);
+            console.log(`  Activation Mode: ${activationMode}`);
+            console.log(`  eTOPUP Transaction ID: ${etopupTransactionId}`);
+            console.log(`  Retailer MSISDN: ${retailerMsisdn}`);
+            console.log(`  Customer Name: ${name}`);
+            console.log(`  Circle: ${circle}`);
+            console.log(`  MRP: ${mrp}`);
+            console.log(`  Validity: ${validity}`);
+            console.log(`  Detail Validity: ${detailValidity}`);
+            console.log(`  Category: ${category}`);
+            console.log(`  Benefits: ${benefits}`);
+            console.log(`  Account Status: ${accountStatus}`);
+            console.log(`  User Type: ${userType}`);
+            console.log(`  Total Offer History Items: ${offerHistoryItems.length}`);
+
+            // Also log the raw data for debugging
+            console.log('[Recharge UAT] Raw offer history data:', JSON.stringify(offerHistoryData, null, 2));
+          
           if (existingResult) {
-            existingResult.swiftStatus = swiftResults.success ? 'Pass' : 'Fail';
+            existingResult.swiftStatus = swiftStatus;
             existingResult.screenshots = [...(existingResult.screenshots || []), ...screenshots];
-            existingResult.transactionId = `SWIFT-${row.msisdn}-${Date.now()}`;
-            existingResult.benefits = row.planBenefit || 'N/A';
+            existingResult.transactionId = transactionId;
+            existingResult.activationDateTime = activationDateTime;
+            existingResult.validity = validity;
+            existingResult.activationMode = activationMode;
+            existingResult.currentCoreBalance = currentCoreBalance;
+            existingResult.etopupTransactionId = etopupTransactionId;
+            existingResult.retailerMsisdn = retailerMsisdn;
+            existingResult.name = name;
+            existingResult.category = category;
+            existingResult.benefits = benefits;
+            existingResult.detailValidity = detailValidity;
+            existingResult.circle = circle;
+            existingResult.accountStatus = accountStatus;
+            existingResult.userType = userType;
+            existingResult.allOfferHistory = allOfferHistory; // Store all offer history items
           } else {
             excelReportService.addUATResult({
               msisdn: row.msisdn,
-              circle: row.circle,
-              mrp: row.rechargeMRP,
+              circle: circle,
+              mrp: mrp,
               planName: row.planBenefit || 'N/A',
               rechargeNotification: row.rechargeNotification || 'N/A',
               inStatus: 'Skip',
-              swiftStatus: swiftResults.success ? 'Pass' : 'Fail',
+              swiftStatus: swiftStatus,
               viAppStatus: viAppFlag === 'yes' ? 'Pending' : 'Skip',
-              transactionId: `SWIFT-${row.msisdn}-${Date.now()}`,
-              activationDateTime: new Date().toLocaleString(),
-              validity: subscriberInfo.serviceValidity || '30 days',
-              activationMode: 'SWIFT Portal',
-              currentCoreBalance: subscriberInfo.coreBalance || '0.00',
-              etopupTransactionId: `ET-${Date.now()}`,
-              retailerMsisdn: row.msisdn,
-              name: subscriberInfo.customerName || 'N/A',
-              category: 'SWIFT Recharge',
-              benefits: row.planBenefit || 'N/A',
-              detailValidity: subscriberInfo.serviceValidity || '30 days',
+              transactionId: transactionId,
+              activationDateTime: activationDateTime,
+              validity: validity,
+              activationMode: activationMode,
+              currentCoreBalance: currentCoreBalance,
+              etopupTransactionId: etopupTransactionId,
+              retailerMsisdn: retailerMsisdn,
+              name: name,
+              category: category,
+              benefits: benefits,
+              detailValidity: detailValidity,
+              accountStatus: accountStatus,
+              userType: userType,
+              allOfferHistory: allOfferHistory, // Store all offer history items
               screenshots: screenshots
             });
           }
           
           const screenshotEntries = rechargePage.getScreenshots().filter(s => s.msisdn === row.msisdn);
           excelReportService.addScreenshots(screenshotEntries);
+          
           
           console.log(`[Recharge UAT] ✅ SWIFT test completed: ${swiftResults.success ? 'PASS' : 'FAIL'}`);
         } else {

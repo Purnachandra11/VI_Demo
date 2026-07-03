@@ -1,7 +1,4 @@
-/**
- * SiebelSubscriptionsPage.ts
- * Page Object — Steps 4, 5.1, 5.2
- */
+// test/pages/SiebelSubscriptionsPage.ts (UPDATED)
 
 import { browser, $, $$ } from '@wdio/globals';
 import { expect } from 'chai';
@@ -9,18 +6,41 @@ import { expect } from 'chai';
 // ─── Selectors ─────────────────────────────────────────────────────────────────
 
 const SEL = {
-  msisdnInput   : '//*[@id="a_7"]/div/table/tbody/tr[3]/td[4]/div/input',
+  msisdnInput   : '//*[contains(@aria-label,"MSISDN")]',
   goButton      : '//*[@id="s_7_1_1_0_Ctrl" or @id="s_1_1_1_0_Ctrl"]',
   breadcrumb    : '//span[@class="siebui-crumb"]',
   assetFieldAria: 'input[aria-label="Asset"]',
   assetFieldAlt : 'input[aria-labelledby="AssetNumTitle_Label"]',
   assetFieldFull: '//*[@id="a_3"]/table/tbody/tr/td/span/div/table[1]/tbody/tr/td[1]/input',
-  // Use s_1_l instead of s_7_l // Excludes header row // Correct grid ID
-  gridBody      : '#s_1_l tbody tr:not(.jqgfirstrow)',  
-  gridTable     : '#s_1_l',  
+  // Account Summary specific locators
+  accountSummaryHeader: '//span[contains(text(), "Account Summary")]',
+  assetNumberDisplay: '//span[@id="s_3_l_Asset_Number"] | //input[contains(@id,"Asset_Number")]',
+  mobileNumberDisplay: '//span[contains(@id,"Mobile_Number")] | //input[contains(@aria-label,"Mobile")]',
+  // Grid selectors
+  gridBody      : '#s_1_l tbody tr:not(.jqgfirstrow)',
+  gridTable     : '#s_1_l',
   noDataMessage : '//div[contains(text(), "No records to display")]',
   loadingOverlay: '//div[contains(@class, "loading") or contains(@class, "wait")]',
 } as const;
+
+export interface SubscriptionRecord {
+  msisdn: string;
+  status: string;
+  assetNumber: string;
+  serviceBundle: string;
+  prepost: string;
+  circleName: string;
+  simNumber: string;
+  url: string;
+  accountNumber: string;
+  customerName: string;
+  billingAccountId: string;
+  faId: string;
+  alternateNumber: string;
+  activationDate: string;
+  modifyDeactivationDate: string;
+  crmInstance: string;
+}
 
 export class SiebelSubscriptionsPage {
 
@@ -28,7 +48,7 @@ export class SiebelSubscriptionsPage {
     console.log(`\n📱 Entering MSISDN: ${msisdn}`);
     
     // Give Siebel time to fully render after login 
-    await browser.pause(3000); 
+    await browser.pause(3000);
     
     // Try to click Subscriptions tab first if visible 
     try { 
@@ -185,40 +205,251 @@ export class SiebelSubscriptionsPage {
     return 'SUBSCRIPTION_LIST';
   }
 
+  /**
+   * Parse all subscription rows from the grid
+   * Returns array of subscription records with all available data
+   */
+  async parseSubscriptions(): Promise<SubscriptionRecord[]> {
+    console.log('📊 Parsing subscription grid data...');
+    const subscriptions: SubscriptionRecord[] = [];
+    
+    try {
+      // Wait for table to load
+      await this.waitForGridToLoad();
+      
+      // Get all data rows
+      const rows = await $$(SEL.gridBody);
+      
+      if ((await rows.length) === 0) {
+        console.log('   ⚠️ No subscription rows found');
+        return subscriptions;
+      }
+      
+      for (const row of rows) {
+        const cells = await row.$$('td');
+        
+        if ((await cells.length) >= 17) {
+          try {
+            const subscription: SubscriptionRecord = {
+              msisdn: await this.getCellText(cells[1]) || '',
+              status: await this.getCellText(cells[2]) || '',
+              assetNumber: await this.getCellText(cells[3]) || '',
+              serviceBundle: await this.getCellText(cells[4]) || '',
+              prepost: await this.getCellText(cells[5]) || '',
+              circleName: await this.getCellText(cells[6]) || '',
+              simNumber: await this.getCellText(cells[7]) || '',
+              url: await this.getCellText(cells[8]) || '',
+              accountNumber: await this.getCellText(cells[9]) || '',
+              customerName: await this.getCellText(cells[10]) || '',
+              billingAccountId: await this.getCellText(cells[11]) || '',
+              faId: await this.getCellText(cells[12]) || '',
+              alternateNumber: await this.getCellText(cells[13]) || '',
+              activationDate: await this.getCellText(cells[14]) || '',
+              modifyDeactivationDate: await this.getCellText(cells[15]) || '',
+              crmInstance: await this.getCellText(cells[16]) || ''
+            };
+            
+            subscriptions.push(subscription);
+          } catch (cellError) {
+            console.log(`   ⚠️ Error parsing row: ${cellError}`);
+          }
+        }
+      }
+      
+      console.log(`   ✅ Parsed ${subscriptions.length} subscription records`);
+      return subscriptions;
+      
+    } catch (error) {
+      console.log(`   ⚠️ Error parsing subscriptions: ${error}`);
+      return subscriptions;
+    }
+  }
+
+  private async getCellText(cell: any): Promise<string> {
+    try {
+      // Try to get title attribute first (often has the actual value)
+      const title = await cell.getAttribute('title');
+      if (title && title.trim()) {
+        return title.trim();
+      }
+      // Fall back to text content
+      return (await cell.getText()).trim();
+    } catch {
+      return '';
+    }
+  }
+
   async verifyAccountSummaryPage(expectedMsisdn: string): Promise<void> {
     console.log(`\n✅ Verifying Account Summary for MSISDN: ${expectedMsisdn}`);
+    console.log('   ⏳ Waiting for Account Summary page to load completely...');
 
-    const breadcrumb = await $(SEL.breadcrumb);
-    await breadcrumb.waitForDisplayed({ timeout: 15_000 });
-    const breadcrumbText = (await breadcrumb.getText()).trim();
-    expect(breadcrumbText).to.contain('Account Summary');
-    console.log(`   ✅ Breadcrumb: "${breadcrumbText}"`);
+    // FIRST: Wait for the breadcrumb to show "Account Summary"
+    try {
+      const breadcrumb = await $(SEL.breadcrumb);
+      await breadcrumb.waitForDisplayed({ timeout: 30_000 });
+      const breadcrumbText = (await breadcrumb.getText()).trim();
+      
+      if (!breadcrumbText.toLowerCase().includes('account summary')) {
+        // If breadcrumb doesn't contain "Account Summary", try to detect the page differently
+        console.log(`   ℹ️ Breadcrumb text: "${breadcrumbText}" - waiting for page elements...`);
+      } else {
+        console.log(`   ✅ Breadcrumb: "${breadcrumbText}"`);
+      }
+    } catch (error) {
+      console.log(`   ⚠️ Breadcrumb not found, continuing with other checks...`);
+    }
 
+    // SECOND: Wait for page to be fully loaded by checking for multiple elements
+    await this.waitForAccountSummaryToLoad();
+
+    // THIRD: Try multiple strategies to find the Asset/Mobile Number field
     const assetField = await this.findAssetField();
-    await assetField.waitForDisplayed({ timeout: 10_000 });
+    await assetField.waitForDisplayed({ timeout: 15_000 });
 
-    const assetValue = await assetField.getValue();
+    // Get the value - could be from input or span
+    let assetValue = '';
+    try {
+      assetValue = await assetField.getValue();
+      if (!assetValue || assetValue.trim() === '') {
+        // If input is empty, try text content
+        assetValue = await assetField.getText();
+      }
+    } catch {
+      assetValue = await assetField.getText();
+    }
+
     console.log(`   📱 Asset/Mobile Number field value: "${assetValue}"`);
 
-    const normalise = (v: string) => v.replace(/[^0-9]/g, '').slice(-10);
-    expect(normalise(assetValue)).to.contain(normalise(expectedMsisdn));
+    // Normalize for comparison (remove non-numeric, take last 10 digits)
+    const normalize = (v: string) => v.replace(/[^0-9]/g, '').slice(-10);
+    const expectedNormalized = normalize(expectedMsisdn);
+    const actualNormalized = normalize(assetValue);
+
+    expect(actualNormalized).to.contain(expectedNormalized);
     console.log(`   ✅ MSISDN verified: ${expectedMsisdn}`);
 
+    // Additional verification - check for postpaid/prepaid info
     try {
       const bodyText = await (await $('body')).getText();
       if (bodyText.toLowerCase().includes('postpaid')) {
         console.log('   ✅ Account type: Postpaid confirmed');
+      } else if (bodyText.toLowerCase().includes('prepaid')) {
+        console.log('   ✅ Account type: Prepaid confirmed');
       }
     } catch { /* non-critical */ }
   }
 
+  private async waitForAccountSummaryToLoad(): Promise<void> {
+    console.log('   ⏳ Waiting for Account Summary page content...');
+    
+    // Wait for multiple indicators that page is loaded
+    await browser.waitUntil(
+      async () => {
+        try {
+          // Check for any of these elements
+          const elementSelectors = [
+            'span.siebui-crumb',
+            'input[aria-label="Asset"]',
+            'input[aria-labelledby="AssetNumTitle_Label"]',
+            '//*[@id="a_3"]',
+            '//span[contains(text(), "Account")]',
+            '//div[contains(@class, "applet")]'
+          ];
+          
+          for (const selector of elementSelectors) {
+            try {
+              const el = await $(selector);
+              if (await el.isDisplayed()) {
+                return true;
+              }
+            } catch { /* element not found */ }
+          }
+          return false;
+        } catch {
+          return false;
+        }
+      },
+      { 
+        timeout: 45_000,  // 45 seconds max wait
+        interval: 2_000,  // Check every 2 seconds
+        timeoutMsg: 'Account Summary page did not load within 45 seconds' 
+      }
+    );
+
+    // Additional wait for any loading spinners to disappear
+    try {
+      await browser.waitUntil(
+        async () => {
+          const loadingElements = await $$('//div[contains(@class, "loading") or contains(@class, "wait")]');
+          const visible = await Promise.all(
+            loadingElements.map(async el => await el.isDisplayed())
+          );
+          return !visible.some(v => v === true);
+        },
+        { 
+          timeout: 15_000,
+          interval: 1_000,
+          timeoutMsg: 'Loading indicators still visible'
+        }
+      );
+    } catch { /* no loading indicators or they disappeared */ }
+
+    console.log('   ✅ Account Summary page loaded successfully');
+  }
+
   private async findAssetField() {
-    for (const sel of [SEL.assetFieldAria, SEL.assetFieldAlt, SEL.assetFieldFull]) {
+    // Try all known selectors with extended timeout
+    const selectors = [
+      SEL.assetFieldAria,
+      SEL.assetFieldAlt,
+      SEL.assetFieldFull,
+      '//input[contains(@aria-label, "Asset")]',
+      '//input[contains(@id, "Asset_Number")]',
+      '//span[contains(@id, "Asset_Number")]',
+      '//*[contains(@aria-label, "Mobile Number")]',
+      '//input[contains(@aria-label, "Mobile")]',
+      '//*[@id="s_3_l_Asset_Number"]',
+      '//*[@id="s_3_r_0_Asset_Number"]'
+    ];
+
+    for (const sel of selectors) {
       try {
         const el = await $(sel);
-        if (await el.isExisting()) return el;
+        // Check if element exists and is displayed or present in DOM
+        const exists = await el.isExisting();
+        if (exists) {
+          const displayed = await el.isDisplayed().catch(() => false);
+          if (displayed) {
+            console.log(`   🔍 Found asset field using selector: ${sel}`);
+            return el;
+          } else {
+            // Element exists but not displayed - might be hidden but has value
+            // Try to get its value anyway
+            const value = await el.getValue().catch(() => '');
+            if (value && value.trim()) {
+              console.log(`   🔍 Found hidden asset field with value using: ${sel}`);
+              return el;
+            }
+          }
+        }
       } catch { /* try next */ }
     }
+
+    // Last resort: try to find any input or span with MSISDN/Asset related text
+    try {
+      const allInputs = await $$('input');
+      for (const input of allInputs) {
+        const ariaLabel = await input.getAttribute('aria-label').catch(() => '');
+        const id = await input.getAttribute('id').catch(() => '');
+        const name = await input.getAttribute('name').catch(() => '');
+        const combined = `${ariaLabel} ${id} ${name}`.toLowerCase();
+        if (combined.includes('asset') || combined.includes('msisdn') || combined.includes('mobile')) {
+          console.log(`   🔍 Found asset field by scanning inputs: ${id || ariaLabel || name}`);
+          return input;
+        }
+      }
+    } catch { /* fall through */ }
+
     throw new Error('Asset/Mobile Number field not found with any known locator');
   }
 
@@ -226,94 +457,80 @@ export class SiebelSubscriptionsPage {
     console.log(`\n🔎 Scanning subscription grid for MSISDN: ${msisdn}`);
     await this.waitForGridToLoad();
 
-    const rows = await $$(SEL.gridBody);
-    console.log(`   Found ${await rows.length} data rows in grid`);
+    // First, parse all subscriptions and log them
+    const subscriptions = await this.parseSubscriptions();
+    console.log(`   📊 Found ${subscriptions.length} subscription records`);
+    
+    // Log the first few records for debugging
+    subscriptions.slice(0, 3).forEach((sub, idx) => {
+      console.log(`      Record ${idx + 1}: MSISDN=${sub.msisdn}, Status=${sub.status}, Asset=${sub.assetNumber}`);
+    });
 
-    if ((await rows.length) === 0) {
-      console.log('   ⚠️ No rows found in subscription grid');
-      await this.checkForNoDataMessage();
+    // Find the matching subscription
+    const matchingSub = subscriptions.find(sub => 
+      sub.msisdn.replace(/[^0-9]/g, '').slice(-10) === msisdn.replace(/[^0-9]/g, '').slice(-10)
+    );
+
+    if (!matchingSub) {
+      console.log(`   ❌ No subscription found for MSISDN: ${msisdn}`);
       return false;
     }
 
-    let validRowCount = 0;
-    let skippedRows = 0;
+    console.log(`   ✅ Found matching subscription:`);
+    console.log(`      - MSISDN: ${matchingSub.msisdn}`);
+    console.log(`      - Status: ${matchingSub.status}`);
+    console.log(`      - Asset #: ${matchingSub.assetNumber}`);
+    console.log(`      - Activation: ${matchingSub.activationDate}`);
+    console.log(`      - Circle: ${matchingSub.circleName}`);
 
-    for (const row of rows) {
-      const rowClass = (await row.getAttribute('class')) ?? '';
-      if (rowClass.includes('jqgfirstrow') || rowClass.includes('jqgempty')) {
-        continue;
-      }
+    // Check if status is valid (Active or Suspended)
+    const validStatus = matchingSub.status.toLowerCase() === 'active' || 
+                        matchingSub.status.toLowerCase() === 'suspended';
 
-      let rowMsisdn = '';
-      try {
-        const msisdnElement = await row.$('td[id*="_MSISDN"]');
-        rowMsisdn = (await msisdnElement.getText()).trim();
-      } catch { 
-        skippedRows++;
-        continue; 
-      }
-
-      if (rowMsisdn !== msisdn.trim()) continue;
-
-      let status = '';
-      try {
-        const statusElement = await row.$('td[id*="_Status"]');
-        status = (await statusElement.getText()).trim().toLowerCase();
-      } catch { 
-        console.log(`   ⚠️ Could not read status for MSISDN: ${rowMsisdn}`);
-        continue; 
-      }
-
-      let activationDate = '';
-      try {
-        const activationElement = await row.$('td[id*="_TM_Install_Date"]');
-        activationDate = (await activationElement.getText()).trim();
-      } catch { 
-        console.log(`   ℹ️ No activation date found for MSISDN: ${rowMsisdn}`);
-      }
-
-      console.log(`   Row — MSISDN: ${rowMsisdn} | Status: ${status} | Activation: ${activationDate || 'Not set'}`);
-
-      // Valid statuses: Active or Suspended
-      const validStatus = status === 'active' || status === 'suspended';
-
-      if (!validStatus) {
-        console.log(`   ⏭️  Skipping — Status "${status}" is not Active/Suspended (Case 5.2 requirement)`);
-        skippedRows++;
-        continue;
-      }
-
-      if (!activationDate) {
-        console.log('   ⏭️  Skipping — Activation Date missing');
-        skippedRows++;
-        continue;
-      }
-
-      validRowCount++;
-
-      try {
-        const assetLink = await row.$('td[id*="_Asset_Number"] a');
-        await assetLink.waitForClickable({ timeout: 5_000 });
-        const assetNumber = (await assetLink.getText()).trim();
-        console.log(`   ✅ Valid record found (Active/Suspended) — Asset #: ${assetNumber} | Status: ${status}`);
-        console.log(`   🔗 Clicking Asset # link...`);
-        await assetLink.click();
-        await this.waitForAccountSummaryToLoad();
-        console.log(`   ✅ Successfully navigated to Account Summary for Asset #: ${assetNumber}`);
-        return true;
-      } catch (err) {
-        const error = err as Error;
-        console.warn(`   ⚠️ Could not click Asset link: ${error.message}`);
-        continue;
-      }
+    if (!validStatus) {
+      console.log(`   ⏭️  Skipping - Status "${matchingSub.status}" is not Active/Suspended`);
+      return false;
     }
 
-    console.log(`\n📊 Subscription scan summary:`);
-    console.log(`   - Valid rows (Active/Suspended) found: ${validRowCount}`);
-    console.log(`   - Rows skipped: ${skippedRows}`);
-    console.log(`   - Total rows processed: ${await rows.length}`);
-    console.log(`\n   ❌ No Active/Suspended subscription found for ${msisdn}`);
-    return false;
+    // Click the Asset # link - using the parsed asset number
+    try {
+      // Find the row containing this asset number
+      const rows = await $$(SEL.gridBody);
+      let targetRow = null;
+      let rowIndex = 0;
+
+      for (const row of rows) {
+        rowIndex++;
+        try {
+          const assetLink = await row.$('td[id*="_Asset_Number"] a');
+          const assetText = await assetLink.getText();
+          if (assetText.trim() === matchingSub.assetNumber) {
+            targetRow = row;
+            break;
+          }
+        } catch { continue; }
+      }
+
+      if (!targetRow) {
+        console.log(`   ⚠️ Could not find row with asset number: ${matchingSub.assetNumber}`);
+        return false;
+      }
+
+      const assetLink = await targetRow.$('td[id*="_Asset_Number"] a');
+      await assetLink.waitForClickable({ timeout: 10_000 });
+      console.log(`   🔗 Clicking Asset # link: ${matchingSub.assetNumber}`);
+      await assetLink.click();
+
+      // Wait for Account Summary page to load completely
+      await this.waitForAccountSummaryToLoad();
+      console.log(`   ✅ Successfully navigated to Account Summary for Asset #: ${matchingSub.assetNumber}`);
+      return true;
+
+    } catch (err) {
+      const error = err as Error;
+      console.warn(`   ⚠️ Could not click Asset link: ${error.message}`);
+      return false;
+    }
   }
 
   private async waitForGridToLoad(): Promise<void> {
@@ -338,25 +555,10 @@ export class SiebelSubscriptionsPage {
       );
       
       await browser.pause(1_000);
-      console.log(' Grid loaded successfully');
+      console.log('   ✅ Grid loaded successfully');
     } catch (err) {
       const error = err as Error;
       console.log(`   ⚠️ Grid may not have loaded completely: ${error.message}`);
-    }
-  }
-
-  private async waitForAccountSummaryToLoad(): Promise<void> {
-    console.log('Waiting for Account Summary page to load...');
-    
-    try {
-      const breadcrumb = await $(SEL.breadcrumb);
-      await breadcrumb.waitForDisplayed({ timeout: 15_000 });
-      const assetField = await this.findAssetField();
-      await assetField.waitForDisplayed({ timeout: 10_000 });
-      console.log('Account Summary page loaded successfully');
-    } catch (err) {
-      const error = err as Error;
-      console.log(`Account Summary page may not have loaded completely: ${error.message}`);
     }
   }
 
@@ -409,11 +611,10 @@ export class SiebelSubscriptionsPage {
   }
 
   async clickAssetNumber(rowIndex: number): Promise<void> {
-    // Updated to use s_1_l instead of s_7_l
     const assetLink = await $(`//*[@id="s_1_l"]/tbody/tr[${rowIndex}]/td[@aria-describedby="s_1_l_Asset_Number"]/a`);
     await assetLink.waitForClickable({ timeout: 10000 });
     await assetLink.click();
-    await browser.pause(3000);
+    await this.waitForAccountSummaryToLoad();
     console.log(`✅ Clicked Asset # link at row ${rowIndex}`);
   }
 

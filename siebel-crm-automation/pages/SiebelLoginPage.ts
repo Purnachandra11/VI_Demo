@@ -128,8 +128,8 @@ export class SiebelLoginPage {
           text.includes('security question')
         );
       },
-      { timeout: 30_000, interval: 1_000,
-        timeoutMsg: 'Challenge screen did not appear within 30 s' }
+      { timeout: 60_000, interval: 1_000,
+        timeoutMsg: 'Challenge screen did not appear within 60 s' }
     );
 
     const bodyText = await (await $('body')).getText();

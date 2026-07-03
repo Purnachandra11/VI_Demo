@@ -1,0 +1,4 @@
+{
+  "using": "xpath",
+  "value": "//android.view.View[contains(@content-desc, \"pack\") or contains(@text, \"pack\")]"
+}

@@ -1,0 +1,4 @@
+{
+  "using": "xpath",
+  "value": "//*[contains(@content-desc,\"GB\") or contains(@text,\"GB\")]"
+}

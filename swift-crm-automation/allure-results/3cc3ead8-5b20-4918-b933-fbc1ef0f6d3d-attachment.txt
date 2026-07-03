@@ -1,0 +1,2 @@
+no such alert: WebDriverError: no such alert
+  (Session info: chrome=149.0.7827.197) when running "alert/text" with method "GET"

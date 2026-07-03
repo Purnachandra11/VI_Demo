@@ -1,0 +1,66 @@
+{
+  "script": "<script> [152 bytes]",
+  "args": [
+    {
+      "sessionId": "a05e8b93a8115e779fcb86c71fb82674",
+      "elementId": "f.31C49C3ECA70FFAF79C88F891F9A48BD.d.90909E758A6F3C9A9507723EE85692DE.e.667",
+      "element-6066-11e4-a52e-4f735466cecf": "f.31C49C3ECA70FFAF79C88F891F9A48BD.d.90909E758A6F3C9A9507723EE85692DE.e.667",
+      "locator": {
+        "type": "css",
+        "value": "div.row.breakrow"
+      },
+      "selector": "div.row.breakrow",
+      "parent": {
+        "sessionId": "a05e8b93a8115e779fcb86c71fb82674",
+        "elementId": "f.31C49C3ECA70FFAF79C88F891F9A48BD.d.90909E758A6F3C9A9507723EE85692DE.e.665",
+        "element-6066-11e4-a52e-4f735466cecf": "f.31C49C3ECA70FFAF79C88F891F9A48BD.d.90909E758A6F3C9A9507723EE85692DE.e.665",
+        "locator": {
+          "type": "css",
+          "value": "#demoofferhistry"
+        },
+        "selector": "#demoofferhistry",
+        "parent": {
+          "sessionId": "a05e8b93a8115e779fcb86c71fb82674",
+          "capabilities": {
+            "acceptInsecureCerts": false,
+            "browserName": "chrome",
+            "browserVersion": "149.0.7827.197",
+            "chrome": {
+              "chromedriverVersion": "149.0.7827.201 (6a7b3dbec3b2ca25877c2553b5473b2f277ef644-refs/branch-heads/7827_196@{#6})",
+              "userDataDir": "C:\\Users\\QD2245\\AppData\\Local\\Temp\\wdio-chrome-0-0-1782862187163"
+            },
+            "fedcm:accounts": true,
+            "goog:chromeOptions": {
+              "debuggerAddress": "localhost:59453"
+            },
+            "goog:processID": 24700,
+            "networkConnectionEnabled": false,
+            "pageLoadStrategy": "normal",
+            "platformName": "windows",
+            "proxy": {},
+            "setWindowRect": true,
+            "strictFileInteractability": false,
+            "timeouts": {
+              "implicit": 0,
+              "pageLoad": 300000,
+              "script": 30000
+            },
+            "unhandledPromptBehavior": "ignore",
+            "webSocketUrl": "ws://localhost:44762/session/a05e8b93a8115e779fcb86c71fb82674",
+            "webauthn:extension:credBlob": true,
+            "webauthn:extension:largeBlob": true,
+            "webauthn:extension:minPinLength": true,
+            "webauthn:extension:prf": true,
+            "webauthn:virtualAuthenticators": true,
+            "wdio:driverPID": 21860
+          }
+        },
+        "isReactElement": false,
+        "isShadowElement": false
+      },
+      "index": 0,
+      "isReactElement": false,
+      "isShadowElement": false
+    }
+  ]
+}
