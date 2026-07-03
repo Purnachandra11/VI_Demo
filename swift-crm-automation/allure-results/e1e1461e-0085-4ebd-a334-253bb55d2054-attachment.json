@@ -1,4 +1,0 @@
-{
-  "using": "xpath",
-  "value": "//android.widget.TextView[contains(@text,\"MB\") or //android.widget.TextView[contains(@text,\"unlimited data\")]"
-}

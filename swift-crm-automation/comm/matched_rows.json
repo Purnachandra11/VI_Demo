@@ -2,8 +2,26 @@
   {
     "rowIndex": 0,
     "srNo": 1,
+<<<<<<< HEAD
     "msisdn": "9983477174",
     "circle": "ODI",
+=======
+    "msisdn": "7374919937",
+    "circle": "RJ",
+    "rechargeMRP": "149",
+    "recharge": "yes",
+    "inFlag": "yes",
+    "swift": "yes",
+    "viApp": "no",
+    "planBenefit": "Get Unlimited Calls + 1GB Data + 300SMS. Pack Validity - 28 Days. Data tariff post quota completion will be charged at 50p/MB. Post SMS quota charging will be Re 1 local Re 1.5 STD per SMS.",
+    "rechargeNotification": "NA"
+  },
+  {
+    "rowIndex": 1,
+    "srNo": 2,
+    "msisdn": "7374919937",
+    "circle": "RAJ",
+>>>>>>> a5147db13f7bc69bd0f763290f8cd8eafaceb124
     "rechargeMRP": "149",
     "recharge": "no",
     "inFlag": "yes",
