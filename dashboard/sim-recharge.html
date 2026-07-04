@@ -2167,6 +2167,38 @@
     let sessionId = null;
     let rowCardMap = {};
     let testCardsData = [];
+    let isFileProcessing = false;
+
+    function lockUpload() {
+      isFileProcessing = true;
+
+      const dropZone = document.getElementById("dropZone");
+      const fileInputEl = document.getElementById("fileInput");
+
+      if (dropZone) {
+        dropZone.style.pointerEvents = "none";
+        dropZone.style.opacity = "0.6";
+        dropZone.style.cursor = "not-allowed";
+      }
+
+      if (fileInputEl) fileInputEl.disabled = true;
+    }
+
+    function unlockUpload() {
+      isFileProcessing = false;
+
+      const dropZone = document.getElementById("dropZone");
+      const fileInputEl = document.getElementById("fileInput");
+
+      if (dropZone) {
+        dropZone.style.pointerEvents = "";
+        dropZone.style.opacity = "";
+        dropZone.style.cursor = "";
+      }
+
+      if (fileInputEl) fileInputEl.disabled = false;
+    }
+
 
     /* ============================================================
        DOM REFS
@@ -2235,6 +2267,11 @@
       dropZone.style.borderColor = "";
       dropZone.style.background = "";
 
+      if (isFileProcessing) {
+        addLog("Please wait until the current validation is completed.", "warning");
+        return;
+      }
+
       const file = e.dataTransfer.files[0];
       if (file) {
         const ext = file.name.split('.').pop().toLowerCase();
@@ -2247,17 +2284,31 @@
       }
     });
 
+
     // FIX 3: Click handler for the upload area
     dropZone.addEventListener('click', function (e) {
+      if (isFileProcessing) {
+        addLog("Validation is in progress. Please wait...", "warning");
+        return;
+      }
       // Don't trigger if the click was on the download button
       if (e.target.closest('.btn-download-sample')) return;
       // fileInput.click();
     });
 
+
     // FIX 4: Handle file selection via the drop zone's click
     function handleFile(file) {
+      if (isFileProcessing) {
+        addLog("A file is already being processed. Please wait until it finishes.", "warning");
+        return;
+      }
+
+      lockUpload();
+
       selectedFile = file;
       selectedFileName = file.name;
+
 
       // Update the display
       fileNameDisplay.innerHTML = `<span class="file-name">📄 ${file.name}</span>`;
@@ -2301,7 +2352,7 @@
 
     async function pollLoginStatus() {
       try {
-        const r = await fetch("/api/swift/login-status");
+        // const r = await fetch("/api/swift/login-status");
         if (!r.ok) return;
         const d = await r.json();
         if (d.isLoggedIn) {
@@ -2330,6 +2381,7 @@
       const reader = new FileReader();
       reader.onload = async function (e) {
         try {
+
           const wb = XLSX.read(e.target.result, { type: "array" });
 
           const inputSheetName =
@@ -2591,8 +2643,11 @@ inputRows.forEach((row) => {
           document.getElementById("validationLoader").style.display = "none";
           document.getElementById("tablesContainer").style.display = "block";
 
+          unlockUpload();
+
           addLog(
-            `Preview ready — ${matched.length} matched, ${unmatched.length} unmatched.`,
+
+            `Prevalidation ready — ${matched.length} matched, ${unmatched.length} unmatched.`,
             "success",
           );
           startBtn.disabled = matched.length === 0;
@@ -2636,10 +2691,15 @@ inputRows.forEach((row) => {
         } catch (err) {
           document.getElementById("validationLoader").style.display = "none";
           addLog(`Excel parse error: ${err.message}`, "error");
+        } finally {
+          // Unlock on any completion (success or failure).
+          unlockUpload();
         }
+
       };
       reader.readAsArrayBuffer(file);
     }
+
 
     async function callBulkValidationAPI(inputRows) {
       const numbers = inputRows
@@ -2653,8 +2713,8 @@ inputRows.forEach((row) => {
         return null;
       }
       addLog(
-        `Sending ${numbers.length} number${numbers.length !== 1 ? "s" : ""} for bulk validation…`,
-        "info",
+        `Sending ${numbers.length} VI SIM number${numbers.length !== 1 ? "" : ""}${numbers.length !== 1 ? "s" : ""} for bulk validation in VI System...`,
+        "info"
       );
       try {
         const response = await fetch(
@@ -2667,10 +2727,10 @@ inputRows.forEach((row) => {
         );
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const result = await response.json();
-        addLog(
-          `Validation complete — ✅ ${result.processed_valid ?? 0} valid, ❌ ${result.processed_invalid ?? 0} invalid.`,
-          "success",
-        );
+        // addLog(
+        //   `Validation complete — ✅ ${result.processed_valid ?? 0} valid, ❌ ${result.processed_invalid ?? 0} invalid.`,
+        //   "success",
+        // );
         return result;
       } catch (err) {
         addLog(`Validation API Error: ${err.message}`, "error");
@@ -3844,10 +3904,10 @@ inputRows.forEach((row) => {
       const invalidCount = validationResults.filter(
         (r) => r.isValid === false,
       ).length;
-      addLog(
-        ` Sending emails: ${validCount} valid, ${invalidCount} invalid …`,
-        "info",
-      );
+      // addLog(
+      //   ` Sending emails: ${validCount} valid, ${invalidCount} invalid …`,
+      //   "info",
+      // );
       try {
         const response = await fetch(
           "/api/process-validation-and-send-emails",
