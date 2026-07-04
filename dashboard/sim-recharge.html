@@ -2383,9 +2383,7 @@
           if (bulkResult && Array.isArray(bulkResult.results)) {
             bulkResult.results.forEach((r) => {
               const num = String(r.number).trim();
-              const inputRow = inputRows.find(
-                (row) => String(row["MSISDN"] || "").trim() === num,
-              );
+              const inputRow = inputRows.find(row => String(row["MSISDN"]||"").trim() === num);
               const mrp = inputRow ? Number(inputRow["Recharge MRP"]) : 0;
               const planData = planMRPMap[mrp] || {};
               validationMap[num] = {
@@ -2397,46 +2395,100 @@
               };
             });
           }
+          // Pair each row that was actually sent with its API result BY POSITION,
+// not by MSISDN string — two rows can share an MSISDN with different CIRCLE.
+const sentRows = inputRows.filter(row => String(row["MSISDN"] || "").trim());
+const resultsList = (bulkResult && Array.isArray(bulkResult.results)) ? bulkResult.results : [];
+const rowApiResultMap = new Map();
+sentRows.forEach((row, i) => {
+  rowApiResultMap.set(row, resultsList[i] || null);
+});
 
-          const matched = [],
-            unmatched = [];
-          inputRows.forEach((row) => {
-            const msisdn = String(row["MSISDN"] || "").trim();
-            const mrp = Number(row["Recharge MRP"]);
-            const apiRes = validationMap[msisdn];
-            const reasons = [];
-            const isViValid = apiRes ? apiRes.isValid : false;
-            const isCircleMatched = apiRes ? apiRes.circleMatched : false;
+const matched = [], unmatched = [];
+inputRows.forEach((row) => {
+  const msisdn = String(row["MSISDN"] || "").trim();
+  const mrp = Number(row["Recharge MRP"]);
+  const rawApiRes = rowApiResultMap.get(row);   // ← row-based, not string-based
+  const planData = planMRPMap[mrp] || {};
+  const apiRes = rawApiRes ? {
+    ...rawApiRes,
+    amount: mrp,
+    benefit: planData.benefit || "N/A",
+    planName: planData.planName || "",
+    circle: row["CIRCLE"] || "Vi",
+  } : null;
 
-            if (apiRes && !apiRes.isValid)
-              reasons.push(apiRes.message || "Invalid Vi number");
-            else if (!apiRes)
-              reasons.push("Invalid MSISDN (must be 10 digits)");
-            // else if(apiRes && !isCircleMatched)
-            //   reasons.push(apiRes?.circleMessage || "Circle not matched")
-            if (!planMRPMap[mrp]) reasons.push("MRP not found in plan sheet");
+  const reasons = [];
+  const isViValid = apiRes ? apiRes.isValid : false;
+  const isCircleMatched = apiRes ? apiRes.circleMatched : false;
 
-            if (reasons.length === 0) {
-              matched.push({
-                input: row,
-                plan: planMRPMap[mrp],
-                apiRes: {
-                  ...apiRes,
-                  amount: mrp,
-                  benefit: planMRPMap[mrp]?.benefit || "N/A",
-                  circle: row["CIRCLE"] || "Vi",
-                },
-                isViValid,
-              });
-            } else {
-              unmatched.push({
-                ...row,
-                _reason: reasons.join(" · "),
-                _apiRes: { ...apiRes, amount: mrp },
-                _isViValid: isViValid,
-              });
-            }
-          });
+  if (apiRes && !apiRes.isValid)
+    reasons.push(apiRes.message || "Invalid Vi number");
+  else if (!apiRes)
+    reasons.push("Invalid MSISDN (must be 10 digits)");
+  else if (apiRes && !isCircleMatched)
+    reasons.push(apiRes?.circleMessage || "Circle not matched");
+  if (!planMRPMap[mrp]) reasons.push("MRP not found in plan sheet");
+
+  if (reasons.length === 0) {
+    matched.push({ input: row, plan: planMRPMap[mrp], apiRes, isViValid });
+  } else {
+    unmatched.push({
+      ...row,
+      _reason: reasons.join(" · "),
+      _apiRes: { ...(apiRes || {}), amount: mrp },
+      _isViValid: isViValid,
+    });
+  }
+});
+
+          // const matched = [], unmatched = [];
+          // inputRows.forEach((row) => {
+          //   const msisdn = String(row["MSISDN"] || "").trim();
+          //   const mrp = Number(row["Recharge MRP"]);
+          //   const apiRes = validationMap[msisdn];
+          //   // const apiRes = rowApiResultMap.get(row);   // ← was validationMap[msisdn]
+          //   const reasons = [];
+          //   const isViValid = apiRes ? apiRes.isValid : false;
+          //   const isCircleMatched = apiRes ? apiRes.circleMatched : false;
+
+          //   if (apiRes && !apiRes.isValid)
+          //     reasons.push(apiRes.message || "Invalid Vi number");
+          //   else if (!apiRes)
+          //     reasons.push("Invalid MSISDN (must be 10 digits)");
+          //   else if (apiRes && !isCircleMatched)
+          //     reasons.push(apiRes?.circleMessage || "Circle not matched");
+          //   if (!planMRPMap[mrp]) reasons.push("MRP not found in plan sheet");
+
+          //   // if (apiRes && !apiRes.isValid)
+          //   //   reasons.push(apiRes.message || "Invalid Vi number");
+          //   // else if (!apiRes)
+          //   //   reasons.push("Invalid MSISDN (must be 10 digits)");
+          //   // // else if(apiRes && !isCircleMatched)
+          //   // //   reasons.push(apiRes?.circleMessage || "Circle not matched")
+          //   // if (!planMRPMap[mrp]) reasons.push("MRP not found in plan sheet");
+
+          //   if (reasons.length === 0) {
+          //     matched.push({
+          //       input: row,
+          //       plan: planMRPMap[mrp],
+          //       apiRes: {
+          //         ...apiRes,
+          //         amount: mrp,
+          //         benefit: planMRPMap[mrp]?.benefit || "N/A",
+          //         circle: row["CIRCLE"] || "Vi",
+          //       },
+          //       isViValid,
+          //     });
+          //   } else {
+          //     unmatched.push({
+          //       ...row,
+          //       _reason: reasons.join(" · "),
+          //       _apiRes: { ...apiRes, amount: mrp },
+          //       _isViValid: isViValid,
+          //     });
+          //   }
+          // });
 
           document.getElementById("pvMatched").textContent = matched.length;
           document.getElementById("pvUnmatched").textContent =
@@ -2493,6 +2545,7 @@
             const swiftVal = String(inp["SWIFT"] || "").trim().toLowerCase();
             const inVal = String(inp["IN"] || "").trim().toLowerCase();
             const viAppVal = String(inp["Vi App"] || "").trim().toLowerCase();
+            const mismatches = testCardsData.filter((t) => t.circleMatched === false);
 
             const apiRes = r.apiRes || {};
             const circleText = apiRes.actualCircleText || "";
@@ -2549,17 +2602,30 @@
             bulkResult.results &&
             bulkResult.results.length > 0
           ) {
-            const enriched = bulkResult.results.map((r) => {
-              const vm = validationMap[String(r.number).trim()] || {};
-              return {
-                ...r,
-                amount: vm.amount || 0,
-                benefit: vm.benefit || "N/A",
-                circle: vm.circle || "N/A",
-                planName: vm.planName || "",
-                actualCircle: r?.actualCircleText + " - " + r?.actualCircleCode,
-              };
-            });
+            const enriched = resultsList.map((r, i) => {
+            const row = sentRows[i];
+            const mrp = row ? Number(row["Recharge MRP"]) : 0;
+            const planData = planMRPMap[mrp] || {};
+            return {
+              ...r,
+              amount: mrp || 0,
+              benefit: planData.benefit || "N/A",
+              circle: row ? (row["CIRCLE"] || "N/A") : "N/A",
+              planName: planData.planName || "",
+              actualCircle: (r?.actualCircleText || "") + " - " + (r?.actualCircleCode || ""),
+            };
+          });
+            // const enriched = bulkResult.results.map((r) => {
+            //   const vm = validationMap[String(r.number).trim()] || {};
+            //   return {
+            //     ...r,
+            //     amount: vm.amount || 0,
+            //     benefit: vm.benefit || "N/A",
+            //     circle: vm.circle || "N/A",
+            //     planName: vm.planName || "",
+            //     actualCircle: r?.actualCircleText + " - " + r?.actualCircleCode,
+            //   };
+            // });
             if (
               enriched.filter((r) => r.isValid).length > 0 ||
               enriched.filter((r) => !r.isValid).length > 0
@@ -2740,6 +2806,19 @@
     // }
 
     // NEW: entry point wired to the button — checks discrepancies first
+    // async function startUAT() {
+    //   if (!selectedFile || isRunning) return;
+
+    //   if (!testCardsData || testCardsData.length === 0) {
+    //     addLog(
+    //       "No matched rows to run. Re-check your Excel — nothing passed Vi validation / plan matching.",
+    //       "warning",
+    //     );
+    //     return;
+    //   }
+
+    //   await proceedStartUAT();
+    // }
     async function startUAT() {
       if (!selectedFile || isRunning) return;
 
@@ -2751,22 +2830,27 @@
         return;
       }
 
-      const mismatches = testCardsData.filter((t) => t.circleMatched === false);
-      console.log(mismatches?.length,"mismatch")
-
-      if (mismatches.length > 0) {
-        renderCircleDiscrepancyList(testCardsData);
-        document.getElementById("circleDiscrepancyOverlay").classList.add("visible");
-        addLog(
-          ` ${mismatches.length} circle discrepancy(ies) found — awaiting confirmation.`,
-          "warning",
-        );
-        return; // wait for user's decision in the popup
-      }
-
-      // no discrepancies — go straight ahead
-      await proceedStartUAT();
+      renderCircleDiscrepancyList(testCardsData);
+      document.getElementById("circleDiscrepancyOverlay").classList.add("visible");
+      addLog(`Showing ${testCardsData.length} confirmed matched row(s) for review before starting.`, "info");
     }
+
+    //   const mismatches = testCardsData.filter((t) => t.circleMatched === false);
+    //   console.log(mismatches?.length,"mismatch")
+
+    //   if (mismatches.length > 0) {
+    //     renderCircleDiscrepancyList(testCardsData);
+    //     document.getElementById("circleDiscrepancyOverlay").classList.add("visible");
+    //     addLog(
+    //       ` ${mismatches.length} circle discrepancy(ies) found — awaiting confirmation.`,
+    //       "warning",
+    //     );
+    //     return; // wait for user's decision in the popup
+    //   }
+
+    //   // no discrepancies — go straight ahead
+    //   await proceedStartUAT();
+    // }
     function renderCircleDiscrepancyList(rows) {
       const container = document.getElementById("circleDiscrepancyList");
 
@@ -3772,7 +3856,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               validationResults,
-              // recipients: ['kalidindi.chandra@qdegrees.org'],
+              recipients: ['kalidindi.chandra@qdegrees.org'],
               // recipients: ['kalidindi.chandra@qdegrees.org', 'sunil.kumar1@qdegrees.com'],
             }),
           },

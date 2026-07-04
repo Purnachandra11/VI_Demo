@@ -13,20 +13,96 @@ export class SiebelBillingPage {
         this.pdfValidator = new SiebelBillingPDFPage();
     }
 
+    // async clickBillingAccountTab(): Promise<void> {
+    //     console.log('💰 Clicking Billing/Account tab...');
+    //     try {
+    //         const billingTab = await $(SiebelSelectors.app.billingAndAccountTab);
+    //         await billingTab.waitForClickable({ timeout: 15000 });
+    //         await billingTab.click();
+    //         await browser.pause(3000);
+    //         console.log('   ✅ Billing/Account tab clicked');
+    //     } catch (error) {
+    //         console.log('   ⚠️ Could not click Billing/Account tab, trying alternative...');
+    //         await SiebelHelper.safeClick('//*[contains(text(), "Billing") or contains(text(), "Account")]');
+    //         await browser.pause(3000);
+    //     }
+    // }
     async clickBillingAccountTab(): Promise<void> {
-        console.log('💰 Clicking Billing/Account tab...');
+    console.log('💰 Verifying and clicking Billing/Account tab...');
+
+    // Scope to the 3rd-level nav bar container you identified: #s_vctrl_div
+    const containerSelector = '#s_vctrl_div';
+
+    try {
+        const container = await $(containerSelector);
+        await container.waitForExist({ timeout: 15000 });
+
+        // Verify the tab exists inside this container by its stable text
+        // (IDs like ui-id-220 / ui-id-244 are regenerated per Siebel session,
+        // so we anchor on text + container instead of a hardcoded id)
+        const billingTab = await container.$('a.ui-tabs-anchor=Billing/Account');
+        await billingTab.waitForClickable({
+            timeout: 15000,
+            timeoutMsg: 'Billing/Account tab not clickable inside #s_vctrl_div after 15s'
+        });
+
+        console.log('   ✅ Billing/Account tab verified');
+        await billingTab.click();
+
+        // Wait for the page refresh Siebel does after this tab click
+        await browser.pause(3000);
+        await browser.waitUntil(
+            async () => {
+                const loading = await $$('//div[contains(@class,"loading")]');
+                const visible = await Promise.all(loading.map(el => el.isDisplayed()));
+                return !visible.some(v => v === true);
+            },
+            { timeout: 20000, timeoutMsg: 'Page still loading after Billing/Account click' }
+        );
+
+        console.log('   ✅ Billing/Account tab clicked, page refreshed');
+
+    } catch (error) {
+        console.log('   ⚠️ Container-scoped click failed, trying direct id="ui-id-244" (session-specific)...');
         try {
-            const billingTab = await $(SiebelSelectors.app.billingAndAccountTab);
-            await billingTab.waitForClickable({ timeout: 15000 });
-            await billingTab.click();
+            const postClickTab = await $('#ui-id-244');
+            await postClickTab.waitForClickable({ timeout: 10000 });
+            await postClickTab.click();
             await browser.pause(3000);
-            console.log('   ✅ Billing/Account tab clicked');
-        } catch (error) {
-            console.log('   ⚠️ Could not click Billing/Account tab, trying alternative...');
-            await SiebelHelper.safeClick('//*[contains(text(), "Billing") or contains(text(), "Account")]');
-            await browser.pause(3000);
+            console.log('   ✅ Billing/Account tab clicked via id="ui-id-244"');
+        } catch (fallbackError) {
+            console.log('   ❌ Both strategies failed to click Billing/Account tab');
+            throw fallbackError;
         }
     }
+
+    // Verify Invoice Details section after refresh
+    await this.verifyInvoiceDetailsTitle();
+}
+
+async verifyInvoiceDetailsTitle(): Promise<boolean> {
+    console.log('📋 Verifying "Invoice Details" title...');
+    try {
+        const titleByXpath = await $('//*[@id="a_5"]/div[1]/div[1]');
+        await titleByXpath.waitForDisplayed({ timeout: 15000 });
+        const text = await titleByXpath.getText();
+
+        const isMatch = text.trim().toLowerCase().includes('invoice details');
+        console.log(`   ${isMatch ? '✅' : '⚠️'} Invoice Details title text: "${text}"`);
+        return isMatch;
+    } catch (error) {
+        console.log('   ⚠️ Invoice Details title not found at //*[@id="a_5"]/div[1]/div[1], trying class fallback...');
+        try {
+            const byClass = await $('.siebui-applet-title=Invoice Details');
+            await byClass.waitForDisplayed({ timeout: 10000 });
+            console.log('   ✅ Invoice Details title found via class fallback');
+            return true;
+        } catch {
+            console.log('   ❌ Invoice Details section not found');
+            return false;
+        }
+    }
+}
 
     async verifyInvoiceDetailsSection(): Promise<boolean> {
         console.log('📋 Verifying Invoice Details section...');

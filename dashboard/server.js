@@ -1121,6 +1121,7 @@ const EXCEL_CIRCLE_CODE_ALIASES = {
   MAH: "MNG",
   JK: "JNK",
   MP_CG: "MP",
+  RJ: "RAJ",
 };
 
 function normalizeExcelCircleCode(rawCode) {
@@ -1752,14 +1753,25 @@ app.post("/api/process-validation-and-send-emails", async (req, res) => {
       }
 
       // Check if it's a "MRP not found" case
+      // const isMismatch =
+      //   !isViValid && r.message && r.message.includes("MRP not found");
+
+      // return {
+      //   mobileNumber: r.number,
+      //   status: isViValid ? "Valid" : isMismatch ? "Mismatch" : "Invalid",
+      //   isValid: isViValid,
+      //   isMismatch: isMismatch,
+      const isCircleMismatch = r.circleMatched === false;
       const isMismatch =
-        !isViValid && r.message && r.message.includes("MRP not found");
+        isCircleMismatch ||
+        (!isViValid && r.message && r.message.includes("MRP not found"));
 
       return {
         mobileNumber: r.number,
-        status: isViValid ? "Valid" : isMismatch ? "Mismatch" : "Invalid",
+        status: isViValid && !isCircleMismatch ? "Valid" : isMismatch ? "Mismatch" : "Invalid",
         isValid: isViValid,
         isMismatch: isMismatch,
+        circleMatched: r.circleMatched === true,
         operatorName: isViValid ? "Vi" : "Unknown",
         circle: circle,
         planName: isViValid ? "Recharge Plan" : "N/A",
@@ -1777,8 +1789,11 @@ app.post("/api/process-validation-and-send-emails", async (req, res) => {
     });
 
     // For Email 2: Filter valid numbers that don't have MRP mismatch
+    // const validOnlyForAction = allDetails.filter(
+    //   (d) => d.isValid === true && !d.isMismatch,
+    // );
     const validOnlyForAction = allDetails.filter(
-      (d) => d.isValid === true && !d.isMismatch,
+      (d) => d.isValid === true && d.circleMatched === true,
     );
 
     // For each recipient, send 2 emails

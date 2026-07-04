@@ -19,7 +19,9 @@ export const SiebelSelectors = {
   // Application Shell 
   app: {
     homeTab: '//*[@id="ui-id-126"]',
-    billingAndAccountTab: '//*[@id="ui-id-535" or @id="ui-id-258"]',
+    // billingAndAccountTab: '//*[@id="ui-id-535" or @id="ui-id-258"]',
+    billingAndAccountTab: '#s_vctrl_div a.ui-tabs-anchor=Billing/Account',
+    invoiceDetailsTitle: '//*[@id="a_5"]/div[1]/div[1]',
   },
 
   // Subscriptions / Search Applet
