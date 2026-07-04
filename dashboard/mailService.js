@@ -9,8 +9,21 @@ class MailService {
     this.initializeTransporter();
   }
 
+  /**
+   * Check if email service is enabled
+   */
+  isEmailEnabled() {
+    return process.env.MAIL_ENABLED !== 'false';
+  }
+
   initializeTransporter() {
     try {
+      if (!this.isEmailEnabled()) {
+        console.log('📧 Email service is disabled. Skipping SMTP transporter initialization.');
+        this.transporter = null;
+        return;
+      }
+
       const mailHost = process.env.MAIL_HOST || 'qdegrees.icewarpcloud.in';
       const mailPortRaw = process.env.MAIL_PORT || '587';
       const mailPort = parseInt(mailPortRaw, 10) || 587;
@@ -123,8 +136,8 @@ buildConfirmUrl(detail, signToken) {
     let totalAmount = 0;
 
     // Separate valid and invalid for display order (valid first, then invalid)
-    const validItems = allDetails.filter(d => d.isValid === true);
-    const invalidItems = allDetails.filter(d => d.isValid === false);
+    const validItems = allDetails.filter(d => d.isValid === true && !d.isMismatch);
+    const invalidItems = allDetails.filter(d => d.isValid === false || d.isMismatch);
     const sortedDetails = [...validItems, ...invalidItems];
 
     // Check if any record has a valid benefit (for showing the column)
@@ -135,25 +148,28 @@ buildConfirmUrl(detail, signToken) {
         const amount = parseFloat(detail.amount || 0);
         totalAmount += amount;
 
-        const isViValid = detail.isValid === true;
-        const status = isViValid ? 'Valid' : 'Invalid';
-        const statusClass = isViValid ? 'status-valid' : 'status-invalid';
+        const isViValid = detail.isValid === true && !detail.isMismatch;
+        const status = isViValid ? 'Valid' : detail.isMismatch ? 'Mismatch' : 'Invalid';
+        const statusClass = isViValid ? 'yes' : 'no';
         const statusIcon = isViValid ? '✅' : '❌';
+        const mrpClass = isViValid ? 'mrp-highlight-input' : 'mrp-highlight-no';
 
-        const circle = detail.circle || detail.operatorName || 'N/A';
+        const circle = detail.circle || detail.operatorName || '—';
+        const actualCircle = detail.actualCircle || '—';
         // For combined email, show benefit if exists, otherwise show empty
-        const benefit = this.hasValidBenefitValue(detail) ? (detail.benefit || detail.planName || 'N/A') : '';
+        const benefit = this.hasValidBenefitValue(detail) ? `<span class="benefit-tag">${detail.benefit || detail.planName || '—'}</span>` : '';
         const reason = detail.errorMessage || detail.reason || '';
 
         tableRows += `
-          <tr style="border-bottom: 1px solid #ddd;">
-            <td style="padding: 10px; text-align: center;">${index + 1}</td>
-            <td style="padding: 10px; font-weight: 500;">${detail.mobileNumber || 'N/A'}</td>
-            <td style="padding: 10px;"><span class="${statusClass}">${statusIcon} ${status}</span></td>
-            <td style="padding: 10px;">${circle}</td>
-            <td style="padding: 10px; text-align: right; font-weight: 600; ${!isViValid ? 'color: #dc3545;' : ''}">₹${amount.toFixed(2)}</td>
-            ${hasValidBenefit ? `<td style="padding: 10px; font-size: 12px;">${benefit}</td>` : ''}
-            ${!isViValid ? `<td style="padding: 10px; font-size: 12px; color: #dc3545;">${reason}</td>` : ''}
+          <tr>
+            <td>${index + 1}</td>
+            <td><code style="font-size:12px;">${detail.mobileNumber || '—'}</code></td>
+            <td><span class="match-chip ${statusClass}" title="${detail.viStatus || status}">${statusIcon} ${detail.viStatus || status}</span></td>
+            <td>${circle}</td>
+            <td>${actualCircle}</td>
+            <td><span class="${mrpClass}">₹${amount.toFixed(2)}</span></td>
+            ${hasValidBenefit ? `<td>${benefit}</td>` : ''}
+            ${(!isViValid || detail.isMismatch) ? `<td><span class="match-chip no" style="white-space:normal;text-align:left;line-height:1.5;">${reason}</span></td>` : ''}
           </tr>
         `;
       });
@@ -161,7 +177,7 @@ buildConfirmUrl(detail, signToken) {
 
     // Determine column count
     const hasInvalid = invalidCount > 0;
-    const colCount = 5 + (hasValidBenefit ? 1 : 0) + (hasInvalid ? 1 : 0);
+    const colCount = 6 + (hasValidBenefit ? 1 : 0) + (hasInvalid ? 1 : 0);
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -169,42 +185,136 @@ buildConfirmUrl(detail, signToken) {
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Mobile Recharge Details</title>
+        <title>Mobile Recharge Details Valid & Invalid Numbers</title>
         <style>
-          body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
+          * {
+            box-sizing: border-box;
           }
-          .container {
-            max-width: 1100px;
-            margin: 20px auto;
-            background: white;
+          :root {
+            --accent: #f38328;
+            --accent-dark: #d96f1a;
+            --bg: #faf8f5;
+            --card-bg: #ffffff;
+            --text-dark: #2e2a27;
+            --text-muted: #6f6b67;
+            --orange: #f38328;
+            --orange-dk: #d96b10;
+            --brown: #865940;
+            --brown-lt: #c2966e;
+            --cream: #fdf8f3;
+            --cream-dk: #f5ede2;
+            --text: #2e2319;
+            --muted: #6f5c4a;
+            --border: #e8ddd2;
+            --white: #ffffff;
+            --success: #2e7d32;
+            --success-bg: #e8f5e9;
+            --danger: #c0392b;
+            --danger-bg: #fdecea;
+            --info: #1565c0;
+            --info-bg: #e3f2fd;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 4px 20px rgba(100, 60, 20, 0.1);
+          }
+          body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          }
+          .ptable-wrap {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-bottom: 10px;
+            overflow-x: auto;
+          }
+          .ptable {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+            min-width: 700px;
+          }
+          .ptable thead tr {
+            background: var(--orange);
+            color: var(--white);
+          }
+          .ptable thead th {
+            padding: 11px 15px;
+            font-weight: 600;
+            text-align: left;
+            white-space: nowrap;
+          }
+          .ptable tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+          }
+          .ptable tbody tr:last-child {
+            border-bottom: none;
+          }
+          .ptable tbody tr:hover {
+            background: #fffaf5;
+          }
+          .ptable tbody td {
+            padding: 10px 15px;
+            color: var(--muted);
+            vertical-align: middle;
+          }
+          .ptable tbody td:first-child {
+            color: var(--text);
+            font-weight: 600;
+          }
+          .match-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+          }
+          .match-chip.yes {
+            background: var(--success-bg);
+            color: var(--success);
+          }
+          .match-chip.no {
+            background: var(--danger-bg);
+            color: var(--danger);
+          }
+          .benefit-tag {
+            background: var(--info-bg);
+            color: var(--info);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+            display: inline-block;
+            max-width: 280px;
+            word-break: break-all;
+          }
+          .mrp-highlight-input {
+            color: var(--orange);
+            font-weight: 700;
+          }
+          .mrp-highlight-no {
+            color: var(--danger);
+            font-weight: 700;
           }
           .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dk) 100%);
             color: white;
             padding: 20px;
-            border-radius: 8px;
+            border-radius: var(--radius);
             margin-bottom: 20px;
             text-align: center;
           }
           .header h1 { margin: 0; font-size: 28px; }
           .header p { margin: 5px 0 0 0; font-size: 14px; }
-          .user-section {
-            margin-bottom: 20px;
-            padding: 15px;
-            background-color: #f9f9f9;
-            border-left: 4px solid #667eea;
-            border-radius: 4px;
-          }
-          .user-section h3 { margin: 0 0 10px 0; color: #667eea; }
           .info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
@@ -213,13 +323,14 @@ buildConfirmUrl(detail, signToken) {
           }
           .info-item { 
             padding: 12px; 
-            background-color: #f0f0f0; 
-            border-radius: 4px;
+            background-color: var(--white); 
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
             text-align: center;
           }
           .info-item label { 
             font-weight: 600; 
-            color: #667eea; 
+            color: var(--orange); 
             display: block; 
             font-size: 11px;
             text-transform: uppercase;
@@ -231,53 +342,14 @@ buildConfirmUrl(detail, signToken) {
             font-size: 20px;
             font-weight: 700;
           }
-          .info-item value.valid { color: #28a745; }
-          .info-item value.invalid { color: #dc3545; }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-          }
-          thead { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; 
-          }
-          th { 
-            padding: 12px; 
-            text-align: left; 
-            font-weight: 600; 
-            font-size: 12px; 
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-          }
-          td { padding: 10px; font-size: 13px; }
-          tbody tr:nth-child(even) { background-color: #fafafa; }
-          tbody tr:hover { background-color: #f5f5f5; }
-          .status-valid {
-            background-color: #d4edda;
-            color: #155724;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            display: inline-block;
-          }
-          .status-invalid {
-            background-color: #f8d7da;
-            color: #721c24;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            display: inline-block;
-          }
+          .info-item value.valid { color: var(--success); }
+          .info-item value.invalid { color: var(--danger); }
           .summary {
             margin-top: 30px;
             padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dk) 100%);
             color: white;
-            border-radius: 8px;
+            border-radius: var(--radius);
             text-align: right;
           }
           .summary-item { display: flex; justify-content: space-between; margin: 10px 0; font-size: 16px; }
@@ -288,45 +360,14 @@ buildConfirmUrl(detail, signToken) {
             padding-top: 10px;
             margin-top: 15px;
           }
-          .footer {
-            margin-top: 30px;
-            padding: 20px;
-            border-top: 1px solid #ddd;
-            text-align: center;
-            color: #666;
-            font-size: 12px;
-          }
-          .footer p { margin: 5px 0; }
-          .section-title {
-            color: #667eea;
-            margin-top: 30px;
-            font-size: 16px;
-            font-weight: 600;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 8px;
-          }
-          .sub-header {
-            font-size: 13px;
-            color: #666;
-            margin: 5px 0 10px 0;
-          }
-          .no-data {
-            text-align: center;
-            padding: 20px;
-            color: #999;
-          }
         </style>
       </head>
       <body>
-        <div class="container">
+        <div style="max-width: 1100px; margin: 0 auto;">
           <div class="header">
             <h1>Mobile Recharge Details Valid & Invalid Numbers</h1>
             <p>Complete Report - Valid & Invalid Numbers</p>
-          </div>
-
-          
-          <div class="user-section">
-            <p><strong>Generated on:</strong> ${currentDate}</p>
+            <p style="font-size:12px; opacity:0.9; margin-top:8px;">Generated on: ${currentDate}</p>
           </div>
 
           <div class="info-grid">
@@ -339,29 +380,27 @@ buildConfirmUrl(detail, signToken) {
               <value class="valid">${validCount}</value>
             </div>
             <div class="info-item">
-              <label>Invalid</label>
+              <label>Invalid / Mismatch</label>
               <value class="invalid">${invalidCount}</value>
             </div>
           </div>
 
-          <div class="section-title"> Recharge Details</div>
-          <p class="sub-header">This report contains both valid and invalid numbers.</p>
-
-          <div style="overflow-x: auto;">
-            <table>
+          <div class="ptable-wrap">
+            <table class="ptable">
               <thead>
                 <tr>
                   <th>#</th>
                   <th>MSISDN</th>
                   <th>Vi Status</th>
                   <th>Circle</th>
+                  <th>Actual Circle</th>
                   <th>Recharge MRP (₹)</th>
                   ${hasValidBenefit ? '<th>Benefit</th>' : ''}
-                  ${invalidCount > 0 ? '<th>Reason</th>' : ''}
+                  ${hasInvalid ? '<th>Reason</th>' : ''}
                 </tr>
               </thead>
               <tbody>
-                ${tableRows || `<tr><td colspan="${colCount}" class="no-data">No recharge details available</td></tr>`}
+                ${tableRows || `<tr><td colspan="${colCount}" style="text-align:center; padding:30px; color:var(--muted);">No recharge details available</td></tr>`}
               </tbody>
             </table>
           </div>
@@ -376,20 +415,13 @@ buildConfirmUrl(detail, signToken) {
               <span style="color: #90EE90;">${validCount}</span>
             </div>
             <div class="summary-item">
-              <span>Invalid:</span>
-              <span style="color: #FF6B6B;">${invalidCount}</span>
+              <span>Invalid / Mismatch:</span>
+              <span style="color: #FF9999;">${invalidCount}</span>
             </div>
             <div class="summary-item total">
               <span>Total Amount:</span>
               <span>₹${totalAmount.toFixed(2)}</span>
             </div>
-          </div>
-
-          <div class="footer">
-            <p><strong>VI Automation System</strong></p>
-            <p>This is an automated email. Please do not reply to this message.</p>
-            <p>If you have any questions, please contact support at noreply-all@qdegrees.org</p>
-            <p style="margin-top: 15px; color: #999;">© 2026 VI Telecom. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -494,28 +526,35 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
         const amount = parseFloat(detail.amount || 0);
         totalAmount += amount;
 
-        const status = detail.isValid === true ? 'Valid' : 'Invalid';
-        const statusClass = detail.isValid === true ? 'status-valid' : 'status-invalid';
-        const statusIcon = detail.isValid === true ? '✅' : '❌';
+        const isViValid = detail.isValid === true && !detail.isMismatch;
+        const status = isViValid ? 'Valid' : 'Invalid';
+        const statusClass = isViValid ? 'yes' : 'no';
+        const statusIcon = isViValid ? '✅' : '❌';
 
-        const circle = detail.circle || detail.operatorName || 'N/A';
-        const benefit = this.hasValidBenefitValue(detail) ? (detail.benefit || detail.planName || 'N/A') : '';
+        const circle = detail.circle || detail.operatorName || '—';
+        const actualCircle = detail.actualCircle || '—';
+        const benefit = this.hasValidBenefitValue(detail) ? `<span class="benefit-tag">${detail.benefit || detail.planName || '—'}</span>` : '';
 
         const confirmUrl = this.buildConfirmUrl(detail, signToken);
 
-
-        const actionCell = includeActions && detail.isValid === true
-          ? `<td style="padding: 10px; text-align: center;"><a href="${confirmUrl}" target="_blank" style="display:inline-block;background-color:#28a745;color:#ffffff;text-decoration:none;padding:6px 12px;border-radius:4px;font-size:12px;font-weight:600;">Mark as Completed</a></td>`
-          : '';
+        let actionCell = '';
+        if (includeActions && detail.isValid === true) {
+          if (detail.rechargeRequired) {
+            actionCell = `<td style="text-align:center;"><a href="${confirmUrl}" target="_blank" style="display:inline-block;background-color:var(--success);color:#ffffff;text-decoration:none;padding:6px 12px;border-radius:4px;font-size:11px;font-weight:600;">Mark as Completed</a></td>`;
+          } else {
+            actionCell = `<td style="text-align:center;"><span style="display:inline-block;background-color:var(--danger-bg);color:var(--danger);padding:6px 12px;border-radius:4px;font-size:11px;font-weight:600;">Recharge Not Required</span></td>`;
+          }
+        }
 
         tableRows += `
-          <tr style="border-bottom: 1px solid #ddd;">
-            <td style="padding: 10px; text-align: center;">${index + 1}</td>
-            <td style="padding: 10px; font-weight: 500;">${detail.mobileNumber || 'N/A'}</td>
-            <td style="padding: 10px;"><span class="${statusClass}">${statusIcon} ${status}</span></td>
-            <td style="padding: 10px;">${circle}</td>
-            <td style="padding: 10px; text-align: right; font-weight: 600;">₹${amount.toFixed(2)}</td>
-            ${hasValidBenefit ? `<td style="padding: 10px; font-size: 12px;">${benefit}</td>` : ''}
+          <tr>
+            <td>${index + 1}</td>
+            <td><code style="font-size:12px;">${detail.mobileNumber || '—'}</code></td>
+            <td><span class="match-chip ${statusClass}" title="${detail.viStatus || status}">${statusIcon} ${detail.viStatus || status}</span></td>
+            <td>${circle}</td>
+            <td>${actualCircle}</td>
+            <td><span class="mrp-highlight-input">₹${amount.toFixed(2)}</span></td>
+            ${hasValidBenefit ? `<td>${benefit}</td>` : ''}
             ${actionCell}
           </tr>
         `;
@@ -523,7 +562,7 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
     }
 
     // Determine column count
-    const colCount = 5 + (hasValidBenefit ? 1 : 0) + (includeActions ? 1 : 0);
+    const colCount = 6 + (hasValidBenefit ? 1 : 0) + (includeActions ? 1 : 0);
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -531,42 +570,132 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Mobile Recharge Details</title>
+        <title>Valid Vi Numbers</title>
         <style>
-          body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
+          * {
+            box-sizing: border-box;
           }
-          .container {
-            max-width: 1100px;
-            margin: 20px auto;
-            background: white;
+          :root {
+            --accent: #f38328;
+            --accent-dark: #d96f1a;
+            --bg: #faf8f5;
+            --card-bg: #ffffff;
+            --text-dark: #2e2a27;
+            --text-muted: #6f6b67;
+            --orange: #f38328;
+            --orange-dk: #d96b10;
+            --brown: #865940;
+            --brown-lt: #c2966e;
+            --cream: #fdf8f3;
+            --cream-dk: #f5ede2;
+            --text: #2e2319;
+            --muted: #6f5c4a;
+            --border: #e8ddd2;
+            --white: #ffffff;
+            --success: #2e7d32;
+            --success-bg: #e8f5e9;
+            --danger: #c0392b;
+            --danger-bg: #fdecea;
+            --info: #1565c0;
+            --info-bg: #e3f2fd;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 4px 20px rgba(100, 60, 20, 0.1);
+          }
+          body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          }
+          .ptable-wrap {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-bottom: 10px;
+            overflow-x: auto;
+          }
+          .ptable {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+            min-width: 700px;
+          }
+          .ptable thead tr {
+            background: var(--orange);
+            color: var(--white);
+          }
+          .ptable thead th {
+            padding: 11px 15px;
+            font-weight: 600;
+            text-align: left;
+            white-space: nowrap;
+          }
+          .ptable tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+          }
+          .ptable tbody tr:last-child {
+            border-bottom: none;
+          }
+          .ptable tbody tr:hover {
+            background: #fffaf5;
+          }
+          .ptable tbody td {
+            padding: 10px 15px;
+            color: var(--muted);
+            vertical-align: middle;
+          }
+          .ptable tbody td:first-child {
+            color: var(--text);
+            font-weight: 600;
+          }
+          .match-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+          }
+          .match-chip.yes {
+            background: var(--success-bg);
+            color: var(--success);
+          }
+          .match-chip.no {
+            background: var(--danger-bg);
+            color: var(--danger);
+          }
+          .benefit-tag {
+            background: var(--info-bg);
+            color: var(--info);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+            display: inline-block;
+            max-width: 280px;
+            word-break: break-all;
+          }
+          .mrp-highlight-input {
+            color: var(--orange);
+            font-weight: 700;
           }
           .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dk) 100%);
             color: white;
             padding: 20px;
-            border-radius: 8px;
+            border-radius: var(--radius);
             margin-bottom: 20px;
             text-align: center;
           }
           .header h1 { margin: 0; font-size: 28px; }
           .header p { margin: 5px 0 0 0; font-size: 14px; }
-          .user-section {
-            margin-bottom: 20px;
-            padding: 15px;
-            background-color: #f9f9f9;
-            border-left: 4px solid #667eea;
-            border-radius: 4px;
-          }
-          .user-section h3 { margin: 0 0 10px 0; color: #667eea; }
           .info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
@@ -575,13 +704,14 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
           }
           .info-item { 
             padding: 12px; 
-            background-color: #f0f0f0; 
-            border-radius: 4px;
+            background-color: var(--white); 
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
             text-align: center;
           }
           .info-item label { 
             font-weight: 600; 
-            color: #667eea; 
+            color: var(--orange); 
             display: block; 
             font-size: 11px;
             text-transform: uppercase;
@@ -593,35 +723,13 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
             font-size: 20px;
             font-weight: 700;
           }
-          .info-item value.valid { color: #28a745; }
-          .info-item value.invalid { color: #dc3545; }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-          }
-          thead { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; 
-          }
-          th { 
-            padding: 12px; 
-            text-align: left; 
-            font-weight: 600; 
-            font-size: 12px; 
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-          }
-          td { padding: 10px; font-size: 13px; }
-          tbody tr:nth-child(even) { background-color: #fafafa; }
-          tbody tr:hover { background-color: #f5f5f5; }
+          .info-item value.valid { color: var(--success); }
           .summary {
             margin-top: 30px;
             padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dk) 100%);
             color: white;
-            border-radius: 8px;
+            border-radius: var(--radius);
             text-align: right;
           }
           .summary-item { display: flex; justify-content: space-between; margin: 10px 0; font-size: 16px; }
@@ -632,63 +740,28 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
             padding-top: 10px;
             margin-top: 15px;
           }
-          .footer {
-            margin-top: 30px;
-            padding: 20px;
-            border-top: 1px solid #ddd;
-            text-align: center;
-            color: #666;
-            font-size: 12px;
-          }
-          .footer p { margin: 5px 0; }
-          .status-valid {
-            background-color: #d4edda;
-            color: #155724;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            display: inline-block;
-          }
-          .status-invalid {
-            background-color: #f8d7da;
-            color: #721c24;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            display: inline-block;
-          }
           .section-title {
-            color: #667eea;
+            color: var(--orange);
             margin-top: 30px;
             font-size: 16px;
             font-weight: 600;
-            border-bottom: 2px solid #667eea;
+            border-bottom: 2px solid var(--orange);
             padding-bottom: 8px;
-          }
-          .no-data {
-            text-align: center;
-            padding: 20px;
-            color: #999;
           }
         </style>
       </head>
       <body>
-        <div class="container">
+        <div style="max-width: 1100px; margin: 0 auto;">
           <div class="header">
             <h1>Valid Vi Numbers</h1>
             <p>Action Required - Mark as Completed</p>
-          </div>
-
-          <div class="user-section">
-            <p><strong>Generated on:</strong> ${currentDate}</p>
+            <p style="font-size:12px; opacity:0.9; margin-top:8px;">Generated on: ${currentDate}</p>
           </div>
 
           <div class="info-grid">
             <div class="info-item">
               <label>Total Valid Recharges</label>
-              <value>${filteredDetails.filter(d => d.isValid === true).length}</value>
+              <value class="valid">${filteredDetails.filter(d => d.isValid === true).length}</value>
             </div>
             <div class="info-item">
               <label>Total Amount</label>
@@ -696,29 +769,30 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
             </div>
             <div class="info-item">
               <label>Action Required</label>
-              <value style="color: #28a745;">${filteredDetails.filter(d => d.isValid === true).length}</value>
+              <value class="valid">${filteredDetails.filter(d => d.isValid === true && d.rechargeRequired).length}</value>
             </div>
           </div>
 
           <div class="section-title">✅ Valid Numbers - Action Required</div>
-          <p style="font-size: 13px; color: #666; margin-top: -5px;">
+          <p style="font-size: 13px; color: var(--muted); margin-top: -5px;">
             ${actionNote}
           </p>
-          <div style="overflow-x: auto;">
-            <table>
+          <div class="ptable-wrap">
+            <table class="ptable">
               <thead>
                 <tr>
                   <th>#</th>
                   <th>MSISDN</th>
                   <th>Vi Status</th>
                   <th>Circle</th>
+                  <th>Actual Circle</th>
                   <th>Recharge MRP (₹)</th>
                   ${hasValidBenefit ? '<th>Benefit</th>' : ''}
                   ${includeActions ? '<th>Action</th>' : ''}
                 </tr>
               </thead>
               <tbody>
-                ${tableRows || `<tr><td colspan="${colCount}" style="text-align: center; padding: 20px; color: #999;">No recharge details available</td></tr>`}
+                ${tableRows || `<tr><td colspan="${colCount}" style="text-align:center; padding:30px; color:var(--muted);">No recharge details available</td></tr>`}
               </tbody>
             </table>
           </div>
@@ -732,13 +806,6 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
               <span>Total Amount:</span>
               <span>₹${totalAmount.toFixed(2)}</span>
             </div>
-          </div>
-
-          <div class="footer">
-            <p><strong>VI Automation System</strong></p>
-            <p>This is an automated email. Please do not reply to this message.</p>
-            <p>If you have any questions, please contact support at noreply-all@qdegrees.org</p>
-            <p style="margin-top: 15px; color: #999;">© 2026 VI Telecom. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -1047,6 +1114,17 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
    */
   async sendCombinedEmail(recipientEmail, allDetails, validCount, invalidCount, userName = 'Customer', options = {}) {
     try {
+      if (!this.isEmailEnabled()) {
+        console.log('📧 Email service is disabled. Skipping combined email to:', recipientEmail);
+        return {
+          success: true,
+          skipped: true,
+          message: 'Email service is disabled',
+          recipientEmail: recipientEmail,
+          timestamp: new Date().toISOString()
+        };
+      }
+
       if (!this.transporter) {
         throw new Error('Mail transporter not initialized. Check SMTP configuration.');
       }
@@ -1104,6 +1182,17 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
    */
   async sendMatchedEmail(recipientEmail, rechargeDetails, userName = 'Customer', options = {}, signToken = (id) => id) {
     try {
+      if (!this.isEmailEnabled()) {
+        console.log('📧 Email service is disabled. Skipping matched email to:', recipientEmail);
+        return {
+          success: true,
+          skipped: true,
+          message: 'Email service is disabled',
+          recipientEmail: recipientEmail,
+          timestamp: new Date().toISOString()
+        };
+      }
+
       if (!this.transporter) {
         throw new Error('Mail transporter not initialized. Check SMTP configuration.');
       }
@@ -1166,6 +1255,17 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
    */
   async sendUnmatchedEmail(recipientEmail, invalidDetails, userName = 'Customer', options = {}) {
     try {
+      if (!this.isEmailEnabled()) {
+        console.log('📧 Email service is disabled. Skipping unmatched email to:', recipientEmail);
+        return {
+          success: true,
+          skipped: true,
+          message: 'Email service is disabled',
+          recipientEmail: recipientEmail,
+          timestamp: new Date().toISOString()
+        };
+      }
+
       if (!this.transporter) {
         throw new Error('Mail transporter not initialized. Check SMTP configuration.');
       }
@@ -1224,10 +1324,20 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
   }
 
   /**
-   * Send both emails: One combined (valid + invalid) and one valid only with actions
+   * Send combined email with both valid and invalid numbers
    */
   async sendCombinedEmails(rechargeDetails, recipientEmail, userName = 'Customer', options = {}, signToken = (id) => id) {
-    console.log(`📧 Sending combined emails to: ${recipientEmail}`);
+    if (!this.isEmailEnabled()) {
+      console.log('📧 Email service is disabled. Skipping email to:', recipientEmail);
+      return {
+        success: true,
+        skipped: true,
+        message: 'Email service is disabled',
+        results: []
+      };
+    }
+
+    console.log(`📧 Sending combined email to: ${recipientEmail}`);
     const results = [];
 
     // Separate valid and invalid
@@ -1238,37 +1348,19 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
       ? rechargeDetails.filter((detail) => !this.isValidRechargeDetail(detail))
       : [];
 
-    // EMAIL 1: Combined email with BOTH valid and invalid - NO action buttons (SHOW ALL ROWS)
+    // Send combined email with both valid and invalid
     const allDetails = [...validDetails, ...invalidDetails];
     if (allDetails.length > 0) {
-      console.log(`📤 Sending COMBINED email (${allDetails.length} total: ${validDetails.length} valid, ${invalidDetails.length} invalid) to: ${recipientEmail}`);
+      console.log(`📤 Sending combined email (${allDetails.length} total: ${validDetails.length} valid, ${invalidDetails.length} invalid) to: ${recipientEmail}`);
       const result = await this.sendCombinedEmail(
         recipientEmail,
         allDetails,
         validDetails.length,
         invalidDetails.length,
         userName,
-        Object.assign({}, options, { includeActions: false })
+        options
       );
       results.push({ type: 'combined', result });
-    }
-
-    // EMAIL 2: Only valid numbers with ACTION buttons (only those with valid benefit)
-    if (validDetails.length > 0) {
-      const validWithBenefit = validDetails.filter(d => this.hasValidBenefitValue(d));
-      if (validWithBenefit.length > 0) {
-        console.log(`📤 Sending MATCHED email (${validWithBenefit.length} valid numbers with benefit) to: ${recipientEmail}`);
-        // const result = await this.sendMatchedEmail(
-        //   recipientEmail,
-        //   validWithBenefit,
-        //   userName,
-        //   Object.assign({}, options, { includeActions: true }),
-        //   signToken
-        // );
-        // results.push({ type: 'matched', result });
-      } else {
-        console.log(`⚠️ No valid numbers with benefit for ${recipientEmail}`);
-      }
     }
 
     return {
@@ -1293,6 +1385,16 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
   }
 
   async sendDualStatusEmails(rechargeDetails, actionRecipient, formalRecipient, userName = 'Customer', options = {}, signToken = (id) => id) {
+    if (!this.isEmailEnabled()) {
+      console.log('📧 Email service is disabled. Skipping dual status emails.');
+      return {
+        success: true,
+        skipped: true,
+        message: 'Email service is disabled',
+        results: []
+      };
+    }
+
     console.log("📧 Sending dual status emails...");
     const results = [];
 
@@ -1326,6 +1428,17 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
 
   async sendBulkRechargeEmails(recipients, signToken = (id) => id) {
     try {
+      if (!this.isEmailEnabled()) {
+        console.log('📧 Email service is disabled. Skipping bulk recharge emails.');
+        return {
+          success: true,
+          skipped: true,
+          message: 'Email service is disabled',
+          totalRecipients: recipients.length,
+          timestamp: new Date().toISOString()
+        };
+      }
+
       if (!Array.isArray(recipients) || recipients.length === 0) {
         throw new Error('Recipients array is required and must not be empty');
       }
@@ -1369,6 +1482,16 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
 
   async testConnection() {
     try {
+      if (!this.isEmailEnabled()) {
+        console.log('📧 Email service is disabled. Skipping SMTP connection test.');
+        return {
+          success: true,
+          skipped: true,
+          message: 'Email service is disabled',
+          timestamp: new Date().toISOString()
+        };
+      }
+
       if (!this.transporter) {
         throw new Error('Mail transporter not initialized');
       }

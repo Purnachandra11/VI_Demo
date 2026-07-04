@@ -1557,7 +1557,7 @@
 
     .test-status-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(6, 1fr);
       gap: 10px;
       padding: 0 20px 16px 24px;
     }
@@ -1975,10 +1975,10 @@
 
           <div class="action-buttons">
             <button class="btn btn-primary" id="startBtn" onclick="startUAT()" disabled>
-              <i class="bi bi-play-circle-fill"></i> Start Validation
+              <i class="bi bi-play-circle-fill"></i> Verify Records
             </button>
             <button class="btn btn-danger" id="stopBtn" onclick="stopUAT()" disabled>
-              <i class="bi bi-stop-circle-fill"></i> Stop Test
+              <i class="bi bi-stop-circle-fill"></i> Stop Validation
             </button>
           </div>
 
@@ -2228,6 +2228,7 @@
     const rowStatusPanel = document.getElementById("rowStatusPanel");
     const rowCardsList = document.getElementById("rowCardsList");
     const testCardsContainer = document.getElementById("testCardsContainer");
+   
 
     /* ============================================================
        FIXED: FILE HANDLING
@@ -2253,13 +2254,6 @@
       dropZone.style.borderColor = "var(--orange)";
       dropZone.style.background = "#fff5ef";
     });
-
-    // dropZone.addEventListener('dragleave', (e) => {
-    //   e.preventDefault();
-    //   e.stopPropagation();
-    //   dropZone.style.borderColor = "";
-    //   dropZone.style.background = "";
-    // });
 
     dropZone.addEventListener('drop', (e) => {
       e.preventDefault();
@@ -2477,7 +2471,7 @@ inputRows.forEach((row) => {
   if (apiRes && !apiRes.isValid)
     reasons.push(apiRes.message || "Invalid Vi number");
   else if (!apiRes)
-    reasons.push("Invalid MSISDN (must be 10 digits)");
+    reasons.push("Upload failed. Please check the file format or your internet connection.");
   else if (apiRes && !isCircleMatched)
     reasons.push(apiRes?.circleMessage || "Circle not matched");
   if (!planMRPMap[mrp]) reasons.push("MRP not found in plan sheet");
@@ -2494,54 +2488,6 @@ inputRows.forEach((row) => {
   }
 });
 
-          // const matched = [], unmatched = [];
-          // inputRows.forEach((row) => {
-          //   const msisdn = String(row["MSISDN"] || "").trim();
-          //   const mrp = Number(row["Recharge MRP"]);
-          //   const apiRes = validationMap[msisdn];
-          //   // const apiRes = rowApiResultMap.get(row);   // ← was validationMap[msisdn]
-          //   const reasons = [];
-          //   const isViValid = apiRes ? apiRes.isValid : false;
-          //   const isCircleMatched = apiRes ? apiRes.circleMatched : false;
-
-          //   if (apiRes && !apiRes.isValid)
-          //     reasons.push(apiRes.message || "Invalid Vi number");
-          //   else if (!apiRes)
-          //     reasons.push("Invalid MSISDN (must be 10 digits)");
-          //   else if (apiRes && !isCircleMatched)
-          //     reasons.push(apiRes?.circleMessage || "Circle not matched");
-          //   if (!planMRPMap[mrp]) reasons.push("MRP not found in plan sheet");
-
-          //   // if (apiRes && !apiRes.isValid)
-          //   //   reasons.push(apiRes.message || "Invalid Vi number");
-          //   // else if (!apiRes)
-          //   //   reasons.push("Invalid MSISDN (must be 10 digits)");
-          //   // // else if(apiRes && !isCircleMatched)
-          //   // //   reasons.push(apiRes?.circleMessage || "Circle not matched")
-          //   // if (!planMRPMap[mrp]) reasons.push("MRP not found in plan sheet");
-
-          //   if (reasons.length === 0) {
-          //     matched.push({
-          //       input: row,
-          //       plan: planMRPMap[mrp],
-          //       apiRes: {
-          //         ...apiRes,
-          //         amount: mrp,
-          //         benefit: planMRPMap[mrp]?.benefit || "N/A",
-          //         circle: row["CIRCLE"] || "Vi",
-          //       },
-          //       isViValid,
-          //     });
-          //   } else {
-          //     unmatched.push({
-          //       ...row,
-          //       _reason: reasons.join(" · "),
-          //       _apiRes: { ...apiRes, amount: mrp },
-          //       _isViValid: isViValid,
-          //     });
-          //   }
-          // });
-
           document.getElementById("pvMatched").textContent = matched.length;
           document.getElementById("pvUnmatched").textContent =
             unmatched.length;
@@ -2549,55 +2495,19 @@ inputRows.forEach((row) => {
             `${matched.length} record${matched.length !== 1 ? "s" : ""}`;
           document.getElementById("unmatchedCountBadge").textContent =
             `${unmatched.length} record${unmatched.length !== 1 ? "s" : ""}`;
-          // testCardsData = matched.map((r, idx) => {
-          //   const inp = r.input;
-          //   const rechargeVal = String(inp["Recharge"] || "").trim().toLowerCase();
-          //   const swiftVal = String(inp["SWIFT"] || "").trim().toLowerCase();
-          //   const inVal = String(inp["IN"] || "").trim().toLowerCase();
-          //   const viAppVal = String(inp["Vi App"] || "").trim().toLowerCase();
-
-          //   // build actualCircle dynamically from THIS row's own api result
-          //   const apiRes = r.apiRes || {};
-          //   const circleText = apiRes.actualCircleText || "";
-          //   const circleCode = apiRes.actualCircleCode || "";
-          //   const actualCircle =
-          //     circleText && circleCode
-          //       ? `${circleText} - ${circleCode}`
-          //       : circleText || circleCode || "—";
-
-          //   return {
-          //     rowIndex: idx,
-          //     msisdn: String(inp["MSISDN"] || "").trim(),
-          //     rechargeMRP: inp["Recharge MRP"],
-          //     circle: String(inp["CIRCLE"] || "").trim(),
-          //     actualCircle,                 //  now per-row, not results[0]
-          //     benefit:
-          //       (r.plan && (r.plan["Benefit (Open)"] ?? r.plan.benefit)) || "—",
-          //     viStatus: apiRes.isValid
-          //       ? (apiRes.message || "Valid VI Number")
-          //       : (apiRes.message || "Invalid VI Number"),   // bonus: this was hardcoded too
-          //     recharge: rechargeVal,
-          //     swift: swiftVal,
-          //     in: inVal,
-          //     viApp: viAppVal,
-          //     colStatus: {
-          //       recharge: rechargeVal === "yes" ? "pending" : "skipped",
-          //       swift: "pending",
-          //       in: inVal === "yes" ? "pending" : "skipped",
-          //       viApp: viAppVal === "yes" ? "pending" : "skipped",
-          //     },
-          //     overallStatus: "pending",
-          //     startedAt: null,
-          //     completedAt: null,
-          //   };
-          // });
+        
           testCardsData = matched.map((r, idx) => {
             const inp = r.input;
+             const pretestVal = "yes";
+            // const pretestVal = String(inp["Pretest"] || "").trim().toLowerCase();
             const rechargeVal = String(inp["Recharge"] || "").trim().toLowerCase();
             const swiftVal = String(inp["SWIFT"] || "").trim().toLowerCase();
             const inVal = String(inp["IN"] || "").trim().toLowerCase();
+            const upssVal = (String(inp["UPSS"] || "").trim().toLowerCase()) || "no";
             const viAppVal = String(inp["Vi App"] || "").trim().toLowerCase();
             const mismatches = testCardsData.filter((t) => t.circleMatched === false);
+
+            console.log (testCardsData, "testCardsData", matched.map ,"pretestVal", pretestVal, "rechargeVal", rechargeVal, "swiftVal", swiftVal, "inVal", inVal, "upssVal", upssVal, "viAppVal", viAppVal);
 
             const apiRes = r.apiRes || {};
             const circleText = apiRes.actualCircleText || "";
@@ -2613,7 +2523,6 @@ inputRows.forEach((row) => {
               rechargeMRP: inp["Recharge MRP"],
               circle: String(inp["CIRCLE"] || "").trim(),
               actualCircle,
-              // NEW — server-computed match result (true/false/null)
               circleMatched:
                 typeof apiRes.circleMatched === "boolean" ? apiRes.circleMatched : null,
               benefit:
@@ -2621,15 +2530,21 @@ inputRows.forEach((row) => {
               viStatus: apiRes.isValid
                 ? (apiRes.message || "Valid VI Number")
                 : (apiRes.message || "Invalid VI Number"),
+              
+              pretest: pretestVal,  
               recharge: rechargeVal,
               swift: swiftVal,
               in: inVal,
+              upss:upssVal,
               viApp: viAppVal,
               colStatus: {
+                 
                 recharge: rechargeVal === "yes" ? "pending" : "skipped",
-                swift: "pending",
+                swift: swiftVal=== "yes" ? "pending" : "skipped",
                 in: inVal === "yes" ? "pending" : "skipped",
+                 upss: upssVal === "yes" ? "pending" : "skipped",
                 viApp: viAppVal === "yes" ? "pending" : "skipped",
+                pretest: pretestVal === "yes" ? "pending": "skipped" ,
               },
               overallStatus: "pending",
               startedAt: null,
@@ -2661,6 +2576,15 @@ inputRows.forEach((row) => {
             const row = sentRows[i];
             const mrp = row ? Number(row["Recharge MRP"]) : 0;
             const planData = planMRPMap[mrp] || {};
+            const isMRPFound = !!planMRPMap[mrp];
+            const reasons = [];
+            const isViValid = r ? r.isValid : false;
+            const isCircleMatched = r ? r.circleMatched : false;
+            if (r && !r.isValid) reasons.push(r.message || "Invalid Vi number");
+            else if (!r) reasons.push("Upload failed");
+            else if (r && !isCircleMatched) reasons.push(r?.circleMessage || "Circle not matched");
+            if (!isMRPFound) reasons.push("MRP not found in plan sheet");
+            
             return {
               ...r,
               amount: mrp || 0,
@@ -2668,19 +2592,12 @@ inputRows.forEach((row) => {
               circle: row ? (row["CIRCLE"] || "N/A") : "N/A",
               planName: planData.planName || "",
               actualCircle: (r?.actualCircleText || "") + " - " + (r?.actualCircleCode || ""),
+              recharge: row ? String(row["Recharge"] || "").trim().toLowerCase() : "no",
+              isMRPFound: isMRPFound,
+              reasons: reasons,
             };
           });
-            // const enriched = bulkResult.results.map((r) => {
-            //   const vm = validationMap[String(r.number).trim()] || {};
-            //   return {
-            //     ...r,
-            //     amount: vm.amount || 0,
-            //     benefit: vm.benefit || "N/A",
-            //     circle: vm.circle || "N/A",
-            //     planName: vm.planName || "",
-            //     actualCircle: r?.actualCircleText + " - " + r?.actualCircleCode,
-            //   };
-            // });
+          
             if (
               enriched.filter((r) => r.isValid).length > 0 ||
               enriched.filter((r) => !r.isValid).length > 0
@@ -2692,7 +2609,7 @@ inputRows.forEach((row) => {
           document.getElementById("validationLoader").style.display = "none";
           addLog(`Excel parse error: ${err.message}`, "error");
         } finally {
-          // Unlock on any completion (success or failure).
+
           unlockUpload();
         }
 
@@ -2738,147 +2655,6 @@ inputRows.forEach((row) => {
       }
     }
 
-    // async function callBulkValidationAPI(inputRows) {
-    //   const numbers = inputRows
-    //     .map((row) => String(row["MSISDN"] || "").trim())
-    //     .filter((n) => n);
-    //   if (!numbers.length) {
-    //     addLog("No MSISDN values found.", "warning");
-    //     return null;
-    //   }
-    //   addLog(
-    //     `Sending ${numbers.length} number${numbers.length !== 1 ? "s" : ""} for bulk validation…`,
-    //     "info",
-    //   );
-    //   try {
-    //     const response = await fetch(
-    //       "http://localhost:5174/api/validate/bulk",
-    //       {
-    //         method: "POST",
-    //         headers: { "Content-Type": "application/json" },
-    //         body: JSON.stringify({ numbers }),
-    //       },
-    //     );
-    //     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    //     const result = await response.json();
-    //     addLog(
-    //       `Validation complete — ✅ ${result.processed_valid ?? 0} valid, ❌ ${result.processed_invalid ?? 0} invalid.`,
-    //       "success",
-    //     );
-    //     return result;
-    //   } catch (err) {
-    //     addLog(`Validation API Error: ${err.message}`, "error");
-    //     return null;
-    //   }
-    // }
-
-    /* ============================================================
-       START UAT
-    ============================================================ */
-    // async function startUAT() {
-    //   if (!selectedFile || isRunning) return;
-
-    //   if (!testCardsData || testCardsData.length === 0) {
-    //     addLog(
-    //       "No matched rows to run. Re-check your Excel — nothing passed Vi validation / plan matching.",
-    //       "warning",
-    //     );
-    //     return;
-    //   }
-
-    //   isRunning = true;
-    //   startBtn.disabled = true;
-    //   stopBtn.disabled = false;
-    //   setStatus("UAT in progress…", "info");
-    //   progressSection.classList.add("active");
-    //   progressBar.style.width = "0%";
-    //   progressPercent.textContent = "0%";
-    //   progressAction.textContent = "Uploading file…";
-    //   progressStatus.textContent = "";
-
-    //   // Reset stats when starting
-    //   resetStats();
-    //   document.getElementById("statTotal").textContent = testCardsData.length;
-    //   reportDownloadContainer.innerHTML = "";
-    //   reportDownloadContainer.style.display = "none";
-
-    //   addLog(
-    //     `🚀 Starting UAT with ${testCardsData.length} matched row(s)`,
-    //     "info",
-    //   );
-
-    //   const formData = new FormData();
-    //   formData.append(
-    //     "excel",
-    //     selectedFile,
-    //     selectedFileName || selectedFile.name,
-    //   );
-    //   addLog(
-    //     `📤 Uploading file: ${selectedFileName || selectedFile.name}`,
-    //     "info",
-    //   );
-
-    //   const matchedRowsPayload = testCardsData.map((t) => ({
-    //     rowIndex: t.rowIndex,
-    //     msisdn: t.msisdn,
-    //     rechargeMRP: t.rechargeMRP,
-    //     circle: t.circle,
-    //     recharge: t.recharge,
-    //     viApp: t.viApp,
-    //     swift: t.swift || "yes",
-    //     inFlag: t.in || "yes",
-    //   }));
-    //   formData.append("matchedRows", JSON.stringify(matchedRowsPayload));
-    //   addLog(
-    //     `📋 Sending ${matchedRowsPayload.length} matched row(s)`,
-    //     "info",
-    //   );
-
-    //   try {
-    //     const res = await fetch("/api/swift/upload", {
-    //       method: "POST",
-    //       body: formData,
-    //     });
-
-    //     if (!res.ok) {
-    //       const errorText = await res.text();
-    //       throw new Error(`Upload failed (${res.status}): ${errorText}`);
-    //     }
-
-    //     const result = await res.json();
-    //     if (!result.success)
-    //       throw new Error(result.message || "Upload failed");
-
-    //     sessionId = result.sessionId;
-    //     addLog(
-    //       `✅ File uploaded — ${matchedRowsPayload.length} matched row(s) sent — connecting to automation server…`,
-    //       "success",
-    //     );
-    //     setStatus("Connected to automation server", "success");
-    //     progressAction.textContent = "Connected, starting tests…";
-
-    //     connectWebSocket(sessionId);
-    //   } catch (err) {
-    //     addLog(`❌ Error: ${err.message}`, "error");
-    //     setStatus(`Error: ${err.message}`, "error");
-    //     resetUI();
-    //   }
-    // }
-
-    // NEW: entry point wired to the button — checks discrepancies first
-    // async function startUAT() {
-    //   if (!selectedFile || isRunning) return;
-
-    //   if (!testCardsData || testCardsData.length === 0) {
-    //     addLog(
-    //       "No matched rows to run. Re-check your Excel — nothing passed Vi validation / plan matching.",
-    //       "warning",
-    //     );
-    //     return;
-    //   }
-
-    //   await proceedStartUAT();
-    // }
     async function startUAT() {
       if (!selectedFile || isRunning) return;
 
@@ -2894,23 +2670,6 @@ inputRows.forEach((row) => {
       document.getElementById("circleDiscrepancyOverlay").classList.add("visible");
       addLog(`Showing ${testCardsData.length} confirmed matched row(s) for review before starting.`, "info");
     }
-
-    //   const mismatches = testCardsData.filter((t) => t.circleMatched === false);
-    //   console.log(mismatches?.length,"mismatch")
-
-    //   if (mismatches.length > 0) {
-    //     renderCircleDiscrepancyList(testCardsData);
-    //     document.getElementById("circleDiscrepancyOverlay").classList.add("visible");
-    //     addLog(
-    //       ` ${mismatches.length} circle discrepancy(ies) found — awaiting confirmation.`,
-    //       "warning",
-    //     );
-    //     return; // wait for user's decision in the popup
-    //   }
-
-    //   // no discrepancies — go straight ahead
-    //   await proceedStartUAT();
-    // }
     function renderCircleDiscrepancyList(rows) {
       const container = document.getElementById("circleDiscrepancyList");
 
@@ -2935,32 +2694,6 @@ inputRows.forEach((row) => {
           `;
     }
 
-    // function renderCircleDiscrepancyList(rows) {
-    //   const container = document.getElementById("circleDiscrepancyList");
-    //   container.innerHTML = rows
-    //     .map((t) => {
-    //       const isMatch = t.circleMatched === true;
-    //       const isMismatch = t.circleMatched === false;
-    //       const rowClass = isMismatch ? "mismatch" : isMatch ? "match" : "";
-    //       const chip = isMismatch
-    //         ? `<span class="match-chip no"> Mismatch</span>`
-    //         : isMatch
-    //         ? `<span class="match-chip yes"> Matched</span>`
-    //         : `<span class="match-chip" style="background:#eee;color:#888;">— N/A</span>`;
-    //       return `
-    //         <div class="discrepancy-row ${rowClass}">
-    //           <span class="discrepancy-msisdn">${t.msisdn || "—"}</span>
-    //           <div class="discrepancy-circles">
-    //             <span>${t.circle || "—"}</span>
-    //             <span class="arrow">→</span>
-    //             <span style="font-weight:600;">${t.actualCircle || "—"}</span>
-    //             ${chip}
-    //           </div>
-    //         </div>`;
-    //     })
-    //     .join("");
-    // }
-
     function closeCircleDiscrepancyModal() {
       document.getElementById("circleDiscrepancyOverlay").classList.remove("visible");
       addLog("Start cancelled by user due to circle discrepancy.", "warning");
@@ -2968,7 +2701,7 @@ inputRows.forEach((row) => {
 
     async function confirmStartAfterDiscrepancy() {
       document.getElementById("circleDiscrepancyOverlay").classList.remove("visible");
-      addLog("✅ User confirmed to proceed despite circle discrepancy.", "info");
+      addLog(" User confirmed to proceed despite circle discrepancy.", "info");
       await proceedStartUAT();
     }
 
@@ -3002,8 +2735,10 @@ inputRows.forEach((row) => {
         circle: t.circle,
         recharge: t.recharge,
         viApp: t.viApp,
-        swift: t.swift || "yes",
-        inFlag: t.in || "yes",
+        swift: t.swift,
+        inFlag: t.in,
+        upss: t.upss,
+        pretest: t.pretest,
       }));
       formData.append("matchedRows", JSON.stringify(matchedRowsPayload));
       addLog(`📋 Sending ${matchedRowsPayload.length} matched row(s)`, "info");
@@ -3166,10 +2901,11 @@ inputRows.forEach((row) => {
           <div class="test-info-item"><span class="test-info-label">Benefit</span><span class="test-info-value benefit">${t.benefit || "—"}</span></div>
         </div>
         <div class="test-status-grid">
+          ${colHtml("PreTest", "in", t.colStatus.pretest)}
           ${colHtml("Recharge", "recharge", t.colStatus.recharge)}
           ${colHtml("SWIFT", "swift", t.colStatus.swift)}
           ${colHtml("IN", "in", t.colStatus.in)}
-          ${colHtml("UPSS", "in", t.colStatus.in)}
+          ${colHtml("UPSS", "in", t.colStatus.upss)}
           ${colHtml("Vi App", "viApp", t.colStatus.viApp)}
         </div>
         <div class="test-card-footer">
@@ -3214,18 +2950,45 @@ inputRows.forEach((row) => {
       return map[status] || map.pending;
     }
 
+    // function updateTestCard(rowIndex, updates) {
+    //   const t = testCardsData.find((x) => x.rowIndex === rowIndex);
+    //   if (!t) return;
+    //   if (updates.colStatus) Object.assign(t.colStatus, updates.colStatus);
+    //   if (updates.overallStatus) t.overallStatus = updates.overallStatus;
+    //   if (updates.startedAt) t.startedAt = updates.startedAt;
+    //   if (updates.completedAt) t.completedAt = updates.completedAt;
+
+    //   const card = document.getElementById(`testCard-${rowIndex}`);
+    //   if (!card) return;
+    //   const serialNo =
+    //     testCardsData.findIndex((x) => x.rowIndex === rowIndex) + 1;
+    //   card.className = `test-card ${t.overallStatus}`;
+    //   card.innerHTML = buildTestCardHTML(t, serialNo);
+    // }
     function updateTestCard(rowIndex, updates) {
       const t = testCardsData.find((x) => x.rowIndex === rowIndex);
       if (!t) return;
-      if (updates.colStatus) Object.assign(t.colStatus, updates.colStatus);
+
+      t.pretest = "yes";
+
+      if (!t.colStatus.pretest) {
+        t.colStatus.pretest = "pending";
+      }
+
+      if (updates.colStatus) {
+        Object.assign(t.colStatus, updates.colStatus);
+      }
+
       if (updates.overallStatus) t.overallStatus = updates.overallStatus;
       if (updates.startedAt) t.startedAt = updates.startedAt;
       if (updates.completedAt) t.completedAt = updates.completedAt;
 
       const card = document.getElementById(`testCard-${rowIndex}`);
       if (!card) return;
+
       const serialNo =
         testCardsData.findIndex((x) => x.rowIndex === rowIndex) + 1;
+
       card.className = `test-card ${t.overallStatus}`;
       card.innerHTML = buildTestCardHTML(t, serialNo);
     }
@@ -3323,9 +3086,11 @@ inputRows.forEach((row) => {
           (t) => t.rowIndex === row.rowIndex,
         );
         const colStatuses = testCardData?.colStatus || {
+          pretest: "pending",
           recharge: "pending",
           swift: "pending",
           in: "pending",
+          upss: "pending",
           viApp: "pending",
         };
 
@@ -4006,43 +3771,90 @@ inputRows.forEach((row) => {
       }
     }
 
+    // function renderReportFiles(reports) {
+    //   if (!reportDownloadContainer) return;
+
+    //   const zipReports = (reports || []).filter((report) => {
+    //     const type = String(report.type || "").toLowerCase();
+    //     return type === "zip" || String(report.name || "").toLowerCase().endsWith(".zip");
+    //   });
+
+    //   if (!zipReports.length) {
+    //     reportDownloadContainer.style.display = "none";
+    //     reportDownloadContainer.innerHTML = "";
+    //     return;
+    //   }
+
+    //   const rows = zipReports.map((report) => {
+    //     const label = report.displayName || report.name || "Report bundle";
+    //     const sourceLabel = report.source === "finalreports" ? "Row bundle" : "Report";
+    //     return `
+    //         <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; margin-top:8px; border:1px solid var(--border); border-radius:8px; background:var(--cream);">
+    //           <div style="min-width:0;">
+    //             <div style="font-size:12px; font-weight:600; color:var(--text-dark); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${label}</div>
+    //             <div style="font-size:11px; color:var(--muted);">${sourceLabel} • ZIP</div>
+    //           </div>
+    //           <button class="btn btn-muted btn-sm" onclick="window.open('/api/swift/report/file/${encodeURIComponent(report.name)}','_blank')">
+    //             <i class="bi bi-download"></i> Download
+    //           </button>
+    //         </div>`;
+    //   }).join("");
+
+    //   reportDownloadContainer.innerHTML = `
+    //       <div style="font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:6px;">
+    //         Available row report bundles
+    //       </div>
+    //       ${rows}
+    //     `;
+    //   reportDownloadContainer.style.display = "block";
+    // }
+
     function renderReportFiles(reports) {
-      if (!reportDownloadContainer) return;
+  if (!reportDownloadContainer) return;
 
-      const zipReports = (reports || []).filter((report) => {
-        const type = String(report.type || "").toLowerCase();
-        return type === "zip" || String(report.name || "").toLowerCase().endsWith(".zip");
-      });
+  const zipReports = (reports || []).filter((report) => {
+    const type = String(report.type || "").toLowerCase();
+    return type === "zip" || String(report.name || "").toLowerCase().endsWith(".zip");
+  });
 
-      if (!zipReports.length) {
-        reportDownloadContainer.style.display = "none";
-        reportDownloadContainer.innerHTML = "";
-        return;
-      }
+  if (!zipReports.length) {
+    reportDownloadContainer.style.display = "none";
+    reportDownloadContainer.innerHTML = "";
+    return;
+  }
 
-      const rows = zipReports.map((report) => {
-        const label = report.displayName || report.name || "Report bundle";
-        const sourceLabel = report.source === "finalreports" ? "Row bundle" : "Report";
-        return `
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; margin-top:8px; border:1px solid var(--border); border-radius:8px; background:var(--cream);">
-              <div style="min-width:0;">
-                <div style="font-size:12px; font-weight:600; color:var(--text-dark); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${label}</div>
-                <div style="font-size:11px; color:var(--muted);">${sourceLabel} • ZIP</div>
-              </div>
-              <button class="btn btn-muted btn-sm" onclick="window.open('/api/swift/report/file/${encodeURIComponent(report.name)}','_blank')">
-                <i class="bi bi-download"></i> Download
-              </button>
-            </div>`;
-      }).join("");
-
-      reportDownloadContainer.innerHTML = `
-          <div style="font-size:12px; font-weight:600; color:var(--text-dark); margin-bottom:6px;">
-            Available row report bundles
+  const rows = zipReports.map((report) => {
+    const label = report.displayName || report.name || "Report bundle";
+    const sourceLabel = report.source === "finalreports" ? "Row bundle" : "Report";
+    return `
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; margin-top:8px; border:1px solid var(--border); border-radius:8px; background:var(--cream);">
+          <div style="min-width:0; flex:1;">
+            <div style="font-size:12px; font-weight:600; color:var(--text-dark); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${label}</div>
+            <div style="font-size:11px; color:var(--muted);">${sourceLabel} • ZIP</div>
           </div>
-          ${rows}
-        `;
-      reportDownloadContainer.style.display = "block";
-    }
+          <button class="btn btn-muted btn-sm" style="flex-shrink:0;" onclick="window.open('/api/swift/report/file/${encodeURIComponent(report.name)}','_blank')">
+            <i class="bi bi-download"></i> Download
+          </button>
+        </div>`;
+  }).join("");
+
+  // Injected the Step 6 card structure with rows mapped into the dynamic card body
+  reportDownloadContainer.innerHTML = `
+      <div class="row-status-panel" id="rowStatusPanel" style="margin-top: 24px;">
+        <div class="card">
+          <div class="card-title" style="display: flex; align-items: center; width: 100%;">
+            Available Row Report Bundles
+          </div>
+          <div class="card-content" style="padding-top: 4px;">
+            <div class="row-cards-list" id="rowCardsList">
+              ${rows}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  reportDownloadContainer.style.display = "block";
+}
 
     function downloadReport() {
       window.location.href = "/api/swift/report/latest";

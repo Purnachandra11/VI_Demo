@@ -348,7 +348,7 @@ export class RechargePage {
 
       async enterMSISDNswift(msisdn: string): Promise<void> {
         const selectors = [
-        "#mobforward",  // Move this to the top - it's the actual working selector
+        "#mobforward",  
         'input[placeholder="Search Swift"]',
         "#contextSearch",         
         'input[name="contextSearch"]',

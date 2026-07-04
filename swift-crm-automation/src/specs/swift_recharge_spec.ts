@@ -431,7 +431,7 @@ async function handleLoginWithCaptcha(): Promise<LoginResult> {
             const data = JSON.parse(raw);
             if (data.answer) {
               response = data;
-              console.log(`[Recharge UAT] ✅ CAPTCHA response received: ${data.answer}`);
+              console.log(`[Recharge UAT] CAPTCHA response received: ${data.answer}`);
               if (fs.existsSync(CAPTCHA_REQUEST_FILE)) fs.unlinkSync(CAPTCHA_REQUEST_FILE);
               if (fs.existsSync(CAPTCHA_RESPONSE_FILE)) fs.unlinkSync(CAPTCHA_RESPONSE_FILE);
             }
@@ -839,11 +839,11 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
     // ── STEP 4: Handle login ──────────────────────────────────────────────────
     const loginSuccess = await handleLoginWithRetries(3);
     
-    if (loginSuccess) {
+    if (loginSuccess) { 
       isLoggedIn = true;
-      console.log('[Recharge UAT] ✅ Login successful!');
+      console.log('[Recharge UAT] Login successful!');
     } else {
-      console.log('[Recharge UAT] ⚠️ Login not confirmed - waiting for manual login...');
+      console.log('[Recharge UAT]  Login not confirmed - waiting for manual login...');
       
       const maxWait = 60 * 1000;
       const start = Date.now();
@@ -853,7 +853,7 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
           const isProfileDisplayed = await profileTab.isDisplayed();
           if (isProfileDisplayed) {
             isLoggedIn = true;
-            console.log('[Recharge UAT] ✅ Manual login detected!');
+            console.log('[Recharge UAT] Manual login detected!');
             break;
           }
         } catch (_e) {}

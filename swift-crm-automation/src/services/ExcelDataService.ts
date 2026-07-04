@@ -8,7 +8,9 @@ export interface InputData {
   recharge: string;
   swift: string;
   inFlag: string;
+  upss: string;
   viApp: string;
+  // pretest: 'yes';
 }
 
 export interface RechargePlan {
@@ -41,7 +43,9 @@ export class ExcelDataService {
       recharge: String(row['Recharge'] ?? '').trim(),
       swift: String(row['SWIFT'] ?? '').trim(),
       inFlag: String(row['IN'] ?? '').trim(),
+      upss: String(row['UPSS'] ?? '').trim(),
       viApp: String(row['Vi App'] ?? '').trim(),
+      // pretest: String(row['Pretest'] ?? '').trim(),
     }));
   }
 

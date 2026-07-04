@@ -1736,9 +1736,6 @@ app.post("/api/process-validation-and-send-emails", async (req, res) => {
 
     const emailResults = [];
 
-    // Prepare all recharge details with proper fields from the validation results
-    // We need to get the amount and benefit from the original data
-    // Since we don't have the Excel data here, we'll use the validation results
     const allDetails = validationResults.map((r, index) => {
       const isViValid = r.isValid === true;
 
@@ -1752,48 +1749,38 @@ app.post("/api/process-validation-and-send-emails", async (req, res) => {
         circle = "Invalid Format";
       }
 
-      // Check if it's a "MRP not found" case
-      // const isMismatch =
-      //   !isViValid && r.message && r.message.includes("MRP not found");
-
-      // return {
-      //   mobileNumber: r.number,
-      //   status: isViValid ? "Valid" : isMismatch ? "Mismatch" : "Invalid",
-      //   isValid: isViValid,
-      //   isMismatch: isMismatch,
       const isCircleMismatch = r.circleMatched === false;
-      const isMismatch =
-        isCircleMismatch ||
-        (!isViValid && r.message && r.message.includes("MRP not found"));
+      const isMRPNotFound = r.isMRPFound === false;
+      const isMismatch = isCircleMismatch || isMRPNotFound;
+      const rechargeRequired = r.recharge === "yes";
+      const errorMessage = r.reasons && r.reasons.length > 0 ? r.reasons.join(" · ") : (isViValid ? "" : r.message || "Invalid Vi number");
 
       return {
         mobileNumber: r.number,
-        status: isViValid && !isCircleMismatch ? "Valid" : isMismatch ? "Mismatch" : "Invalid",
+        status: (isViValid && !isMismatch) ? "Valid" : isMismatch ? "Mismatch" : "Invalid",
         isValid: isViValid,
         isMismatch: isMismatch,
         circleMatched: r.circleMatched === true,
+        isMRPFound: r.isMRPFound,
         operatorName: isViValid ? "Vi" : "Unknown",
         circle: circle,
         planName: isViValid ? "Recharge Plan" : "N/A",
-        // Use the amount from the validation result if available, otherwise 0
         amount: r.amount || 0,
         benefit: r.benefit || (isViValid ? "Recharge Plan" : "N/A"),
+        rechargeRequired: rechargeRequired,
         transactionId: isViValid
           ? `TXN_${Date.now()}_${index}_${r.number}`
           : `INV_${Date.now()}_${index}_${r.number}`,
         date: new Date().toLocaleDateString("en-IN"),
-        errorMessage: isViValid ? "" : r.message || "Invalid Vi number",
-        reason: isViValid ? "" : r.message || "Invalid Vi number",
+        errorMessage: errorMessage,
+        reason: errorMessage,
         timestamp: r.timestamp || new Date().toISOString(),
       };
     });
 
-    // For Email 2: Filter valid numbers that don't have MRP mismatch
-    // const validOnlyForAction = allDetails.filter(
-    //   (d) => d.isValid === true && !d.isMismatch,
-    // );
+    // For Email 2: Filter valid numbers that are Valid, CircleMatched, and MRP Found!
     const validOnlyForAction = allDetails.filter(
-      (d) => d.isValid === true && d.circleMatched === true,
+      (d) => d.isValid === true && d.circleMatched === true && (d.isMRPFound === true || d.isMRPFound === undefined),
     );
 
     // For each recipient, send 2 emails
