@@ -169,7 +169,16 @@ buildConfirmUrl(detail, signToken) {
             <td>${actualCircle}</td>
             <td><span class="${mrpClass}">₹${amount.toFixed(2)}</span></td>
             ${hasValidBenefit ? `<td>${benefit}</td>` : ''}
-            ${(!isViValid || detail.isMismatch) ? `<td><span class="match-chip no" style="white-space:normal;text-align:left;line-height:1.5;">${reason}</span></td>` : ''}
+            <td>
+  ${
+    (!isViValid || detail.isMismatch)
+      ? `<span class="match-chip no"
+            style="white-space:normal;text-align:left;line-height:1.5;">
+            ${reason}
+         </span>`
+      : '—'
+  }
+</td>
           </tr>
         `;
       });
@@ -177,7 +186,8 @@ buildConfirmUrl(detail, signToken) {
 
     // Determine column count
     const hasInvalid = invalidCount > 0;
-    const colCount = 6 + (hasValidBenefit ? 1 : 0) + (hasInvalid ? 1 : 0);
+    // const colCount = 6 + (hasValidBenefit ? 1 : 0) + (hasInvalid ? 1 : 0);
+    const colCount = 7 + (hasValidBenefit ? 1 : 0);
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -187,13 +197,11 @@ buildConfirmUrl(detail, signToken) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Mobile Recharge Details Valid & Invalid Numbers</title>
         <style>
-          * {
-            box-sizing: border-box;
-          }
+          * { box-sizing: border-box; margin: 0; padding: 0; }
           :root {
             --accent: #f38328;
             --accent-dark: #d96f1a;
-            --bg: #faf8f5;
+            --bg: #f5f0eb;
             --card-bg: #ffffff;
             --text-dark: #2e2a27;
             --text-muted: #6f6b67;
@@ -213,17 +221,96 @@ buildConfirmUrl(detail, signToken) {
             --danger-bg: #fdecea;
             --info: #1565c0;
             --info-bg: #e3f2fd;
-            --radius: 12px;
-            --radius-sm: 8px;
-            --shadow: 0 4px 20px rgba(100, 60, 20, 0.1);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --shadow: 0 8px 32px rgba(100, 60, 20, 0.10);
+            --shadow-sm: 0 2px 8px rgba(100, 60, 20, 0.06);
           }
           body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: var(--bg);
             color: var(--text);
             margin: 0;
-            padding: 20px;
+            padding: 24px;
+            line-height: 1.5;
           }
+          .wrapper {
+            max-width: 1100px;
+            margin: 0 auto;
+          }
+          .header {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px 28px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+          }
+          .header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: var(--orange);
+            border-radius: var(--radius) var(--radius) 0 0;
+          }
+          .header h1 {
+            margin: 0 0 8px 0;
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.3px;
+          }
+          .header p {
+            margin: 0;
+            font-size: 14px;
+            color: var(--muted);
+          }
+          .header .meta {
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+          }
+          .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-bottom: 20px;
+          }
+          .info-item {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 18px 14px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s, box-shadow 0.2s;
+          }
+          .info-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+          }
+          .info-item label {
+            font-weight: 700;
+            color: var(--orange);
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 6px;
+          }
+          .info-item value {
+            display: block;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text);
+          }
+          .info-item value.valid { color: var(--success); }
+          .info-item value.invalid { color: var(--danger); }
           .ptable-wrap {
             background: var(--white);
             border: 1px solid var(--border);
@@ -235,47 +322,72 @@ buildConfirmUrl(detail, signToken) {
           }
           .ptable {
             width: 100%;
-            border-collapse: collapse;
-            font-size: 12.5px;
-            min-width: 700px;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 13px;
+            table-layout: fixed;
           }
           .ptable thead tr {
             background: var(--orange);
             color: var(--white);
           }
           .ptable thead th {
-            padding: 11px 15px;
+            padding: 10px 12px;
             font-weight: 600;
-            text-align: left;
+            text-align: center;
             white-space: nowrap;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            vertical-align: middle;
           }
+          .ptable thead th:first-child { border-radius: var(--radius-sm) 0 0 0; width: 40px; }
+          .ptable thead th:last-child { border-radius: 0 var(--radius-sm) 0 0; }
+          .ptable thead th:nth-child(2) { width: 110px; }
+          .ptable thead th:nth-child(3) { width: 90px; }
+          .ptable thead th:nth-child(4) { width: 60px; }
+          .ptable thead th:nth-child(5) { width: 110px; }
+          .ptable thead th:nth-child(6) { width: 100px; }
           .ptable tbody tr {
             border-bottom: 1px solid var(--border);
             transition: background 0.15s;
           }
-          .ptable tbody tr:last-child {
-            border-bottom: none;
-          }
-          .ptable tbody tr:hover {
-            background: #fffaf5;
-          }
+          .ptable tbody tr:last-child { border-bottom: none; }
+          .ptable tbody tr:last-child td:first-child { border-radius: 0 0 0 var(--radius-sm); }
+          .ptable tbody tr:last-child td:last-child { border-radius: 0 0 var(--radius-sm) 0; }
+          .ptable tbody tr:hover { background: var(--cream); }
           .ptable tbody td {
-            padding: 10px 15px;
+            padding: 10px 12px;
             color: var(--muted);
             vertical-align: middle;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
           }
+          .ptable tbody tr:last-child td { border-bottom: none; }
           .ptable tbody td:first-child {
             color: var(--text);
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 12px;
+            text-align: center;
+            width: 40px;
           }
+          .ptable tbody td:nth-child(2) { text-align: center; width: 110px; }
+          .ptable tbody td:nth-child(3) { text-align: center; width: 90px; }
+          .ptable tbody td:nth-child(4) { text-align: center; width: 60px; }
+          .ptable tbody td:nth-child(5) { text-align: center; width: 110px; }
+          .ptable tbody td:nth-child(6) { text-align: center; width: 100px; }
+          .ptable tbody td:nth-child(7) { text-align: left; }
+          .ptable tbody td:last-child { text-align: left; }
           .match-chip {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 4px;
-            padding: 3px 10px;
+            padding: 4px 10px;
             border-radius: 20px;
             font-size: 11px;
             font-weight: 600;
+            white-space: nowrap;
           }
           .match-chip.yes {
             background: var(--success-bg);
@@ -288,101 +400,70 @@ buildConfirmUrl(detail, signToken) {
           .benefit-tag {
             background: var(--info-bg);
             color: var(--info);
-            padding: 3px 8px;
+            padding: 6px 10px;
             border-radius: 6px;
             font-size: 11px;
             font-weight: 600;
             font-family: 'Courier New', monospace;
             display: inline-block;
-            max-width: 280px;
-            word-break: break-all;
+            max-width: 220px;
+            word-break: break-word;
+            line-height: 1.5;
+            text-align: left;
           }
           .mrp-highlight-input {
             color: var(--orange);
             font-weight: 700;
+            font-size: 13px;
+            white-space: nowrap;
           }
           .mrp-highlight-no {
             color: var(--danger);
             font-weight: 700;
+            font-size: 13px;
+            white-space: nowrap;
           }
-          .header {
-            background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dk) 100%);
-            color: white;
-            padding: 20px;
-            border-radius: var(--radius);
-            margin-bottom: 20px;
-            text-align: center;
-          }
-          .header h1 { margin: 0; font-size: 28px; }
-          .header p { margin: 5px 0 0 0; font-size: 14px; }
-          .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
-          }
-          .info-item { 
-            padding: 12px; 
-            background-color: var(--white); 
+          .summary {
+            margin-top: 24px;
+            padding: 24px;
+            background: var(--white);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            text-align: center;
-          }
-          .info-item label { 
-            font-weight: 600; 
-            color: var(--orange); 
-            display: block; 
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-          }
-          .info-item value { 
-            display: block; 
-            margin-top: 5px; 
-            font-size: 20px;
-            font-weight: 700;
-          }
-          .info-item value.valid { color: var(--success); }
-          .info-item value.invalid { color: var(--danger); }
-          .summary {
-            margin-top: 30px;
-            padding: 20px;
-            background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dk) 100%);
-            color: white;
-            border-radius: var(--radius);
+            box-shadow: var(--shadow);
             text-align: right;
           }
-          .summary-item { display: flex; justify-content: space-between; margin: 10px 0; font-size: 16px; }
+          .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 15px;
+            color: var(--muted);
+            font-weight: 500;
+          }
           .summary-item.total {
             font-size: 20px;
-            font-weight: bold;
-            border-top: 2px solid rgba(255, 255, 255, 0.3);
-            padding-top: 10px;
-            margin-top: 15px;
+            font-weight: 700;
+            color: var(--text);
+            border-top: 2px solid var(--border);
+            padding-top: 12px;
+            margin-top: 12px;
+          }
+          .summary-item.total span:last-child {
+            color: var(--orange);
+          }
+          @media (max-width: 640px) {
+            .info-grid { grid-template-columns: 1fr; }
+            .header h1 { font-size: 20px; }
+            body { padding: 12px; }
           }
         </style>
       </head>
       <body>
-        <div style="max-width: 1100px; margin: 0 auto;">
+        <div class="wrapper">
           <div class="header">
-            <h1>Mobile Recharge Details Valid & Invalid Numbers</h1>
-            <p>Complete Report - Valid & Invalid Numbers</p>
-            <p style="font-size:12px; opacity:0.9; margin-top:8px;">Generated on: ${currentDate}</p>
-          </div>
-
-          <div class="info-grid">
-            <div class="info-item">
-              <label>Total Recharges</label>
-              <value>${allDetails.length}</value>
-            </div>
-            <div class="info-item">
-              <label>Valid</label>
-              <value class="valid">${validCount}</value>
-            </div>
-            <div class="info-item">
-              <label>Invalid / Mismatch</label>
-              <value class="invalid">${invalidCount}</value>
-            </div>
+            <h1>Mobile Recharge Details</h1>
+            <p>Complete Report — Valid & Invalid Numbers</p>
+            <p class="meta">Generated on: ${currentDate}</p>
           </div>
 
           <div class="ptable-wrap">
@@ -396,32 +477,13 @@ buildConfirmUrl(detail, signToken) {
                   <th>Actual Circle</th>
                   <th>Recharge MRP (₹)</th>
                   ${hasValidBenefit ? '<th>Benefit</th>' : ''}
-                  ${hasInvalid ? '<th>Reason</th>' : ''}
+                  <th>Reason</th>
                 </tr>
               </thead>
               <tbody>
                 ${tableRows || `<tr><td colspan="${colCount}" style="text-align:center; padding:30px; color:var(--muted);">No recharge details available</td></tr>`}
               </tbody>
             </table>
-          </div>
-
-          <div class="summary">
-            <div class="summary-item">
-              <span>Total Recharges:</span>
-              <span>${allDetails.length}</span>
-            </div>
-            <div class="summary-item">
-              <span>Valid:</span>
-              <span style="color: #90EE90;">${validCount}</span>
-            </div>
-            <div class="summary-item">
-              <span>Invalid / Mismatch:</span>
-              <span style="color: #FF9999;">${invalidCount}</span>
-            </div>
-            <div class="summary-item total">
-              <span>Total Amount:</span>
-              <span>₹${totalAmount.toFixed(2)}</span>
-            </div>
           </div>
         </div>
       </body>
@@ -456,7 +518,7 @@ Generated on: ${currentDate}
       const validItems = allDetails.filter(d => d.isValid === true);
       const invalidItems = allDetails.filter(d => d.isValid === false);
       const sortedDetails = [...validItems, ...invalidItems];
-      
+
       sortedDetails.forEach((detail, index) => {
         const amount = parseFloat(detail.amount || 0);
         totalAmount += amount;
@@ -540,9 +602,9 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
         let actionCell = '';
         if (includeActions && detail.isValid === true) {
           if (detail.rechargeRequired) {
-            actionCell = `<td style="text-align:center;"><a href="${confirmUrl}" target="_blank" style="display:inline-block;background-color:var(--success);color:#ffffff;text-decoration:none;padding:6px 12px;border-radius:4px;font-size:11px;font-weight:600;">Mark as Completed</a></td>`;
+            actionCell = `<td style="text-align:center;"><a href="${confirmUrl}" target="_blank" style="display:inline-block;background-color:var(--success);color:#ffffff;text-decoration:none;padding:8px 14px;border-radius:6px;font-size:12px;font-weight:600;box-shadow:0 2px 6px rgba(46,125,50,0.25);transition:all 0.2s;">Mark as Completed</a></td>`;
           } else {
-            actionCell = `<td style="text-align:center;"><span style="display:inline-block;background-color:var(--danger-bg);color:var(--danger);padding:6px 12px;border-radius:4px;font-size:11px;font-weight:600;">Recharge Not Required</span></td>`;
+            actionCell = `<td style="text-align:center;"><span style="display:inline-block;background-color:var(--danger-bg);color:var(--danger);padding:8px 14px;border-radius:6px;font-size:12px;font-weight:600;">Recharge Not Required</span></td>`;
           }
         }
 
@@ -572,13 +634,11 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Valid Vi Numbers</title>
         <style>
-          * {
-            box-sizing: border-box;
-          }
+          * { box-sizing: border-box; margin: 0; padding: 0; }
           :root {
             --accent: #f38328;
             --accent-dark: #d96f1a;
-            --bg: #faf8f5;
+            --bg: #f5f0eb;
             --card-bg: #ffffff;
             --text-dark: #2e2a27;
             --text-muted: #6f6b67;
@@ -598,16 +658,111 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
             --danger-bg: #fdecea;
             --info: #1565c0;
             --info-bg: #e3f2fd;
-            --radius: 12px;
-            --radius-sm: 8px;
-            --shadow: 0 4px 20px rgba(100, 60, 20, 0.1);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --shadow: 0 8px 32px rgba(100, 60, 20, 0.10);
+            --shadow-sm: 0 2px 8px rgba(100, 60, 20, 0.06);
           }
           body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: var(--bg);
             color: var(--text);
             margin: 0;
-            padding: 20px;
+            padding: 24px;
+            line-height: 1.5;
+          }
+          .wrapper {
+            max-width: 1100px;
+            margin: 0 auto;
+          }
+          .header {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px 28px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+          }
+          .header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: var(--orange);
+            border-radius: var(--radius) var(--radius) 0 0;
+          }
+          .header h1 {
+            margin: 0 0 8px 0;
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.3px;
+          }
+          .header p {
+            margin: 0;
+            font-size: 14px;
+            color: var(--muted);
+          }
+          .header .meta {
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+          }
+          .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-bottom: 20px;
+          }
+          .info-item {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 18px 14px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.2s, box-shadow 0.2s;
+          }
+          .info-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+          }
+          .info-item label {
+            font-weight: 700;
+            color: var(--orange);
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 6px;
+          }
+          .info-item value {
+            display: block;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text);
+          }
+          .info-item value.valid { color: var(--success); }
+          .section-title {
+            color: var(--text);
+            margin: 28px 0 12px 0;
+            font-size: 16px;
+            font-weight: 700;
+            border-bottom: 2px solid var(--orange);
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+          .section-note {
+            font-size: 13px;
+            color: var(--muted);
+            margin: -4px 0 14px 0;
+            font-weight: 500;
           }
           .ptable-wrap {
             background: var(--white);
@@ -620,47 +775,72 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
           }
           .ptable {
             width: 100%;
-            border-collapse: collapse;
-            font-size: 12.5px;
-            min-width: 700px;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 13px;
+            table-layout: fixed;
           }
           .ptable thead tr {
             background: var(--orange);
             color: var(--white);
           }
           .ptable thead th {
-            padding: 11px 15px;
+            padding: 10px 12px;
             font-weight: 600;
-            text-align: left;
+            text-align: center;
             white-space: nowrap;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            vertical-align: middle;
           }
+          .ptable thead th:first-child { border-radius: var(--radius-sm) 0 0 0; width: 40px; }
+          .ptable thead th:last-child { border-radius: 0 var(--radius-sm) 0 0; }
+          .ptable thead th:nth-child(2) { width: 110px; }
+          .ptable thead th:nth-child(3) { width: 90px; }
+          .ptable thead th:nth-child(4) { width: 60px; }
+          .ptable thead th:nth-child(5) { width: 110px; }
+          .ptable thead th:nth-child(6) { width: 100px; }
           .ptable tbody tr {
             border-bottom: 1px solid var(--border);
             transition: background 0.15s;
           }
-          .ptable tbody tr:last-child {
-            border-bottom: none;
-          }
-          .ptable tbody tr:hover {
-            background: #fffaf5;
-          }
+          .ptable tbody tr:last-child { border-bottom: none; }
+          .ptable tbody tr:last-child td:first-child { border-radius: 0 0 0 var(--radius-sm); }
+          .ptable tbody tr:last-child td:last-child { border-radius: 0 0 var(--radius-sm) 0; }
+          .ptable tbody tr:hover { background: var(--cream); }
           .ptable tbody td {
-            padding: 10px 15px;
+            padding: 10px 12px;
             color: var(--muted);
             vertical-align: middle;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
           }
+          .ptable tbody tr:last-child td { border-bottom: none; }
           .ptable tbody td:first-child {
             color: var(--text);
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 12px;
+            text-align: center;
+            width: 40px;
           }
+          .ptable tbody td:nth-child(2) { text-align: center; width: 110px; }
+          .ptable tbody td:nth-child(3) { text-align: center; width: 90px; }
+          .ptable tbody td:nth-child(4) { text-align: center; width: 60px; }
+          .ptable tbody td:nth-child(5) { text-align: center; width: 110px; }
+          .ptable tbody td:nth-child(6) { text-align: center; width: 100px; }
+          .ptable tbody td:nth-child(7) { text-align: left; }
+          .ptable tbody td:last-child { text-align: center; }
           .match-chip {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 4px;
-            padding: 3px 10px;
+            padding: 4px 10px;
             border-radius: 20px;
             font-size: 11px;
             font-weight: 600;
+            white-space: nowrap;
           }
           .match-chip.yes {
             background: var(--success-bg);
@@ -673,89 +853,64 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
           .benefit-tag {
             background: var(--info-bg);
             color: var(--info);
-            padding: 3px 8px;
+            padding: 6px 10px;
             border-radius: 6px;
             font-size: 11px;
             font-weight: 600;
             font-family: 'Courier New', monospace;
             display: inline-block;
-            max-width: 280px;
-            word-break: break-all;
+            max-width: 220px;
+            word-break: break-word;
+            line-height: 1.5;
+            text-align: left;
           }
           .mrp-highlight-input {
             color: var(--orange);
             font-weight: 700;
+            font-size: 13px;
+            white-space: nowrap;
           }
-          .header {
-            background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dk) 100%);
-            color: white;
-            padding: 20px;
-            border-radius: var(--radius);
-            margin-bottom: 20px;
-            text-align: center;
-          }
-          .header h1 { margin: 0; font-size: 28px; }
-          .header p { margin: 5px 0 0 0; font-size: 14px; }
-          .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
-          }
-          .info-item { 
-            padding: 12px; 
-            background-color: var(--white); 
+          .summary {
+            margin-top: 24px;
+            padding: 24px;
+            background: var(--white);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            text-align: center;
-          }
-          .info-item label { 
-            font-weight: 600; 
-            color: var(--orange); 
-            display: block; 
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-          }
-          .info-item value { 
-            display: block; 
-            margin-top: 5px; 
-            font-size: 20px;
-            font-weight: 700;
-          }
-          .info-item value.valid { color: var(--success); }
-          .summary {
-            margin-top: 30px;
-            padding: 20px;
-            background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dk) 100%);
-            color: white;
-            border-radius: var(--radius);
+            box-shadow: var(--shadow);
             text-align: right;
           }
-          .summary-item { display: flex; justify-content: space-between; margin: 10px 0; font-size: 16px; }
+          .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 15px;
+            color: var(--muted);
+            font-weight: 500;
+          }
           .summary-item.total {
             font-size: 20px;
-            font-weight: bold;
-            border-top: 2px solid rgba(255, 255, 255, 0.3);
-            padding-top: 10px;
-            margin-top: 15px;
+            font-weight: 700;
+            color: var(--text);
+            border-top: 2px solid var(--border);
+            padding-top: 12px;
+            margin-top: 12px;
           }
-          .section-title {
+          .summary-item.total span:last-child {
             color: var(--orange);
-            margin-top: 30px;
-            font-size: 16px;
-            font-weight: 600;
-            border-bottom: 2px solid var(--orange);
-            padding-bottom: 8px;
+          }
+          @media (max-width: 640px) {
+            .info-grid { grid-template-columns: 1fr; }
+            .header h1 { font-size: 20px; }
+            body { padding: 12px; }
           }
         </style>
       </head>
       <body>
-        <div style="max-width: 1100px; margin: 0 auto;">
+        <div class="wrapper">
           <div class="header">
             <h1>Valid Vi Numbers</h1>
-            <p>Action Required - Mark as Completed</p>
-            <p style="font-size:12px; opacity:0.9; margin-top:8px;">Generated on: ${currentDate}</p>
+            <p>Action Required — Mark as Completed</p>
+            <p class="meta">Generated on: ${currentDate}</p>
           </div>
 
           <div class="info-grid">
@@ -773,10 +928,9 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
             </div>
           </div>
 
-          <div class="section-title">✅ Valid Numbers - Action Required</div>
-          <p style="font-size: 13px; color: var(--muted); margin-top: -5px;">
-            ${actionNote}
-          </p>
+          <div class="section-title"> Valid Numbers — Action Required</div>
+          <p class="section-note">${actionNote}</p>
+
           <div class="ptable-wrap">
             <table class="ptable">
               <thead>
@@ -799,11 +953,11 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
 
           <div class="summary">
             <div class="summary-item">
-              <span>Total Valid Recharges:</span>
+              <span>Total Valid Recharges</span>
               <span>${filteredDetails.filter(d => d.isValid === true).length}</span>
             </div>
             <div class="summary-item total">
-              <span>Total Amount:</span>
+              <span>Total Amount</span>
               <span>₹${totalAmount.toFixed(2)}</span>
             </div>
           </div>
@@ -833,13 +987,13 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
         const reason = detail.errorMessage || detail.reason || 'Invalid Vi number';
 
         tableRows += `
-          <tr style="border-bottom: 1px solid #ddd;">
-            <td style="padding: 10px; text-align: center;">${index + 1}</td>
-            <td style="padding: 10px; font-weight: 500;">${detail.mobileNumber || 'N/A'}</td>
-            <td style="padding: 10px;"><span class="status-invalid">❌ Invalid</span></td>
-            <td style="padding: 10px;">${circle}</td>
-            <td style="padding: 10px; text-align: right; font-weight: 600; color: #dc3545;">₹${amount.toFixed(2)}</td>
-            <td style="padding: 10px; font-size: 12px; color: #dc3545;">${reason}</td>
+          <tr>
+            <td>${index + 1}</td>
+            <td><code style="font-size:12px;">${detail.mobileNumber || 'N/A'}</code></td>
+            <td><span class="match-chip no">❌ Invalid</span></td>
+            <td>${circle}</td>
+            <td><span class="mrp-highlight-no">₹${amount.toFixed(2)}</span></td>
+            <td><span class="reason-text">${reason}</span></td>
           </tr>
         `;
       });
@@ -853,133 +1007,263 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Invalid Vi Numbers Report</title>
         <style>
-          body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          :root {
+            --bg: #f5f0eb;
+            --text: #2e2319;
+            --muted: #6f5c4a;
+            --border: #e8ddd2;
+            --white: #ffffff;
+            --danger: #c0392b;
+            --danger-bg: #fdecea;
+            --radius: 16px;
+            --radius-sm: 10px;
+            --shadow: 0 8px 32px rgba(100, 60, 20, 0.10);
+            --shadow-sm: 0 2px 8px rgba(100, 60, 20, 0.06);
           }
-          .container {
+          body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 24px;
+            line-height: 1.5;
+          }
+          .wrapper {
             max-width: 1100px;
-            margin: 20px auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 0 auto;
           }
           .header {
-            background: linear-gradient(135deg, #dc3545 0%, #c0392b 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px 28px;
             margin-bottom: 20px;
             text-align: center;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
           }
-          .header h1 { margin: 0; font-size: 28px; }
-          .header p { margin: 5px 0 0 0; font-size: 14px; }
-          .user-section {
-            margin-bottom: 20px;
-            padding: 15px;
-            background-color: #f9f9f9;
-            border-left: 4px solid #dc3545;
-            border-radius: 4px;
+          .header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: var(--danger);
+            border-radius: var(--radius) var(--radius) 0 0;
           }
-          .user-section h3 { margin: 0 0 10px 0; color: #dc3545; }
+          .header h1 {
+            margin: 0 0 8px 0;
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.3px;
+          }
+          .header p {
+            margin: 0;
+            font-size: 14px;
+            color: var(--muted);
+          }
+          .header .meta {
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 500;
+          }
           .info-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
             margin-bottom: 20px;
           }
-          .info-item { 
-            padding: 12px; 
-            background-color: #f0f0f0; 
-            border-radius: 4px;
+          .info-item {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 18px 14px;
             text-align: center;
+            box-shadow: var(--shadow-sm);
           }
-          .info-item label { 
-            font-weight: 600; 
-            color: #dc3545; 
-            display: block; 
+          .info-item label {
+            font-weight: 700;
+            color: var(--danger);
+            display: block;
             font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.6px;
+            margin-bottom: 6px;
           }
-          .info-item value { 
-            display: block; 
-            margin-top: 5px; 
-            font-size: 20px;
+          .info-item value {
+            display: block;
+            font-size: 22px;
             font-weight: 700;
+            color: var(--text);
           }
-          table {
+          .section-title {
+            color: var(--text);
+            margin: 28px 0 12px 0;
+            font-size: 16px;
+            font-weight: 700;
+            border-bottom: 2px solid var(--danger);
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+          .section-note {
+            font-size: 13px;
+            color: var(--muted);
+            margin: -4px 0 14px 0;
+            font-weight: 500;
+          }
+          .ptable-wrap {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-bottom: 10px;
+            overflow-x: auto;
+          }
+          .ptable {
             width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 13px;
+            table-layout: fixed;
           }
-          thead { 
-            background: linear-gradient(135deg, #dc3545 0%, #c0392b 100%);
-            color: white; 
+          .ptable thead tr {
+            background: var(--danger);
+            color: var(--white);
           }
-          th { 
-            padding: 12px; 
-            text-align: left; 
-            font-weight: 600; 
-            font-size: 12px; 
+          .ptable thead th {
+            padding: 10px 12px;
+            font-weight: 600;
+            text-align: center;
+            white-space: nowrap;
+            font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.4px;
+            vertical-align: middle;
           }
-          td { padding: 10px; font-size: 13px; }
-          tbody tr:nth-child(even) { background-color: #fafafa; }
-          tbody tr:hover { background-color: #f5f5f5; }
-          .status-invalid {
-            background-color: #f8d7da;
-            color: #721c24;
+          .ptable thead th:first-child { border-radius: var(--radius-sm) 0 0 0; width: 40px; }
+          .ptable thead th:last-child { border-radius: 0 var(--radius-sm) 0 0; }
+          .ptable thead th:nth-child(2) { width: 110px; }
+          .ptable thead th:nth-child(3) { width: 90px; }
+          .ptable thead th:nth-child(4) { width: 60px; }
+          .ptable thead th:nth-child(5) { width: 100px; }
+          .ptable tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+          }
+          .ptable tbody tr:last-child { border-bottom: none; }
+          .ptable tbody tr:last-child td:first-child { border-radius: 0 0 0 var(--radius-sm); }
+          .ptable tbody tr:last-child td:last-child { border-radius: 0 0 var(--radius-sm) 0; }
+          .ptable tbody tr:hover { background: #fff5f5; }
+          .ptable tbody td {
+            padding: 10px 12px;
+            color: var(--muted);
+            vertical-align: middle;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+          }
+          .ptable tbody tr:last-child td { border-bottom: none; }
+          .ptable tbody td:first-child {
+            color: var(--text);
+            font-weight: 700;
+            font-size: 12px;
+            text-align: center;
+            width: 40px;
+          }
+          .ptable tbody td:nth-child(2) { text-align: center; width: 110px; }
+          .ptable tbody td:nth-child(3) { text-align: center; width: 90px; }
+          .ptable tbody td:nth-child(4) { text-align: center; width: 60px; }
+          .ptable tbody td:nth-child(5) { text-align: center; width: 100px; }
+          .ptable tbody td:last-child { text-align: left; }
+          .match-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
             padding: 4px 10px;
             border-radius: 20px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
-            display: inline-block;
+            white-space: nowrap;
+          }
+          .match-chip.no {
+            background: var(--danger-bg);
+            color: var(--danger);
+          }
+          .mrp-highlight-no {
+            color: var(--danger);
+            font-weight: 700;
+            font-size: 13px;
+            white-space: nowrap;
+          }
+          .reason-text {
+            font-size: 12px;
+            color: var(--danger);
+            font-weight: 500;
+            line-height: 1.5;
           }
           .summary {
-            margin-top: 30px;
-            padding: 20px;
-            background: linear-gradient(135deg, #dc3545 0%, #c0392b 100%);
-            color: white;
-            border-radius: 8px;
+            margin-top: 24px;
+            padding: 24px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
             text-align: right;
           }
-          .summary-item { display: flex; justify-content: space-between; margin: 10px 0; font-size: 16px; }
+          .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 15px;
+            color: var(--muted);
+            font-weight: 500;
+          }
           .summary-item.total {
             font-size: 20px;
-            font-weight: bold;
-            border-top: 2px solid rgba(255, 255, 255, 0.3);
-            padding-top: 10px;
-            margin-top: 15px;
+            font-weight: 700;
+            color: var(--text);
+            border-top: 2px solid var(--border);
+            padding-top: 12px;
+            margin-top: 12px;
+          }
+          .summary-item.total span:last-child {
+            color: var(--danger);
           }
           .footer {
-            margin-top: 30px;
-            padding: 20px;
-            border-top: 1px solid #ddd;
+            margin-top: 28px;
+            padding: 24px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
             text-align: center;
-            color: #666;
+            color: var(--muted);
             font-size: 12px;
+            line-height: 1.8;
           }
-          .footer p { margin: 5px 0; }
+          .footer strong {
+            color: var(--text);
+            font-size: 13px;
+          }
+          @media (max-width: 640px) {
+            .info-grid { grid-template-columns: 1fr; }
+            .header h1 { font-size: 20px; }
+            body { padding: 12px; }
+          }
         </style>
       </head>
       <body>
-        <div class="container">
+        <div class="wrapper">
           <div class="header">
             <h1>⚠️ Invalid Vi Numbers Report</h1>
             <p>Unmatched Test Cases</p>
-          </div>
-
-        
-          <div class="user-section">
-            <p><strong>Generated on:</strong> ${currentDate}</p>
+            <p class="meta">Generated on: ${currentDate}</p>
           </div>
 
           <div class="info-grid">
@@ -993,12 +1277,11 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
             </div>
           </div>
 
-          <h3 style="color: #dc3545; margin-top: 30px;">Invalid Number Details</h3>
-          <p style="font-size: 13px; color: #666; margin-top: -5px;">
-            The following numbers were found to be invalid Vi numbers.
-          </p>
-          <div style="overflow-x: auto;">
-            <table>
+          <div class="section-title">❌ Invalid Number Details</div>
+          <p class="section-note">The following numbers were found to be invalid Vi numbers.</p>
+
+          <div class="ptable-wrap">
+            <table class="ptable">
               <thead>
                 <tr>
                   <th>#</th>
@@ -1010,18 +1293,18 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
                 </tr>
               </thead>
               <tbody>
-                ${tableRows || `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #999;">No invalid details available</td></tr>`}
+                ${tableRows || `<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted);">No invalid details available</td></tr>`}
               </tbody>
             </table>
           </div>
 
           <div class="summary">
             <div class="summary-item">
-              <span>Total Invalid Numbers:</span>
+              <span>Total Invalid Numbers</span>
               <span>${invalidDetails.length}</span>
             </div>
             <div class="summary-item total">
-              <span>Total Amount:</span>
+              <span>Total Amount</span>
               <span>₹${invalidDetails.reduce((sum, d) => sum + parseFloat(d.amount || 0), 0).toFixed(2)}</span>
             </div>
           </div>
@@ -1030,7 +1313,7 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
             <p><strong>VI Automation System</strong></p>
             <p>This is an automated email. Please do not reply to this message.</p>
             <p>If you have any questions, please contact support at noreply-all@qdegrees.org</p>
-            <p style="margin-top: 15px; color: #999;">© 2026 VI Telecom. All rights reserved.</p>
+            <p style="margin-top: 10px; color: var(--muted);">© 2026 VI Telecom. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -1063,13 +1346,13 @@ Generated on: ${currentDate}
       rechargeDetails.forEach((detail, index) => {
         const amount = parseFloat(detail.amount || 0);
         totalAmount += amount;
-        
+
         if (detail.isValid === true || String(detail.status || '').toLowerCase() === 'success') {
           validCount++;
         } else {
           invalidCount++;
         }
-        
+
         const status = detail.isValid === true ? 'Valid' : 'Invalid';
         const circle = detail.circle || detail.operatorName || 'N/A';
         const benefit = this.hasValidBenefitValue(detail) ? (detail.benefit || detail.planName || 'N/A') : '';
@@ -1154,9 +1437,9 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
         replyTo: replyToEmail
       };
 
-      console.log('📧 Sending COMBINED email to:', recipientEmail);
+      console.log('Sending COMBINED email to:', recipientEmail);
       const result = await this.transporter.sendMail(mailOptions);
-      console.log(`✅ Combined email sent to ${recipientEmail}:`, result.messageId);
+      console.log(` Combined email sent to ${recipientEmail}:`, result.messageId);
 
       return {
         success: true,
@@ -1227,9 +1510,9 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
         replyTo: replyToEmail
       };
 
-      console.log('📧 Sending MATCHED email to:', recipientEmail);
+      console.log('Sending MATCHED email to:', recipientEmail);
       const result = await this.transporter.sendMail(mailOptions);
-      console.log(`✅ Matched email sent to ${recipientEmail}:`, result.messageId);
+      console.log(` Matched email sent to ${recipientEmail}:`, result.messageId);
 
       return {
         success: true,
@@ -1300,9 +1583,9 @@ If you have any questions, please contact support at noreply-all@qdegrees.org
         replyTo: replyToEmail
       };
 
-      console.log('📧 Sending UNMATCHED email to:', recipientEmail);
+      console.log(' Sending UNMATCHED email to:', recipientEmail);
       const result = await this.transporter.sendMail(mailOptions);
-      console.log(`✅ Unmatched email sent to ${recipientEmail}:`, result.messageId);
+      console.log(` Unmatched email sent to ${recipientEmail}:`, result.messageId);
 
       return {
         success: true,

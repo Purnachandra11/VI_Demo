@@ -256,6 +256,70 @@ class SwiftCrmOrchestrator {
       }));
   }
 
+  // Add this method to the SwiftCrmOrchestrator class
+async sendPreTestFailureEmail(msisdn, rowData, failureReason) {
+  try {
+    const mailService = require('./mailService');
+    
+    const emailContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #c0392b;">PreTest Validation Failed</h2>
+        <hr style="border: 1px solid #eee;">
+        
+        <p><strong>MSISDN:</strong> ${msisdn}</p>
+        <p><strong>Circle:</strong> ${rowData.circle || 'N/A'}</p>
+        <p><strong>Recharge MRP:</strong> ₹${rowData.rechargeMRP || 'N/A'}</p>
+        <p><strong>Plan Benefit:</strong> ${rowData.planBenefit || 'N/A'}</p>
+        <p><strong>Failure Reason:</strong> <span style="color: #c0392b; font-weight: bold;">${failureReason}</span></p>
+        
+        <div style="background: #fdecea; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #c0392b;">
+          <p style="margin: 0; color: #7b1c1c;">
+            <strong>⚠️ Action Required:</strong> The SIM number ${msisdn} is not clean. 
+            It has active voice usage (2 entries) which prevents the recharge test from proceeding.
+            Please clear the active usage and retry the test.
+          </p>
+        </div>
+        
+        <hr style="border: 1px solid #eee;">
+        <p style="color: #888; font-size: 12px;">
+          This is an automated email from the VI Sim Automation Platform.<br>
+          Please do not reply to this email.
+        </p>
+      </div>
+    `;
+
+    const recipientEmail = 'kalidindi.chandra@qdegrees.org'; // You can make this configurable
+    
+    const result = await mailService.sendCombinedEmail(
+      recipientEmail,
+      [{
+        mobileNumber: msisdn,
+        amount: rowData.rechargeMRP || 0,
+        circle: rowData.circle || 'N/A',
+        planName: rowData.planBenefit || 'N/A',
+        isValid: false,
+        errorMessage: failureReason,
+        transactionId: `PRETEST_FAIL_${Date.now()}_${msisdn}`,
+        date: new Date().toLocaleDateString('en-IN'),
+        viStatus: 'PreTest Failed - SIM Not Clean',
+        reason: failureReason
+      }],
+      0, // validCount
+      1, // invalidCount
+      'VI Automation Team',
+      { subject: `⚠️ PreTest Failed: ${msisdn} - SIM Not Clean` }
+    );
+
+    this.log(`📧 PreTest failure email sent for ${msisdn}: ${result.success ? 'Success' : 'Failed'}`, 
+             result.success ? 'success' : 'error');
+    
+    return result;
+  } catch (error) {
+    this.log(`❌ Failed to send PreTest failure email: ${error.message}`, 'error');
+    return { success: false, error: error.message };
+  }
+}
+
   // In swiftCrmOrchestrator.js, add a method to check for recharge confirmation
 
 async waitForRechargeConfirmation(msisdn, timeoutMs = 300000) {
@@ -681,16 +745,16 @@ sleep(ms) {
       // IN and SWIFT test status
       if (line.includes("IN test completed")) {
         if (line.includes("PASS")) {
-          this.log("✅ IN test passed", "success");
+          this.log("IN test completed successfully", "success");
         } else if (line.includes("FAIL")) {
-          this.log("❌ IN test failed", "error");
+          this.log("IN test failed", "error");
         }
       }
       if (line.includes("SWIFT test completed")) {
         if (line.includes("PASS")) {
-          this.log("✅ SWIFT test passed", "success");
+          this.log("SWIFT completed successfully", "success");
         } else if (line.includes("FAIL")) {
-          this.log("❌ SWIFT test failed", "error");
+          this.log(" SWIFT test failed", "error");
         }
       }
 
@@ -716,65 +780,133 @@ sleep(ms) {
     });
   }
 
-  handleRowEvent(ev) {
-    const { event, rowIndex, msisdn, error } = ev;
-    switch (event) {
-      case "row_start":
-        this.broadcastRowStatus(rowIndex, "running", { msisdn });
-        this.log(`▶ Row started: ${msisdn}`, "info");
-        break;
+  // handleRowEvent(ev) {
+  //   const { event, rowIndex, msisdn, error } = ev;
+  //   switch (event) {
+  //     case "row_start":
+  //       this.broadcastRowStatus(rowIndex, "running", { msisdn });
+  //       this.log(`▶ Row started: ${msisdn}`, "info");
+  //       break;
 
-      case "row_data":
-        const existing = this.rowStatuses.find((r) => r.rowIndex === rowIndex);
-        if (existing) {
-          if (!existing.offerData) existing.offerData = [];
-          existing.offerData.push({
-            transactionId: ev.transactionId,
-            activationDateTime: ev.activationDateTime,
-            validity: ev.validity,
-            mrp: ev.mrp,
-            activationMode: ev.activationMode,
-            currentCoreBalance: ev.currentCoreBalance,
-            etopupTransactionId: ev.etopupTransactionId,
-            retailerMsisdn: ev.retailerMsisdn,
-            name: ev.name,
-            category: ev.category,
-            benefits: ev.benefits,
-            detailValidity: ev.detailValidity,
-          });
-          this.log(`📊 Scraped offer data for ${msisdn}: MRP ${ev.mrp}`, "info");
-        }
-        break;
+  //     case "row_data":
+  //       const existing = this.rowStatuses.find((r) => r.rowIndex === rowIndex);
+  //       if (existing) {
+  //         if (!existing.offerData) existing.offerData = [];
+  //         existing.offerData.push({
+  //           transactionId: ev.transactionId,
+  //           activationDateTime: ev.activationDateTime,
+  //           validity: ev.validity,
+  //           mrp: ev.mrp,
+  //           activationMode: ev.activationMode,
+  //           currentCoreBalance: ev.currentCoreBalance,
+  //           etopupTransactionId: ev.etopupTransactionId,
+  //           retailerMsisdn: ev.retailerMsisdn,
+  //           name: ev.name,
+  //           category: ev.category,
+  //           benefits: ev.benefits,
+  //           detailValidity: ev.detailValidity,
+  //         });
+  //         this.log(`📊 Scraped offer data for ${msisdn}: MRP ${ev.mrp}`, "info");
+  //       }
+  //       break;
 
-      case "row_waiting_confirm":
-        this.broadcastRowStatus(rowIndex, "waiting_recharge_confirm", {
-          msisdn,
-          message: "Waiting for recharge confirmation from Smart Connect Application…",
-        });
-        break;
+  //     case "row_waiting_confirm":
+  //       this.broadcastRowStatus(rowIndex, "waiting_recharge_confirm", {
+  //         msisdn,
+  //         message: "Waiting for recharge confirmation from Smart Connect Application…",
+  //       });
+  //       break;
 
-      case "row_navigate_tab":
-        this.log(`🔄 Navigating to agent tab for row: ${msisdn}`, "info");
-        break;
+  //     case "row_navigate_tab":
+  //       this.log(`🔄 Navigating to agent tab for row: ${msisdn}`, "info");
+  //       break;
 
-      case "row_completed":
-        this.broadcastRowStatus(rowIndex, "completed", { msisdn });
-        this.log(`✅ Row completed: ${msisdn}`, "success");
-        break;
+  //     case "row_completed":
+  //       this.broadcastRowStatus(rowIndex, "completed", { msisdn });
+  //       this.log(`✅ Row completed: ${msisdn}`, "success");
+  //       break;
 
-      case "row_failed":
-        this.broadcastRowStatus(rowIndex, "failed", { msisdn, error });
-        this.log(`❌ Row failed: ${msisdn} — ${error || "unknown error"}`, "error");
-        break;
+  //     case "row_failed":
+  //       this.broadcastRowStatus(rowIndex, "failed", { msisdn, error });
+  //       this.log(`❌ Row failed: ${msisdn} — ${error || "unknown error"}`, "error");
+  //       break;
 
-      default:
-        break;
-    }
-  }
+  //     default:
+  //       break;
+  //   }
+  // }
 
   // ══════════════════════════════════════════════════════════════════════
   // SCREENSHOTS + REPORTS
   // ══════════════════════════════════════════════════════════════════════
+
+  // In swiftCrmOrchestrator.js, update the handleRowEvent method
+handleRowEvent(ev) {
+  const { event, rowIndex, msisdn, error } = ev;
+  switch (event) {
+    case "row_start":
+      this.broadcastRowStatus(rowIndex, "running", { msisdn });
+      this.log(`▶ Row started: ${msisdn}`, "info");
+      break;
+
+    case "row_data":
+      const existing = this.rowStatuses.find((r) => r.rowIndex === rowIndex);
+      if (existing) {
+        if (!existing.offerData) existing.offerData = [];
+        existing.offerData.push({
+          transactionId: ev.transactionId,
+          activationDateTime: ev.activationDateTime,
+          validity: ev.validity,
+          mrp: ev.mrp,
+          activationMode: ev.activationMode,
+          currentCoreBalance: ev.currentCoreBalance,
+          etopupTransactionId: ev.etopupTransactionId,
+          retailerMsisdn: ev.retailerMsisdn,
+          name: ev.name,
+          category: ev.category,
+          benefits: ev.benefits,
+          detailValidity: ev.detailValidity,
+        });
+        this.log(`📊 Scraped offer data for ${msisdn}: MRP ${ev.mrp}`, "info");
+      }
+      break;
+
+    case "row_waiting_confirm":
+      this.broadcastRowStatus(rowIndex, "waiting_recharge_confirm", {
+        msisdn,
+        message: "Waiting for recharge confirmation from Smart Connect Application…",
+      });
+      break;
+
+    case "row_navigate_tab":
+      this.log(`🔄 Navigating to agent tab for row: ${msisdn}`, "info");
+      break;
+
+    case "row_completed":
+      this.broadcastRowStatus(rowIndex, "completed", { msisdn });
+      this.log(`✅ Row completed: ${msisdn}`, "success");
+      break;
+
+    case "row_failed":
+      this.broadcastRowStatus(rowIndex, "failed", { msisdn, error });
+      this.log(`❌ Row failed: ${msisdn} — ${error || "unknown error"}`, "error");
+      
+      // NEW: Check if this is a PreTest failure and send email
+      if (error && error.includes('PreTest')) {
+        const rowData = this.matchedRows.find(r => r.msisdn === msisdn);
+        if (rowData) {
+          // Send PreTest failure email asynchronously
+          this.sendPreTestFailureEmail(msisdn, rowData, error).catch(err => {
+            this.log(`⚠️ Background email send failed: ${err.message}`, 'warning');
+          });
+        }
+      }
+      break;
+
+    default:
+      break;
+  }
+}
 
   collectScreenshots() {
     try {

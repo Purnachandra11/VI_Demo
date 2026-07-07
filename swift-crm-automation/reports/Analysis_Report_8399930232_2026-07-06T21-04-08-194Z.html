@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Analysis Report - 8399930232</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; padding: 20px; color: #333; line-height: 1.5; }
+    .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { color: #f38328; border-bottom: 3px solid #f38328; padding-bottom: 10px; margin-bottom: 20px; font-size: 24px; }
+    h2 { color: #333; margin: 25px 0 10px 0; padding: 8px 0; border-bottom: 2px solid #eee; font-size: 18px; }
+    h3 { color: #555; margin: 18px 0 10px 0; font-size: 15px; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0 20px 0; font-size: 12px; }
+    th { background: #f38328; color: white; padding: 10px 12px; text-align: left; font-weight: 600; }
+    td { padding: 8px 12px; border-bottom: 1px solid #eee; }
+    tr:nth-child(even) { background: #f9f9f9; }
+    .badge { display: inline-block; padding: 3px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .badge-pass { background: #e8f5e9; color: #2e7d32; }
+    .badge-fail { background: #fdecea; color: #c0392b; }
+    .badge-critical { background: #fdecea; color: #c0392b; font-weight: 700; }
+    .badge-high { background: #ffebee; color: #c62828; }
+    .badge-medium { background: #fff3e0; color: #e65100; }
+    .badge-low { background: #f5f5f5; color: #888; }
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 15px 0 25px 0; }
+    .summary-item { background: #f8f5f0; padding: 15px; border-radius: 6px; text-align: center; border-left: 4px solid #f38328; }
+    .summary-item .number { font-size: 28px; font-weight: 700; color: #f38328; }
+    .summary-item .label { font-size: 12px; color: #888; margin-top: 4px; }
+    .info-box { background: #f8f5f0; padding: 15px; border-radius: 6px; margin: 10px 0; border-left: 4px solid #f38328; }
+    .info-box strong { color: #f38328; }
+    .flow-box { background: #f5f8fa; padding: 15px; border-radius: 6px; margin: 10px 0; font-family: monospace; font-size: 13px; line-height: 1.8; border: 1px solid #e0e0e0; }
+    .flow-step { padding: 4px 0; }
+    .root-cause-box { background: #fdecea; padding: 20px; border-radius: 8px; border-left: 4px solid #c0392b; margin: 15px 0; }
+    .root-cause-box h3 { color: #c0392b; }
+    .recommendation-high { background: #ffebee; border-left: 4px solid #c62828; padding: 12px; margin: 8px 0; border-radius: 4px; }
+    .recommendation-medium { background: #fff3e0; border-left: 4px solid #e65100; padding: 12px; margin: 8px 0; border-radius: 4px; }
+    .recommendation-low { background: #f5f5f5; border-left: 4px solid #888; padding: 12px; margin: 8px 0; border-radius: 4px; }
+    .verdict-box { text-align: center; padding: 30px; background: #fdecea; border-radius: 8px; border: 2px solid #c0392b; margin: 20px 0; }
+    .verdict-box .verdict-status { font-size: 48px; }
+    .verdict-box .verdict-text { font-size: 24px; font-weight: 700; color: #c0392b; }
+    .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 11px; color: #888; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>FINAL ANALYSIS REPORT - SWIFT + IN Recharge UAT Execution</h1>
+  <p style="color: #888; margin-bottom: 20px;">MSISDN: <strong>8399930232</strong> | Test Date: <strong>2026-07-06</strong> | Generated: 7/7/2026, 2:34:08 am</p>
+
+  <!-- Executive Summary -->
+  <h2>📋 Executive Summary</h2>
+  <div class="summary-grid">
+    <div class="summary-item">
+      <div class="number">Recharge UAT for MRP 149 Plan</div>
+      <div class="label">Test Case</div>
+    </div>
+    <div class="summary-item">
+      <div class="number">8399930232</div>
+      <div class="label">MSISDN</div>
+    </div>
+    <div class="summary-item">
+      <div class="number">2026-07-06</div>
+      <div class="label">Test Date</div>
+    </div>
+    <div class="summary-item" style="border-left-color: #c0392b;">
+      <div class="number" style="color: #c0392b;">❌ FAILED</div>
+      <div class="label">Overall Status</div>
+    </div>
+    <div class="summary-item" style="border-left-color: #c0392b;">
+      <div class="number" style="color: #c0392b;">❌ FAIL</div>
+      <div class="label">SWIFT Status</div>
+    </div>
+    <div class="summary-item" style="border-left-color: #c0392b;">
+      <div class="number" style="color: #c0392b;">❌ FAIL</div>
+      <div class="label">IN Status</div>
+    </div>
+  </div>
+
+  <!-- Comparison -->
+  <h2>1. Expected vs Actual - Side by Side Comparison</h2>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Parameter</th><th>Expected (Input Data)</th><th>Actual (UAT/SWIFT/IN)</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      
+        <tr>
+          <td>1</td>
+          <td><strong>MSISDN</strong></td>
+          <td>8399930232</td>
+          <td>8399930232</td>
+          <td><span class="badge badge-pass">✅ Pass</span></td>
+        </tr>
+      
+        <tr>
+          <td>2</td>
+          <td><strong>Circle</strong></td>
+          <td>ASM</td>
+          <td>ASM</td>
+          <td><span class="badge badge-pass">✅ Pass</span></td>
+        </tr>
+      
+        <tr>
+          <td>3</td>
+          <td><strong>Recharge MRP</strong></td>
+          <td>149</td>
+          <td>149</td>
+          <td><span class="badge badge-pass">✅ Pass</span></td>
+        </tr>
+      
+        <tr>
+          <td>4</td>
+          <td><strong>Plan Benefit</strong></td>
+          <td>UL+1.5GB/Day+HERO+100SMS/Day || 56D</td>
+          <td>Get Unlimited Calls + 1GB Data + 300SMS. Pack Validity - 28 Days. Data tariff post quota completion will be charged at 50p/MB. Post SMS quota charging will be Re 1 local Re 1.5 STD per SMS. || 28D</td>
+          <td><span class="badge badge-fail">❌ Fail</span></td>
+        </tr>
+      
+        <tr>
+          <td>5</td>
+          <td><strong>Validity</strong></td>
+          <td>56 Days</td>
+          <td>28 Days</td>
+          <td><span class="badge badge-fail">❌ Fail</span></td>
+        </tr>
+      
+        <tr>
+          <td>6</td>
+          <td><strong>Voice</strong></td>
+          <td>Unlimited Calls</td>
+          <td>Unlimited Calls</td>
+          <td><span class="badge badge-pass">✅ Pass</span></td>
+        </tr>
+      
+        <tr>
+          <td>7</td>
+          <td><strong>Data</strong></td>
+          <td>1.5GB/Day</td>
+          <td>1GB (Total)</td>
+          <td><span class="badge badge-fail">❌ Fail</span></td>
+        </tr>
+      
+        <tr>
+          <td>8</td>
+          <td><strong>SMS</strong></td>
+          <td>100SMS/Day</td>
+          <td>300 SMS</td>
+          <td><span class="badge badge-fail">❌ Fail</span></td>
+        </tr>
+      
+        <tr>
+          <td>9</td>
+          <td><strong>HERO</strong></td>
+          <td>Included</td>
+          <td>Missing</td>
+          <td><span class="badge badge-fail">❌ Fail</span></td>
+        </tr>
+      
+        <tr>
+          <td>10</td>
+          <td><strong>Activation Date</strong></td>
+          <td>2026-07-06</td>
+          <td>02 Jul '26 12.04 PM</td>
+          <td><span class="badge badge-fail">❌ Fail</span></td>
+        </tr>
+      
+    </tbody>
+  </table>
+
+  <!-- SWIFT Analysis -->
+  <h2>2. Detailed SWIFT Analysis - <span style="color: #c0392b;">❌ FAIL</span></h2>
+  
+  <h3>SWIFT Test Execution Flow</h3>
+  <div class="flow-box">
+    
+      <div class="flow-step">
+        1. MSISDN Entry ──► 8399930232 
+      </div>
+    
+      <div class="flow-step">
+        2. Search ──► Subscriber found 
+      </div>
+    
+      <div class="flow-step">
+        3. Subscriber Info ──► Customer: Moloy Chatterjee TEST 
+      </div>
+    
+      <div class="flow-step">
+        4. UAT Results ──► Transaction ID: 21636064962 
+      </div>
+    
+      <div class="flow-step">
+        5. Activation Date ──► 02 Jul '26 12.04 PM <span class="badge badge-fail">❌</span>
+      </div>
+    
+      <div class="flow-step">
+        6. Validity ──► 28 Days <span class="badge badge-fail">❌</span>
+      </div>
+    
+      <div class="flow-step">
+        7. MRP ──► 149 <span class="badge badge-pass">✅</span>
+      </div>
+    
+      <div class="flow-step">
+        8. Benefits Provisioned ──► Get Unlimited Calls + 1GB Data + 300SMS. Pack Validity - 28 Days. Data tariff post quota completion will be charged at 50p/MB. Post SMS quota charging will be Re 1 local Re 1.5 STD per SMS. <span class="badge badge-fail">❌</span>
+      </div>
+    
+      <div class="flow-step">
+        9. SWIFT Voice Usage ──► Unlimited voice offers active <span class="badge badge-pass">✅</span>
+      </div>
+    
+      <div class="flow-step">
+        10. SWIFT Data Usage ──► See data usage table 
+      </div>
+    
+      <div class="flow-step">
+        11. SWIFT SMS Usage ──► See SMS usage table 
+      </div>
+    
+  </div>
+
+  <h3>SWIFT UAT Results Table</h3>
+  <table>
+    <thead>
+      <tr><th>Field</th><th>Expected</th><th>Actual</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      
+        <tr>
+          <td><strong>Transaction ID</strong></td>
+          <td>-</td>
+          <td>21636064962</td>
+          <td><span class="badge badge-pass">✅</span></td>
+        </tr>
+      
+        <tr>
+          <td><strong>Activation Date & Time</strong></td>
+          <td>2026-07-06</td>
+          <td>02 Jul '26 12.04 PM</td>
+          <td><span class="badge badge-fail">❌</span></td>
+        </tr>
+      
+        <tr>
+          <td><strong>Validity</strong></td>
+          <td>56 Days</td>
+          <td>28 Days</td>
+          <td><span class="badge badge-fail">❌</span></td>
+        </tr>
+      
+        <tr>
+          <td><strong>MRP</strong></td>
+          <td>149</td>
+          <td>149</td>
+          <td><span class="badge badge-pass">✅</span></td>
+        </tr>
+      
+        <tr>
+          <td><strong>Activation Mode</strong></td>
+          <td>-</td>
+          <td>EtopUp</td>
+          <td><span class="badge badge-pass">✅</span></td>
+        </tr>
+      
+        <tr>
+          <td><strong>Current Core Balance</strong></td>
+          <td>-</td>
+          <td>0</td>
+          <td><span class="badge badge-pass">✅</span></td>
+        </tr>
+      
+        <tr>
+          <td><strong>Category</strong></td>
+          <td>Unlimited</td>
+          <td>Unlimited</td>
+          <td><span class="badge badge-pass">✅</span></td>
+        </tr>
+      
+        <tr>
+          <td><strong>Benefits</strong></td>
+          <td>UL+1.5GB/Day+HERO+100SMS/Day</td>
+          <td>Get Unlimited Calls + 1GB Data + 300SMS. Pack Validity - 28 Days. Data tariff post quota completion will be charged at 50p/MB. Post SMS quota charging will be Re 1 local Re 1.5 STD per SMS.</td>
+          <td><span class="badge badge-fail">❌</span></td>
+        </tr>
+      
+        <tr>
+          <td><strong>Detail Validity</strong></td>
+          <td>56 Days</td>
+          <td>28 Days</td>
+          <td><span class="badge badge-fail">❌</span></td>
+        </tr>
+      
+    </tbody>
+  </table>
+
+  
+    <h3>SWIFT Voice Usage</h3>
+    <table>
+      <thead>
+        <tr><th>Offer Name</th><th>Balance Left</th><th>Category</th><th>Expiry Date</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        
+          <tr>
+            <td>UL Home calls - Local + National</td>
+            <td>-  </td>
+            <td>Unlimited</td>
+            <td>29 Jul '26</td>
+            <td><span class="badge badge-pass">✅</span></td>
+          </tr>
+        
+          <tr>
+            <td>UL National Roaming Calls - Local + National</td>
+            <td>-  </td>
+            <td>Unlimited</td>
+            <td>29 Jul '26</td>
+            <td><span class="badge badge-pass">✅</span></td>
+          </tr>
+        
+      </tbody>
+    </table>
+    <p><strong>Verdict:</strong> Voice component correctly provisioned with Unlimited calls. ✅</p>
+  
+
+  
+    <h3>SWIFT Data Usage</h3>
+    <table>
+      <thead>
+        <tr><th>MSISDN</th><th>Note</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        
+          <tr>
+            <td>8399930232</td>
+            <td>No data usage data available</td>
+            <td><span class="badge badge-pass">✅</span></td>
+          </tr>
+        
+      </tbody>
+    </table>
+  
+
+  
+    <h3>SWIFT SMS Usage</h3>
+    <table>
+      <thead>
+        <tr><th>MSISDN</th><th>Note</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        
+          <tr>
+            <td>8399930232</td>
+            <td>No SMS usage data available</td>
+            <td><span class="badge badge-pass">✅</span></td>
+          </tr>
+        
+      </tbody>
+    </table>
+  
+
+  <h3>SWIFT Failure Reasons Summary</h3>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Failure Type</th><th>Expected</th><th>Actual</th><th>Severity</th></tr>
+    </thead>
+    <tbody>
+      
+        <tr>
+          <td>1</td>
+          <td>Activation Date</td>
+          <td>2026-07-06</td>
+          <td>02 Jul '26 12.04 PM</td>
+          <td><span class="badge badge-critical">Critical</span></td>
+        </tr>
+      
+        <tr>
+          <td>2</td>
+          <td>Validity Period</td>
+          <td>56 Days</td>
+          <td>28 Days</td>
+          <td><span class="badge badge-critical">Critical</span></td>
+        </tr>
+      
+        <tr>
+          <td>3</td>
+          <td>Data Quota</td>
+          <td>1.5GB/Day</td>
+          <td>1GB (Total)</td>
+          <td><span class="badge badge-critical">Critical</span></td>
+        </tr>
+      
+        <tr>
+          <td>4</td>
+          <td>SMS Quota</td>
+          <td>100SMS/Day</td>
+          <td>300 SMS</td>
+          <td><span class="badge badge-critical">Critical</span></td>
+        </tr>
+      
+        <tr>
+          <td>5</td>
+          <td>HERO Benefit</td>
+          <td>Included</td>
+          <td>Not Found</td>
+          <td><span class="badge badge-critical">Critical</span></td>
+        </tr>
+      
+        <tr>
+          <td>6</td>
+          <td>Plan Benefit String</td>
+          <td>UL+1.5GB/Day+HERO+100SMS/Day || 56D</td>
+          <td>Get Unlimited Calls + 1GB Data + 300SMS. Pack Validity - 28 Days. Data tariff post quota completion will be charged at 50p/MB. Post SMS quota charging will be Re 1 local Re 1.5 STD per SMS. || 28D</td>
+          <td><span class="badge badge-critical">Critical</span></td>
+        </tr>
+      
+    </tbody>
+  </table>
+
+  <div class="info-box">
+    <strong>SWIFT Overall Status:</strong> <span class="badge badge-fail">❌ FAIL</span>
+  </div>
+
+  <!-- IN Analysis -->
+  <h2>3. Detailed IN Analysis - <span style="color: #c0392b;">❌ FAIL</span></h2>
+
+  <h3>IN Test Execution Flow</h3>
+  <div class="flow-box">
+    
+      <div class="flow-step">
+        1. IN Results Status ──► Fail (Wrong plan provisioned) <span class="badge badge-fail">❌</span>
+      </div>
+    
+      <div class="flow-step">
+        2. Customer Name ──► Moloy Chatterjee TEST 
+      </div>
+    
+      <div class="flow-step">
+        3. Core Balance ──►  58.47 
+      </div>
+    
+      <div class="flow-step">
+        4. Service Validity ──► 29 Jul '26 
+      </div>
+    
+      <div class="flow-step">
+        5. Account Status ──► Active 
+      </div>
+    
+      <div class="flow-step">
+        6. User Type ──► Pack User 
+      </div>
+    
+      <div class="flow-step">
+        7. Activation Date ──► 30 Nov '18 
+      </div>
+    
+      <div class="flow-step">
+        8. Dedicated Accounts ──► 2 entries 
+      </div>
+    
+      <div class="flow-step">
+        9. Offers ──► 6 entries 
+      </div>
+    
+      <div class="flow-step">
+        10. Screenshot Count ──► 27 
+      </div>
+    
+  </div>
+
+  <h3>IN Results Table</h3>
+  <table>
+    <thead>
+      <tr><th>Field</th><th>Value</th><th>Expected</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      
+        <tr>
+          <td><strong>Status</strong></td>
+          <td>Fail</td>
+          <td>Pass</td>
+          <td><span class="badge badge-fail">❌</span></td>
+        </tr>
+      
+        <tr>
+          <td><strong>Customer Name</strong></td>
+          <td>Moloy Chatterjee TEST</td>
+          <td>-</td>
+          <td><span class="badge badge-pass">✅</span></td>
+        </tr>
+      
+        <tr>
+          <td><strong>Core Balance</strong></td>
+          <td> 58.47</td>
+          <td>-</td>
+          <td><span class="badge badge-pass">✅</span></td>
+        </tr>
+      
+        <tr>
+          <td><strong>Service Validity</strong></td>
+          <td>29 Jul '26</td>
+          <td>56 Days from activation</td>
+          <td><span class="badge badge-fail">❌</span></td>
+        </tr>
+      
+        <tr>
+          <td><strong>Account Status</strong></td>
+          <td>Active</td>
+          <td>Active</td>
+          <td><span class="badge badge-pass">✅</span></td>
+        </tr>
+      
+        <tr>
+          <td><strong>User Type</strong></td>
+          <td>Pack User</td>
+          <td>Pack User</td>
+          <td><span class="badge badge-pass">✅</span></td>
+        </tr>
+      
+        <tr>
+          <td><strong>Activation Date</strong></td>
+          <td>30 Nov '18</td>
+          <td>-</td>
+          <td><span class="badge badge-pass">✅</span></td>
+        </tr>
+      
+        <tr>
+          <td><strong>Service Removal On</strong></td>
+          <td>13 Nov '26</td>
+          <td>-</td>
+          <td><span class="badge badge-pass">✅</span></td>
+        </tr>
+      
+        <tr>
+          <td><strong>Supervision Expires On</strong></td>
+          <td>29 Jul '26</td>
+          <td>-</td>
+          <td><span class="badge badge-pass">✅</span></td>
+        </tr>
+      
+    </tbody>
+  </table>
+
+  
+    <h3>IN Dedicated Accounts</h3>
+    <table>
+      <thead>
+        <tr><th>DA Name</th><th>DA ID</th><th>Start Date</th><th>Expiry Date</th><th>DA Value</th><th>Unit</th><th>Type</th></tr>
+      </thead>
+      <tbody>
+        
+          <tr>
+            <td>176_FixedSMS</td>
+            <td>176</td>
+            <td>01 Jan '01 | 12.00 PM</td>
+            <td>29 Jul '26 | 12.00 PM</td>
+            <td>299</td>
+            <td>UNIT</td>
+            <td>5</td>
+          </tr>
+        
+          <tr>
+            <td>233_UL_Fixed_Data</td>
+            <td>233</td>
+            <td>01 Jan '01 | 12.00 PM</td>
+            <td>29 Jul '26 | 12.00 PM</td>
+            <td>702.68</td>
+            <td>MB</td>
+            <td>6</td>
+          </tr>
+        
+      </tbody>
+    </table>
+    <p><strong>Analysis:</strong> DA values reflect wrong quotas and/or validity for the expected plan.</p>
+    <p><strong>Verdict:</strong> ❌ <strong>FAIL</strong> - Wrong quotas and validity</p>
+  
+
+  
+    <h3>IN Offers</h3>
+    <table>
+      <thead>
+        <tr><th>Offer Name</th><th>Offer ID</th><th>Start Date & Time</th><th>End Date & Time</th><th>Offer Type</th></tr>
+      </thead>
+      <tbody>
+        
+          <tr>
+            <td>1_DEFAULT</td>
+            <td>1</td>
+            <td>20 Feb '23 | 11.59 PM</td>
+            <td>31 Dec '99 | 11.59 PM</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>5_4G_TAG</td>
+            <td>5</td>
+            <td>05 Aug '25 | 11.59 PM</td>
+            <td>31 Dec '99 | 11.59 PM</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>41119003_UL_Voice_Home</td>
+            <td>41119003</td>
+            <td>02 Jul '26 | 11.04 AM</td>
+            <td>29 Jul '26 | 11.59 PM</td>
+            <td>2</td>
+          </tr>
+        
+          <tr>
+            <td>41133000_UL_Voice_Roam</td>
+            <td>41133000</td>
+            <td>02 Jul '26 | 11.04 AM</td>
+            <td>29 Jul '26 | 11.59 PM</td>
+            <td>2</td>
+          </tr>
+        
+          <tr>
+            <td>42309176_FixedSMS</td>
+            <td>42309176</td>
+            <td>01 Jan '01 | 11.59 PM</td>
+            <td>29 Jul '26 | 11.59 PM</td>
+            <td>0</td>
+          </tr>
+        
+          <tr>
+            <td>43334442_UL_Fixed_Data</td>
+            <td>43334442</td>
+            <td>01 Jan '01 | 11.59 PM</td>
+            <td>29 Jul '26 | 11.59 PM</td>
+            <td>0</td>
+          </tr>
+        
+      </tbody>
+    </table>
+    <p><strong>Analysis:</strong> Voice/data offers show activation with wrong validity period.</p>
+    <p><strong>Verdict:</strong> ❌ <strong>FAIL</strong> - Wrong validity period</p>
+  
+
+  <h3>IN Failure Reasons Summary</h3>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Failure Type</th><th>Expected</th><th>Actual</th><th>Severity</th></tr>
+    </thead>
+    <tbody>
+      
+        <tr>
+          <td>1</td>
+          <td>Service Validity</td>
+          <td>56 Days</td>
+          <td>28073 Days (29 Jul '26)</td>
+          <td><span class="badge badge-critical">Critical</span></td>
+        </tr>
+      
+        <tr>
+          <td>2</td>
+          <td>Data Quota</td>
+          <td>1.5GB/Day</td>
+          <td>702.68 MB</td>
+          <td><span class="badge badge-critical">Critical</span></td>
+        </tr>
+      
+        <tr>
+          <td>3</td>
+          <td>SMS Quota</td>
+          <td>100SMS/Day</td>
+          <td>299 UNIT</td>
+          <td><span class="badge badge-critical">Critical</span></td>
+        </tr>
+      
+        <tr>
+          <td>4</td>
+          <td>HERO Benefit</td>
+          <td>Included</td>
+          <td>Not Found in DA or Offers</td>
+          <td><span class="badge badge-critical">Critical</span></td>
+        </tr>
+      
+        <tr>
+          <td>5</td>
+          <td>Voice Offer Expiry</td>
+          <td>~56 days from activation</td>
+          <td>31 Dec '99 | 11.59 PM</td>
+          <td><span class="badge badge-critical">Critical</span></td>
+        </tr>
+      
+    </tbody>
+  </table>
+
+  <div class="info-box">
+    <strong>IN Overall Status:</strong> <span class="badge badge-fail">❌ FAIL</span>
+  </div>
+
+  <!-- Root Cause Analysis -->
+  <h2>4. Root Cause Analysis</h2>
+  <div class="root-cause-box">
+    <h3>🔴 CRITICAL ISSUE: WRONG PRODUCT PROVISIONED</h3>
+    <div style="margin: 15px 0; padding: 15px; background: white; border-radius: 4px;">
+      <p><strong>Expected Plan:</strong> 149 MRP - 56 Days - 1.5GB/Day - 100SMS/Day - HERO</p>
+      <p><strong>Actual Plan:</strong> 149 MRP - 28 Days - 1GB (Total) - 300 SMS - No HERO</p>
+    </div>
+    <div style="margin: 15px 0; padding: 15px; background: white; border-radius: 4px;">
+      <h4>Issues Identified:</h4>
+      <ul style="margin-left: 20px; line-height: 2;">
+        <li>Activation Date: Expected 2026-07-06, got 02 Jul '26 12.04 PM</li><li>Validity Period: Expected 56 Days, got 28 Days</li><li>Data Quota: Expected 1.5GB/Day, got 1GB (Total)</li><li>SMS Quota: Expected 100SMS/Day, got 300 SMS</li><li>HERO Benefit: Expected Included, got Not Found</li><li>Plan Benefit String: Expected UL+1.5GB/Day+HERO+100SMS/Day || 56D, got Get Unlimited Calls + 1GB Data + 300SMS. Pack Validity - 28 Days. Data tariff post quota completion will be charged at 50p/MB. Post SMS quota charging will be Re 1 local Re 1.5 STD per SMS. || 28D</li><li>Service Validity: Expected 56 Days, got 28073 Days (29 Jul '26)</li><li>Data Quota: Expected 1.5GB/Day, got 702.68 MB</li><li>SMS Quota: Expected 100SMS/Day, got 299 UNIT</li><li>HERO Benefit: Expected Included, got Not Found in DA or Offers</li><li>Voice Offer Expiry: Expected ~56 days from activation, got 31 Dec '99 | 11.59 PM</li>
+      </ul>
+    </div>
+    <div style="margin: 15px 0; padding: 15px; background: white; border-radius: 4px;">
+      <p>Wrong product was provisioned. The recharge activated a different plan with incorrect validity, data quota, SMS quota, and/or missing HERO benefit.</p>
+    </div>
+  </div>
+
+  <!-- Timeline -->
+  <h2>5. Test Execution Timeline</h2>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Timestamp</th><th>Event</th><th>System</th></tr>
+    </thead>
+    <tbody>
+      
+        <tr>
+          <td>1</td>
+          <td>2026-07-06 21:02:13</td>
+          <td>Subscriber Info</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">SWIFT</span></td>
+        </tr>
+      
+        <tr>
+          <td>2</td>
+          <td>2026-07-06 21:02:14</td>
+          <td>Alert Bar</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">SWIFT</span></td>
+        </tr>
+      
+        <tr>
+          <td>3</td>
+          <td>2026-07-06 21:02:14</td>
+          <td>Full Page</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">SWIFT</span></td>
+        </tr>
+      
+        <tr>
+          <td>4</td>
+          <td>2026-07-06 21:02:14</td>
+          <td>Step3 Subscriber Info</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">SWIFT</span></td>
+        </tr>
+      
+        <tr>
+          <td>5</td>
+          <td>2026-07-06 21:02:22</td>
+          <td>IN Step1 Search MSISDN</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">IN</span></td>
+        </tr>
+      
+        <tr>
+          <td>6</td>
+          <td>2026-07-06 21:02:31</td>
+          <td>IN Step2 Click Search</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">IN</span></td>
+        </tr>
+      
+        <tr>
+          <td>7</td>
+          <td>2026-07-06 21:02:37</td>
+          <td>Subscriber Info</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">SWIFT</span></td>
+        </tr>
+      
+        <tr>
+          <td>8</td>
+          <td>2026-07-06 21:02:38</td>
+          <td>Alert Bar</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">SWIFT</span></td>
+        </tr>
+      
+        <tr>
+          <td>9</td>
+          <td>2026-07-06 21:02:38</td>
+          <td>Full Page</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">SWIFT</span></td>
+        </tr>
+      
+        <tr>
+          <td>10</td>
+          <td>2026-07-06 21:02:38</td>
+          <td>IN Step3 Subscriber Info</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">IN</span></td>
+        </tr>
+      
+        <tr>
+          <td>11</td>
+          <td>2026-07-06 21:02:38</td>
+          <td>IN Step4 Recharges Benefits</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">IN</span></td>
+        </tr>
+      
+        <tr>
+          <td>12</td>
+          <td>2026-07-06 21:02:41</td>
+          <td>IN Step5 Customer IN Profile</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">IN</span></td>
+        </tr>
+      
+        <tr>
+          <td>13</td>
+          <td>2026-07-06 21:02:41</td>
+          <td>IN Step6 Product Overview</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">IN</span></td>
+        </tr>
+      
+        <tr>
+          <td>14</td>
+          <td>2026-07-06 21:02:41</td>
+          <td>IN Step7 Account Overview</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">IN</span></td>
+        </tr>
+      
+        <tr>
+          <td>15</td>
+          <td>2026-07-06 21:02:44</td>
+          <td>IN Step8 Dedicated Account Tab</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">IN</span></td>
+        </tr>
+      
+        <tr>
+          <td>16</td>
+          <td>2026-07-06 21:02:44</td>
+          <td>IN Step8 1 Other Offers DA</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">IN</span></td>
+        </tr>
+      
+        <tr>
+          <td>17</td>
+          <td>2026-07-06 21:02:47</td>
+          <td>IN Step9 Offer Tab</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">IN</span></td>
+        </tr>
+      
+        <tr>
+          <td>18</td>
+          <td>2026-07-06 21:02:48</td>
+          <td>IN Step9 1 Other Offers OfferTab</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">IN</span></td>
+        </tr>
+      
+        <tr>
+          <td>19</td>
+          <td>2026-07-06 21:02:51</td>
+          <td>IN Step10 IN Profile Button</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">IN</span></td>
+        </tr>
+      
+        <tr>
+          <td>20</td>
+          <td>2026-07-06 21:03:47</td>
+          <td>Subscriber Info</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">SWIFT</span></td>
+        </tr>
+      
+        <tr>
+          <td>21</td>
+          <td>2026-07-06 21:03:47</td>
+          <td>Alert Bar</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">SWIFT</span></td>
+        </tr>
+      
+        <tr>
+          <td>22</td>
+          <td>2026-07-06 21:03:48</td>
+          <td>Full Page</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">SWIFT</span></td>
+        </tr>
+      
+        <tr>
+          <td>23</td>
+          <td>2026-07-06 21:03:48</td>
+          <td>SWIFT Step2 Click Search</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">SWIFT</span></td>
+        </tr>
+      
+        <tr>
+          <td>24</td>
+          <td>2026-07-06 21:03:48</td>
+          <td>SWIFT Step3 Recharges Benefits</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">SWIFT</span></td>
+        </tr>
+      
+        <tr>
+          <td>25</td>
+          <td>2026-07-06 21:03:58</td>
+          <td>SWIFT Step4 Active Offers</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">SWIFT</span></td>
+        </tr>
+      
+        <tr>
+          <td>26</td>
+          <td>2026-07-06 21:04:00</td>
+          <td>SWIFT Step5 Offer History</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">SWIFT</span></td>
+        </tr>
+      
+        <tr>
+          <td>27</td>
+          <td>2026-07-06 21:04:08</td>
+          <td>SWIFT Step6 Offer History Details</td>
+          <td><span class="badge" style="background: #e3f2fd; color: #1565c0;">SWIFT</span></td>
+        </tr>
+      
+    </tbody>
+  </table>
+
+  <!-- Screenshots -->
+  <h2>6. Screenshot Summary</h2>
+  <div class="summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));">
+    <div class="summary-item">
+      <div class="number">27</div>
+      <div class="label">Total Screenshots</div>
+    </div>
+    <div class="summary-item">
+      <div class="number">12</div>
+      <div class="label">IN System</div>
+    </div>
+    <div class="summary-item">
+      <div class="number">5</div>
+      <div class="label">SWIFT System</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Sr. No.</th><th>File</th><th>Captured At</th><th>Step Name</th></tr>
+    </thead>
+    <tbody>
+      
+        <tr>
+          <td>1</td>
+          <td><code>subscriber_8399930232_2026-07-06T21-02-07-204Z.png</code></td>
+          <td>2026-07-06T21:02:13.786Z</td>
+          <td>Subscriber Info</td>
+        </tr>
+      
+        <tr>
+          <td>1</td>
+          <td><code>alertbar_8399930232_2026-07-06T21-02-07-204Z.png</code></td>
+          <td>2026-07-06T21:02:14.000Z</td>
+          <td>Alert Bar</td>
+        </tr>
+      
+        <tr>
+          <td>1</td>
+          <td><code>fullpage_8399930232_2026-07-06T21-02-07-204Z.png</code></td>
+          <td>2026-07-06T21:02:14.127Z</td>
+          <td>Full Page</td>
+        </tr>
+      
+        <tr>
+          <td>3</td>
+          <td><code>screenshot_3_8399930232_2026-07-06T21-02-14-127Z.png</code></td>
+          <td>2026-07-06T21:02:14.319Z</td>
+          <td>Row1_Step3_Subscriber_Info</td>
+        </tr>
+      
+        <tr>
+          <td>4</td>
+          <td><code>screenshot_4_8399930232_2026-07-06T21-02-22-348Z.png</code></td>
+          <td>2026-07-06T21:02:22.448Z</td>
+          <td>IN_Step1_Search_MSISDN</td>
+        </tr>
+      
+        <tr>
+          <td>5</td>
+          <td><code>screenshot_5_8399930232_2026-07-06T21-02-31-042Z.png</code></td>
+          <td>2026-07-06T21:02:31.224Z</td>
+          <td>IN_Step2_Click_Search</td>
+        </tr>
+      
+        <tr>
+          <td>1</td>
+          <td><code>subscriber_8399930232_2026-07-06T21-02-31-225Z.png</code></td>
+          <td>2026-07-06T21:02:37.832Z</td>
+          <td>Subscriber Info</td>
+        </tr>
+      
+        <tr>
+          <td>1</td>
+          <td><code>alertbar_8399930232_2026-07-06T21-02-31-225Z.png</code></td>
+          <td>2026-07-06T21:02:38.036Z</td>
+          <td>Alert Bar</td>
+        </tr>
+      
+        <tr>
+          <td>1</td>
+          <td><code>fullpage_8399930232_2026-07-06T21-02-31-225Z.png</code></td>
+          <td>2026-07-06T21:02:38.214Z</td>
+          <td>Full Page</td>
+        </tr>
+      
+        <tr>
+          <td>6</td>
+          <td><code>screenshot_6_8399930232_2026-07-06T21-02-38-214Z.png</code></td>
+          <td>2026-07-06T21:02:38.345Z</td>
+          <td>IN_Step3_Subscriber_Info</td>
+        </tr>
+      
+        <tr>
+          <td>7</td>
+          <td><code>screenshot_7_8399930232_2026-07-06T21-02-38-380Z.png</code></td>
+          <td>2026-07-06T21:02:38.543Z</td>
+          <td>IN_Step4_Recharges_Benefits</td>
+        </tr>
+      
+        <tr>
+          <td>8</td>
+          <td><code>screenshot_8_8399930232_2026-07-06T21-02-40-922Z.png</code></td>
+          <td>2026-07-06T21:02:41.056Z</td>
+          <td>IN_Step5_Customer_IN_Profile</td>
+        </tr>
+      
+        <tr>
+          <td>9</td>
+          <td><code>screenshot_9_8399930232_2026-07-06T21-02-41-087Z.png</code></td>
+          <td>2026-07-06T21:02:41.242Z</td>
+          <td>IN_Step6_Product_Overview</td>
+        </tr>
+      
+        <tr>
+          <td>10</td>
+          <td><code>screenshot_10_8399930232_2026-07-06T21-02-41-852Z.png</code></td>
+          <td>2026-07-06T21:02:41.971Z</td>
+          <td>IN_Step7_Account_Overview</td>
+        </tr>
+      
+        <tr>
+          <td>11</td>
+          <td><code>screenshot_11_8399930232_2026-07-06T21-02-44-355Z.png</code></td>
+          <td>2026-07-06T21:02:44.490Z</td>
+          <td>IN_Step8_Dedicated_Account_Tab</td>
+        </tr>
+      
+        <tr>
+          <td>12</td>
+          <td><code>screenshot_12_8399930232_2026-07-06T21-02-44-835Z.png</code></td>
+          <td>2026-07-06T21:02:44.987Z</td>
+          <td>IN_Step8_1_Other_Offers_DA</td>
+        </tr>
+      
+        <tr>
+          <td>13</td>
+          <td><code>screenshot_13_8399930232_2026-07-06T21-02-47-462Z.png</code></td>
+          <td>2026-07-06T21:02:47.632Z</td>
+          <td>IN_Step9_Offer_Tab</td>
+        </tr>
+      
+        <tr>
+          <td>14</td>
+          <td><code>screenshot_14_8399930232_2026-07-06T21-02-48-549Z.png</code></td>
+          <td>2026-07-06T21:02:48.757Z</td>
+          <td>IN_Step9_1_Other_Offers_OfferTab</td>
+        </tr>
+      
+        <tr>
+          <td>15</td>
+          <td><code>screenshot_15_8399930232_2026-07-06T21-02-50-939Z.png</code></td>
+          <td>2026-07-06T21:02:51.117Z</td>
+          <td>IN_Step10_IN_Profile_Button</td>
+        </tr>
+      
+        <tr>
+          <td>1</td>
+          <td><code>subscriber_8399930232_2026-07-06T21-03-41-209Z.png</code></td>
+          <td>2026-07-06T21:03:47.729Z</td>
+          <td>Subscriber Info</td>
+        </tr>
+      
+        <tr>
+          <td>1</td>
+          <td><code>alertbar_8399930232_2026-07-06T21-03-41-209Z.png</code></td>
+          <td>2026-07-06T21:03:47.941Z</td>
+          <td>Alert Bar</td>
+        </tr>
+      
+        <tr>
+          <td>1</td>
+          <td><code>fullpage_8399930232_2026-07-06T21-03-41-209Z.png</code></td>
+          <td>2026-07-06T21:03:48.114Z</td>
+          <td>Full Page</td>
+        </tr>
+      
+        <tr>
+          <td>16</td>
+          <td><code>screenshot_16_8399930232_2026-07-06T21-03-48-114Z.png</code></td>
+          <td>2026-07-06T21:03:48.257Z</td>
+          <td>SWIFT_Step2_Click_Search</td>
+        </tr>
+      
+        <tr>
+          <td>17</td>
+          <td><code>screenshot_17_8399930232_2026-07-06T21-03-48-303Z.png</code></td>
+          <td>2026-07-06T21:03:48.470Z</td>
+          <td>SWIFT_Step3_Recharges_Benefits</td>
+        </tr>
+      
+        <tr>
+          <td>18</td>
+          <td><code>screenshot_18_8399930232_2026-07-06T21-03-58-163Z.png</code></td>
+          <td>2026-07-06T21:03:58.295Z</td>
+          <td>SWIFT_Step4_Active_Offers</td>
+        </tr>
+      
+        <tr>
+          <td>19</td>
+          <td><code>screenshot_19_8399930232_2026-07-06T21-04-00-558Z.png</code></td>
+          <td>2026-07-06T21:04:00.719Z</td>
+          <td>SWIFT_Step5_Offer_History</td>
+        </tr>
+      
+        <tr>
+          <td>20</td>
+          <td><code>screenshot_20_8399930232_2026-07-06T21-04-07-962Z.png</code></td>
+          <td>2026-07-06T21:04:08.158Z</td>
+          <td>SWIFT_Step6_Offer_History_Details</td>
+        </tr>
+      
+    </tbody>
+  </table>
+
+  <!-- Final Verdict -->
+  <h2>7. Final Verdict</h2>
+  <div class="verdict-box">
+    <div class="verdict-status">❌</div>
+    <div class="verdict-text">FAILED</div>
+    <div style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 500px; margin-left: auto; margin-right: auto;">
+      <div style="background: white; padding: 10px; border-radius: 4px;">
+        <strong>SWIFT:</strong> <span class="badge badge-fail">❌ FAIL</span>
+      </div>
+      <div style="background: white; padding: 10px; border-radius: 4px;">
+        <strong>IN:</strong> <span class="badge badge-fail">❌ FAIL</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recommendations -->
+  <h2>8. Recommendations</h2>
+  
+  <h3>🔴 High Priority - Immediate Action</h3>
+  
+    <div class="recommendation-high">
+      <strong>Wrong plan provisioned in SWIFT/IN systems</strong><br>
+      <span style="color: #555;">Investigate recharge routing and product catalog mapping for MRP 149. Verify correct plan ID is sent to provisioning systems.</span><br>
+      <span style="font-size: 11px; color: #888;">Owner: Product/Provisioning Team</span>
+    </div>
+  
+    <div class="recommendation-high">
+      <strong>Activation date mismatch in offer history</strong><br>
+      <span style="color: #555;">Verify offer history reflects today's recharge transaction and not a stale/previous activation.</span><br>
+      <span style="font-size: 11px; color: #888;">Owner: SWIFT CRM Team</span>
+    </div>
+  
+    <div class="recommendation-high">
+      <strong>Incorrect DA quotas in IN system</strong><br>
+      <span style="color: #555;">Validate dedicated account provisioning logic for data and SMS quotas against expected plan benefits.</span><br>
+      <span style="font-size: 11px; color: #888;">Owner: IN Provisioning Team</span>
+    </div>
+  
+    <div class="recommendation-high">
+      <strong>Service validity mismatch in IN system</strong><br>
+      <span style="color: #555;">Verify that the validity period is correctly configured for the MRP 149 plan (56 days). The current service validity is only 22 days.</span><br>
+      <span style="font-size: 11px; color: #888;">Owner: IN Provisioning Team</span>
+    </div>
+  
+
+  <h3>🟡 Medium Priority</h3>
+  
+    <div class="recommendation-medium">
+      <strong>HERO benefit not provisioned</strong><br>
+      <span style="color: #555;">Check HERO VAS/benefit attachment rules for the target MRP plan.</span><br>
+      <span style="font-size: 11px; color: #888;">Owner: VAS/Product Team</span>
+    </div>
+  
+
+  <h3>🟢 Low Priority</h3>
+  <p style="color: #888;">No low priority recommendations.</p>
+
+  <!-- Footer -->
+  <div class="footer">
+    <p>Report generated by VI Sim Automation Platform</p>
+    <p>&copy; 2026 QDegrees Services Pvt. Ltd.</p>
+  </div>
+</div>
+</body>
+</html>

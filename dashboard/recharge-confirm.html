@@ -2,221 +2,694 @@
 <html lang="en">
 
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Confirm Recharge</title>
-<style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirm Recharge</title>
+  <style>
+    :root {
+      --accent: #f38328;
+      --accent-dark: #d96f1a;
+      --bg: #f5f0eb;
+      --card-bg: #ffffff;
+      --text-dark: #2e2a27;
+      --text-muted: #6f6b67;
+      --orange: #f38328;
+      --orange-dk: #d96b10;
+      --brown: #865940;
+      --brown-lt: #c2966e;
+      --cream: #fdf8f3;
+      --cream-dk: #f5ede2;
+      --text: #2e2319;
+      --muted: #6f5c4a;
+      --border: #e8ddd2;
+      --white: #ffffff;
+      --success: #2e7d32;
+      --success-bg: #e8f5e9;
+      --danger: #c0392b;
+      --danger-bg: #fdecea;
+      --info: #1565c0;
+      --info-bg: #e3f2fd;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --shadow: 0 8px 32px rgba(100, 60, 20, 0.12);
+      --shadow-sm: 0 2px 8px rgba(100, 60, 20, 0.08);
+    }
 
-.detail-table { width: 100%; margin: 16px 0; font-size: 13px; border-collapse: collapse; }
-.detail-table td { padding: 6px 4px; text-align: left; border-bottom: 1px solid #eee; }
-.detail-table td:first-child { color: #888; font-weight: 600; width: 45%; }
-.detail-table td:last-child { color: #333; font-weight: 600; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-  body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #f4f4f4;
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .card {
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-    padding: 30px 35px;
-    max-width: 420px;
-    width: 90%;
-    text-align: center;
-  }
-  .card h2 { margin: 0 0 10px 0; color: #333; font-size: 20px; }
-  .card p { color: #555; font-size: 14px; margin: 8px 0; }
-  .number { font-size: 22px; font-weight: 700; color: #667eea; margin: 14px 0; }
-  .btn-row { display: flex; gap: 12px; margin-top: 22px; }
-  button {
-    flex: 1;
-    padding: 11px 16px;
-    border: none;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .btn-ok { background: #28a745; color: white; }
-  .btn-ok:hover { background: #218838; }
-  .btn-cancel { background: #e9ecef; color: #333; }
-  .btn-cancel:hover { background: #dee2e6; }
-  .btn-skip { background: #ffc107; color: #333; }
-  .btn-skip:hover { background: #e0a800; }
-  .status { margin-top: 16px; font-size: 13px; color: #888; }
-  .status.error { color: #dc3545; }
-  .status.success { color: #28a745; }
-  .status.warning { color: #ffc107; }
-  .status.info { color: #17a2b8; }
-  
-  .btn-ok:disabled, .btn-cancel:disabled, .btn-skip:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-</style>
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background-image: radial-gradient(circle at 10% 20%, rgba(243, 131, 40, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(134, 89, 64, 0.04) 0%, transparent 40%);
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 40px 36px;
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--orange);
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+
+    .card h2 {
+      margin: 0 0 8px 0;
+      color: var(--text);
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .card>p:first-of-type {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin: 0 0 24px 0;
+      line-height: 1.5;
+      max-width: 380px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 14px;
+      margin-top: 24px;
+    }
+
+    button {
+      flex: 1;
+      padding: 14px 18px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    button::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0);
+      transition: background 0.2s;
+    }
+
+    button:hover::after {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+      box-shadow: 0 4px 12px rgba(46, 125, 50, 0.25);
+    }
+
+    .btn-success:hover {
+      background: #256928;
+      box-shadow: 0 6px 16px rgba(46, 125, 50, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+      box-shadow: 0 4px 12px rgba(192, 57, 43, 0.25);
+    }
+
+    .btn-danger:hover {
+      background: #9a2d22;
+      box-shadow: 0 6px 16px rgba(192, 57, 43, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .status {
+      margin-top: 18px;
+      font-size: 13px;
+      color: var(--text-muted);
+      min-height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      transition: all 0.3s ease;
+    }
+
+    .status.error {
+      color: var(--danger);
+      background: var(--danger-bg);
+      font-weight: 500;
+    }
+
+    .status.success {
+      color: var(--success);
+      background: var(--success-bg);
+      font-weight: 500;
+    }
+
+    .status.warning {
+      color: #b35900;
+      background: #fff3e0;
+      font-weight: 500;
+    }
+
+    .status.info {
+      color: var(--info);
+      background: var(--info-bg);
+      font-weight: 500;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    button:disabled::after {
+      display: none;
+    }
+
+    .form-container {
+      display: none;
+      margin-top: 28px;
+      text-align: left;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .form-group select,
+    .form-group input[type="file"],
+    .form-group textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      background: white;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    .form-group select:focus,
+    .form-group textarea:focus,
+    .form-group input[type="file"]:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(243, 131, 40, 0.1);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 90px;
+      max-height: 220px;
+      line-height: 1.5;
+    }
+
+    .form-group .char-count {
+      text-align: right;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      font-weight: 500;
+    }
+
+    .form-group .char-count.warning {
+      color: var(--orange);
+    }
+
+    .form-group .char-count.danger {
+      color: var(--danger);
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: var(--orange);
+      color: white;
+      box-shadow: 0 4px 12px rgba(243, 131, 40, 0.25);
+      margin-top: 4px;
+    }
+
+    .btn-submit:hover {
+      background: var(--accent-dark);
+      box-shadow: 0 6px 16px rgba(243, 131, 40, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-cancel-form {
+      width: 100%;
+      background: transparent;
+      color: var(--danger);
+      border: 1.5px solid var(--danger);
+      margin-top: 10px;
+      font-weight: 600;
+    }
+
+    .btn-cancel-form:hover {
+      background: var(--danger-bg);
+      transform: translateY(-1px);
+    }
+
+    .detail-table {
+      width: 100%;
+      margin: 20px 0;
+      font-size: 14px;
+      border-collapse: separate;
+      border-spacing: 0;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .detail-table tr {
+      transition: background 0.2s;
+    }
+
+    .detail-table tr:hover {
+      background: rgba(243, 131, 40, 0.02);
+    }
+
+    .detail-table td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .detail-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .detail-table td:first-child {
+      color: var(--muted);
+      font-weight: 600;
+      width: 42%;
+      background: var(--cream);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .detail-table td:last-child {
+      color: var(--text);
+      font-weight: 600;
+      background: white;
+    }
+
+    .sr-no-value {
+      font-weight: 700;
+      color: var(--orange);
+    }
+
+    @media (max-width: 520px) {
+      .card {
+        padding: 28px 20px;
+        border-radius: 14px;
+      }
+      .card h2 {
+        font-size: 22px;
+      }
+      .btn-row {
+        flex-direction: column;
+        gap: 10px;
+      }
+      button {
+        width: 100%;
+      }
+      .detail-table td {
+        padding: 10px 12px;
+        font-size: 13px;
+      }
+    }
+
+    .form-group select {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236f5c4a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+
+    .form-group input[type="file"] {
+      padding: 10px 14px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .form-group input[type="file"]::file-selector-button {
+      background: var(--cream);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 12px;
+      margin-right: 12px;
+      color: var(--text);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .form-group input[type="file"]::file-selector-button:hover {
+      background: var(--cream-dk);
+      border-color: var(--brown-lt);
+    }
+  </style>
 </head>
+
 <body>
   <div class="card" id="card">
     <h2>Confirm Recharge</h2>
     <p>You are about to mark this number as completed and proceed to recharge it on the Vi website:</p>
 
     <table class="detail-table" id="detailTable">
-      <tr><td>Sr. No.</td><td id="srNoDisplay">—</td></tr>
-      <tr><td>MSISDN</td><td id="mobileDisplay">Loading...</td></tr>
-      <tr><td>Vi Status</td><td id="statusDisplay">—</td></tr>
-      <tr><td>Circle</td><td id="circleDisplay">—</td></tr>
-      <tr><td>Recharge MRP (₹)</td><td id="amountDisplay">—</td></tr>
-      <tr><td>Benefit</td><td id="benefitDisplay">—</td></tr>
+      <tr>
+        <td>Sr. No.</td>
+        <td id="srNoDisplay" class="sr-no-value">—</td>
+      </tr>
+      <tr>
+        <td>MSISDN</td>
+        <td id="mobileDisplay">Loading...</td>
+      </tr>
+      <tr>
+        <td>Vi Status</td>
+        <td id="statusDisplay">—</td>
+      </tr>
+      <tr>
+        <td>Circle</td>
+        <td id="circleDisplay">—</td>
+      </tr>
+      <tr>
+        <td>Recharge MRP (₹)</td>
+        <td id="amountDisplay">—</td>
+      </tr>
+      <tr>
+        <td>Benefit</td>
+        <td id="benefitDisplay">—</td>
+      </tr>
     </table>
 
-    <div class="btn-row">
-      <button class="btn-skip" id="skipBtn">⏭ Skip</button>
-      <button class="btn-cancel" id="cancelBtn">Cancel</button>
-      <button class="btn-ok" id="okBtn">✅ OK, Proceed</button>
+    <div class="btn-row" id="mainButtons">
+      <button class="btn-success" id="successBtn">Recharge Successfully Done - OK Proceed</button>
+      <button class="btn-danger" id="failedBtn">Recharge Failed - Need to Skip This</button>
     </div>
+
+    <div class="form-container" id="failureForm">
+      <div class="form-group">
+        <label for="reasonSelect">Select Reason for Failure</label>
+        <select id="reasonSelect">
+          <option value="">Select a reason</option>
+          <option value="mrp_not_found">MRP Not Found</option>
+          <option value="invalid_mpin">Invalid MPIN</option>
+          <option value="insufficient_balance">Insufficient Balance</option>
+          <option value="technical_error">Technical Error</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="freeTestBook">Free Test Book</label>
+        <textarea id="freeTestBook" maxlength="1000" placeholder="Enter test book details here..."></textarea>
+        <div class="char-count" id="charCount">0 / 1000</div>
+      </div>
+      <div class="form-group">
+        <label for="artifactsInput">Attach Artifacts "Screenshots"</label>
+        <input type="file" id="artifactsInput" multiple accept="image/*,.pdf,.doc,.docx">
+      </div>
+      <button class="btn-submit" id="submitFailureBtn">Submit Failure</button>
+      <button class="btn-cancel-form" id="cancelFormBtn">Cancel</button>
+    </div>
+
     <div class="status" id="statusMsg"></div>
   </div>
 
-<script>
-  const txnId = window.__TXN_ID__;
-  const mobileNumber = window.__MOBILE_NUMBER__;
-  const amount = window.__AMOUNT__;
-  const circle = window.__CIRCLE__;
-  const benefit = window.__BENEFIT__;
-  const viStatus = window.__VI_STATUS__;
-  const srNo = window.__SR_NO__;
-  const confirmApiUrl = window.__CONFIRM_API_URL__;
+  <script>
+    // Get data from window variables
+    const txnId = window.__TXN_ID__;
+    const mobileNumber = window.__MOBILE_NUMBER__;
+    const amount = window.__AMOUNT__;
+    const circle = window.__CIRCLE__;
+    const benefit = window.__BENEFIT__;
+    const viStatus = window.__VI_STATUS__;
+    const srNo = window.__SR_NO__;
+    const confirmApiUrl = window.__CONFIRM_API_URL__;
 
-  document.getElementById('srNoDisplay').textContent = srNo || '—';
-  document.getElementById('mobileDisplay').textContent = mobileNumber || 'N/A';
-  document.getElementById('statusDisplay').textContent = viStatus || '—';
-  document.getElementById('circleDisplay').textContent = circle || '—';
-  document.getElementById('amountDisplay').textContent = amount ? ('₹' + amount) : '—';
-  document.getElementById('benefitDisplay').textContent = benefit || '—';
+    // Display the data with proper formatting
+    document.getElementById('srNoDisplay').textContent = srNo || '—';
+    document.getElementById('mobileDisplay').textContent = mobileNumber || 'N/A';
+    document.getElementById('statusDisplay').textContent = viStatus || '—';
+    document.getElementById('circleDisplay').textContent = circle || '—';
+    document.getElementById('amountDisplay').textContent = amount ? ('₹' + amount) : '—';
+    document.getElementById('benefitDisplay').textContent = benefit || '—';
 
-  // ─── Cancel: Close tab / stop ───────────────────────────────────────────
-  document.getElementById('cancelBtn').addEventListener('click', () => {
+    // Get DOM elements
+    const mainButtons = document.getElementById('mainButtons');
+    const failureForm = document.getElementById('failureForm');
     const statusMsg = document.getElementById('statusMsg');
-    statusMsg.textContent = 'Cancelled. You can close this tab.';
-    statusMsg.className = 'status error';
-    document.getElementById('okBtn').disabled = true;
-    document.getElementById('cancelBtn').disabled = true;
-    document.getElementById('skipBtn').disabled = true;
-    // Send cancellation to server
-    fetch(`/api/recharge/skip/${encodeURIComponent(txnId)}`, { 
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reason: 'User cancelled' })
-    }).catch(() => {});
-  });
+    const successBtn = document.getElementById('successBtn');
+    const failedBtn = document.getElementById('failedBtn');
+    const submitFailureBtn = document.getElementById('submitFailureBtn');
+    const cancelFormBtn = document.getElementById('cancelFormBtn');
+    const freeTestBook = document.getElementById('freeTestBook');
+    const charCount = document.getElementById('charCount');
 
-  // ─── Skip: Skip this row, move to next ──────────────────────────────────
-  document.getElementById('skipBtn').addEventListener('click', async () => {
-    const okBtn = document.getElementById('okBtn');
-    const cancelBtn = document.getElementById('cancelBtn');
-    const skipBtn = document.getElementById('skipBtn');
-    const statusMsg = document.getElementById('statusMsg');
-
-    okBtn.disabled = true;
-    cancelBtn.disabled = true;
-    skipBtn.disabled = true;
-    statusMsg.textContent = '⏭ Skipping this row...';
-    statusMsg.className = 'status warning';
-
-    try {
-      const response = await fetch(`/api/recharge/skip/${encodeURIComponent(txnId)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          reason: 'User skipped',
-          timestamp: new Date().toISOString()
-        })
-      });
-      
-      if (response.ok) {
-        statusMsg.textContent = '✅ Row skipped. Continuing automation...';
-        statusMsg.className = 'status success';
-        setTimeout(() => {
-          window.close();
-        }, 1500);
-      } else {
-        statusMsg.textContent = '❌ Failed to skip. Please try again.';
-        statusMsg.className = 'status error';
-        okBtn.disabled = false;
-        cancelBtn.disabled = false;
-        skipBtn.disabled = false;
+    // Character counter for Free Test Book
+    freeTestBook.addEventListener('input', function() {
+      const length = this.value.length;
+      const maxLength = 1000;
+      charCount.textContent = `${length} / ${maxLength}`;
+      charCount.className = 'char-count';
+      if (length > maxLength * 0.9) {
+        charCount.classList.add('danger');
+      } else if (length > maxLength * 0.7) {
+        charCount.classList.add('warning');
       }
-    } catch (err) {
-      statusMsg.textContent = '❌ Error skipping row. Please try again.';
-      statusMsg.className = 'status error';
-      okBtn.disabled = false;
-      cancelBtn.disabled = false;
-      skipBtn.disabled = false;
-      console.error('Skip error:', err);
-    }
-  });
+    });
 
-  // ─── OK, Proceed: Confirm recharge and continue test ─────────────────────
-  document.getElementById('okBtn').addEventListener('click', async () => {
-    const okBtn = document.getElementById('okBtn');
-    const cancelBtn = document.getElementById('cancelBtn');
-    const skipBtn = document.getElementById('skipBtn');
-    const statusMsg = document.getElementById('statusMsg');
+    // Success button handler
+    successBtn.addEventListener('click', async () => {
+      successBtn.disabled = true;
+      failedBtn.disabled = true;
+      statusMsg.textContent = '⏳ Confirming recharge...';
+      statusMsg.className = 'status info';
 
-    okBtn.disabled = true;
-    cancelBtn.disabled = true;
-    skipBtn.disabled = true;
-    statusMsg.textContent = '⏳ Confirming recharge...';
-    statusMsg.className = 'status info';
+      try {
+        console.log(`[Recharge] Sending confirmation to: ${confirmApiUrl}`);
+        console.log(`[Recharge] TXN ID: ${txnId}, Mobile: ${mobileNumber}`);
 
-    try {
-      // Send confirmation to server
-      const response = await fetch(confirmApiUrl, { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          confirmed: true,
-          timestamp: new Date().toISOString()
-        })
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        statusMsg.textContent = '✅ Recharge confirmed successfully! Continuing automation...';
-        statusMsg.className = 'status success';
-        console.log(`[Recharge Confirm] ✅ Confirmed for ${mobileNumber}`);
-        
-        // Close the popup after a short delay
-        setTimeout(() => {
-          window.close();
-          // If window.close doesn't work, redirect back
-          try {
-            window.location.href = '/sim-recharge.html';
-          } catch (_) {}
-        }, 1200);
-      } else {
-        statusMsg.textContent = '❌ Confirmation failed. Please try again.';
+        const response = await fetch(confirmApiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            confirmed: true,
+            timestamp: new Date().toISOString(),
+            mobileNumber: mobileNumber,
+            txnId: txnId
+          })
+        });
+
+        console.log(`[Recharge] Response status: ${response.status}`);
+
+        // Try to parse response
+        let result;
+        try {
+          result = await response.json();
+          console.log('[Recharge] Response data:', result);
+        } catch (parseErr) {
+          console.error('[Recharge] Failed to parse JSON:', parseErr);
+          // If response is not JSON, check if it's OK
+          if (response.ok) {
+            result = { success: true };
+          } else {
+            throw new Error(`Server returned ${response.status}`);
+          }
+        }
+
+        if (response.ok && (result.success === true || result.success === 'true')) {
+          statusMsg.textContent = 'Recharge confirmed successfully! Continuing automation...';
+          statusMsg.className = 'status success';
+          console.log(`[Recharge] Confirmed for ${mobileNumber}`);
+
+          // Close the popup after a short delay
+          setTimeout(() => {
+            window.close();
+            try {
+              window.location.href = '/sim-recharge.html';
+            } catch (_) {}
+          }, 1500);
+        } else {
+          // Check if we got an error message
+          const errorMsg = result?.message || result?.error || 'Confirmation failed';
+          throw new Error(errorMsg);
+        }
+      } catch (error) {
+        console.error('[Recharge] Confirm error:', error);
+        statusMsg.textContent = `❌ Error: ${error.message || 'Please try again.'}`;
         statusMsg.className = 'status error';
-        okBtn.disabled = false;
-        cancelBtn.disabled = false;
-        skipBtn.disabled = false;
+        successBtn.disabled = false;
+        failedBtn.disabled = false;
       }
-    } catch (err) {
-      console.error('Confirm error:', err);
-      statusMsg.textContent = '❌ Error confirming recharge. Please try again.';
-      statusMsg.className = 'status error';
-      okBtn.disabled = false;
-      cancelBtn.disabled = false;
-      skipBtn.disabled = false;
-    }
-  });
-</script>
+    });
+
+    // Failed button handler - show form
+    failedBtn.addEventListener('click', () => {
+      mainButtons.style.display = 'none';
+      failureForm.style.display = 'block';
+      statusMsg.textContent = '';
+      statusMsg.className = 'status';
+    });
+
+    // Cancel form handler
+    cancelFormBtn.addEventListener('click', () => {
+      failureForm.style.display = 'none';
+      mainButtons.style.display = 'flex';
+      statusMsg.textContent = '';
+      statusMsg.className = 'status';
+      // Reset form fields
+      document.getElementById('reasonSelect').value = '';
+      freeTestBook.value = '';
+      charCount.textContent = '0 / 1000';
+      charCount.className = 'char-count';
+      document.getElementById('artifactsInput').value = '';
+    });
+
+    // Submit failure handler
+    submitFailureBtn.addEventListener('click', async () => {
+      const reason = document.getElementById('reasonSelect').value;
+      const freeTestBookText = freeTestBook.value.trim();
+      const artifactsInput = document.getElementById('artifactsInput');
+
+      if (!reason) {
+        statusMsg.textContent = '⚠️ Please select a reason for failure.';
+        statusMsg.className = 'status warning';
+        return;
+      }
+
+      if (!freeTestBookText) {
+        statusMsg.textContent = '⚠️ Please enter Free Test Book details.';
+        statusMsg.className = 'status warning';
+        return;
+      }
+
+      if (freeTestBookText.length > 1000) {
+        statusMsg.textContent = '⚠️ Free Test Book text exceeds 1000 characters limit.';
+        statusMsg.className = 'status warning';
+        return;
+      }
+
+      submitFailureBtn.disabled = true;
+      cancelFormBtn.disabled = true;
+      statusMsg.textContent = '⏳ Submitting failure details...';
+      statusMsg.className = 'status info';
+
+      try {
+        const formData = new FormData();
+        formData.append('txnId', txnId);
+        formData.append('reason', reason);
+        formData.append('freeTestBook', freeTestBookText);
+        formData.append('timestamp', new Date().toISOString());
+
+        // Append files
+        for (let i = 0; i < artifactsInput.files.length; i++) {
+          formData.append('artifacts', artifactsInput.files[i]);
+        }
+
+        const response = await fetch(`/api/recharge/failure`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.ok) {
+          statusMsg.textContent = 'Failure details submitted! Continuing automation...';
+          statusMsg.className = 'status success';
+          setTimeout(() => {
+            window.close();
+            try {
+              window.location.href = '/sim-recharge.html';
+            } catch (_) {}
+          }, 1500);
+        } else {
+          throw new Error('Submission failed');
+        }
+      } catch (error) {
+        console.error('Submit failure error:', error);
+        statusMsg.textContent = 'Error submitting failure details. Please try again.';
+        statusMsg.className = 'status error';
+        submitFailureBtn.disabled = false;
+        cancelFormBtn.disabled = false;
+      }
+    });
+
+    // Log the data for debugging
+    console.log('Recharge confirmation data:', {
+      txnId,
+      mobileNumber,
+      amount,
+      circle,
+      benefit,
+      viStatus,
+      srNo,
+      confirmApiUrl
+    });
+  </script>
 </body>
+
 </html>

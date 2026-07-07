@@ -9,6 +9,20 @@ const multer = require("multer");
 const crypto = require("crypto");
 const app = express();
 const fs = require("fs");
+
+// Configure multer for artifacts file uploads
+const artifactsStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, "uploads", "artifacts");
+    fs.mkdirSync(uploadDir, { recursive: true });
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+const artifactsUpload = multer({ storage: artifactsStorage });
 const PORT = Number(process.env.PORT) || 5174;
 const SERVER_IP = process.env.SERVER_PUBLIC_IP || "13.233.121.125";
 const { spawn } = require("child_process");
@@ -185,6 +199,112 @@ const VI_RECHARGE_URL = "https://www.myvi.in/prepaid/online-mobile-recharge";
 //   res.setHeader('Content-Type', 'text/html');
 //   res.send(html);
 // });
+
+// Add this endpoint to server.js
+app.post('/api/swift/pretest-failure-email', async (req, res) => {
+  try {
+    const { msisdn, circle, rechargeMRP, benefit, reason } = req.body;
+    
+    if (!msisdn) {
+      return res.status(400).json({ success: false, message: 'MSISDN is required' });
+    }
+    
+    const mailService = require('./mailService');
+    
+    const emailContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #c0392b;">⚠️ PreTest Validation Failed</h2>
+        <hr style="border: 1px solid #eee;">
+        
+        <p><strong>MSISDN:</strong> ${msisdn}</p>
+        <p><strong>Circle:</strong> ${circle || 'N/A'}</p>
+        <p><strong>Recharge MRP:</strong> ₹${rechargeMRP || 'N/A'}</p>
+        <p><strong>Plan Benefit:</strong> ${benefit || 'N/A'}</p>
+        <p><strong>Failure Reason:</strong> <span style="color: #c0392b; font-weight: bold;">${reason || 'SIM Not Clean - Active Voice Usage Detected'}</span></p>
+        
+        <div style="background: #fdecea; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #c0392b;">
+          <p style="margin: 0; color: #7b1c1c;">
+            <strong>⚠️ Action Required:</strong> The SIM number ${msisdn} is not clean. 
+            It has active voice usage which prevents the recharge test from proceeding.
+            Please clear the active usage and retry the test.
+          </p>
+        </div>
+        
+        <hr style="border: 1px solid #eee;">
+        <p style="color: #888; font-size: 12px;">
+          This is an automated email from the VI Sim Automation Platform.<br>
+          Please do not reply to this email.
+        </p>
+      </div>
+    `;
+    
+    // Send email using mailService
+    const result = await mailService.sendRechargeDetailsEmail(
+      'kalidindi.chandra@qdegrees.org',
+      [{
+        mobileNumber: msisdn,
+        amount: rechargeMRP || 0,
+        circle: circle || 'N/A',
+        planName: benefit || 'N/A',
+        isValid: false,
+        errorMessage: reason || 'SIM Not Clean - Active Voice Usage Detected',
+        transactionId: `PRETEST_FAIL_${Date.now()}_${msisdn}`,
+        date: new Date().toLocaleDateString('en-IN'),
+        viStatus: 'PreTest Failed - SIM Not Clean'
+      }],
+      'VI Automation Team',
+      { subject: `PreTest Failed: ${msisdn} - SIM Not Clean` }
+    );
+    
+    res.json({
+      success: result.success,
+      message: result.success ? 'Email sent successfully' : 'Failed to send email',
+      details: result
+    });
+  } catch (error) {
+    console.error('PreTest failure email error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post("/api/recharge/confirm/:txnId", (req, res) => {
+  const { txnId } = req.params;
+  const record = pendingRecharges.get(txnId);
+
+  if (!record) {
+    console.log(` Recharge confirm called for unknown txn ${txnId}`);
+    return res.status(404).json({ success: false, message: "Transaction not found" });
+  }
+
+  record.confirmed = true;
+  record.confirmedAt = new Date().toISOString();
+  console.log(` Recharge confirmed for txn ${txnId} (mobile: ${record.mobileNumber})`);
+
+  // Write confirmation file for WDIO's waitForRechargeConfirmation() to pick up
+  try {
+    const commDir = path.join(__dirname, "..", "swift-crm-automation", "comm");
+    fs.mkdirSync(commDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(commDir, "recharge_confirmed.json"),
+      JSON.stringify(
+        {
+          txnId,
+          msisdn: record.mobileNumber,
+          confirmed: true,
+          timestamp: Date.now(),
+        },
+        null,
+        2,
+      ),
+    );
+    console.log(`[SWIFT]  Recharge confirmation file written for ${record.mobileNumber}`);
+  } catch (fileErr) {
+    console.error(`[SWIFT] Failed to write confirmation file: ${fileErr.message}`);
+  }
+
+  res.json({ success: true, txnId, confirmed: true });
+});
+
 app.get("/recharge/confirm/:txnId", (req, res) => {
   const txnId = req.params.txnId;
   const detail = global.pendingRecharges.get(txnId) || {};
@@ -1658,25 +1778,39 @@ app.post("/api/recharge/skip/:txnId", (req, res) => {
   res.json({ success: true, txnId, skipped: true });
 });
 
-app.get("/admin", (req, res) => {
-  res.sendFile(path.join(__dirname, "admin.html"));
-});
+// Endpoint for recharge failure submission
+app.post("/api/recharge/failure", artifactsUpload.array("artifacts"), async (req, res) => {
+  try {
+    const txnId = req.body.txnId;
+    const reason = req.body.reason;
+    const freeTestBook = req.body.freeTestBook === "true";
 
-// ─── Skip recharge (user clicked Skip or Cancel) ──────────────────────────
-app.post("/api/recharge/skip/:txnId", (req, res) => {
-  const { txnId } = req.params;
-  const record = pendingRecharges.get(txnId);
+    if (!txnId) {
+      return res.status(400).json({ success: false, message: "txnId is required" });
+    }
 
-  if (record) {
-    record.skipped = true;
-    record.skippedAt = new Date().toISOString();
-    record.skipReason = req.body?.reason || "User skipped";
-    console.log(
-      `⏭ Recharge skipped for txn ${txnId} (mobile: ${record.mobileNumber}) - ${record.skipReason}`,
-    );
+    const record = pendingRecharges.get(txnId);
+    if (record) {
+      record.failed = true;
+      record.failedAt = new Date().toISOString();
+      record.failureReason = reason || "Failure reported";
+      record.freeTestBook = freeTestBook;
+      
+      // Save uploaded files info
+      if (req.files && req.files.length > 0) {
+        record.artifacts = req.files.map(file => ({
+          filename: file.filename,
+          originalname: file.originalname,
+          path: file.path,
+          size: file.size
+        }));
+      }
+      
+      console.log(
+        `Recharge marked as failed for txn ${txnId} (mobile: ${record.mobileNumber}) - ${record.failureReason}`,
+      );
 
-    // Write skip status to file for WDIO to detect
-    try {
+      // Write failure status to file for WDIO to detect
       const commDir = path.join(
         __dirname,
         "..",
@@ -1685,13 +1819,15 @@ app.post("/api/recharge/skip/:txnId", (req, res) => {
       );
       fs.mkdirSync(commDir, { recursive: true });
       fs.writeFileSync(
-        path.join(commDir, "recharge_skipped.json"),
+        path.join(commDir, "recharge_failed.json"),
         JSON.stringify(
           {
             txnId,
             msisdn: record.mobileNumber,
-            skipped: true,
-            reason: record.skipReason,
+            failed: true,
+            reason: record.failureReason,
+            freeTestBook: record.freeTestBook,
+            artifacts: record.artifacts,
             timestamp: Date.now(),
           },
           null,
@@ -1699,16 +1835,21 @@ app.post("/api/recharge/skip/:txnId", (req, res) => {
         ),
       );
       console.log(
-        `[SWIFT] ⏭ Recharge skip file written for ${record.mobileNumber}`,
+        `[SWIFT] Recharge failure file written for ${record.mobileNumber}`,
       );
-    } catch (fileErr) {
-      console.error(`[SWIFT] Failed to write skip file: ${fileErr.message}`);
+    } else {
+      console.log(` Recharge failure called for unknown txn ${txnId}`);
     }
-  } else {
-    console.log(`⚠️ Recharge skip called for unknown txn ${txnId}`);
-  }
 
-  res.json({ success: true, txnId, skipped: true });
+    res.json({ success: true, txnId, failed: true });
+  } catch (error) {
+    console.error("Error handling recharge failure:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.get("/admin", (req, res) => {
+  res.sendFile(path.join(__dirname, "admin.html"));
 });
 
 // ========== Process Validation and Send Emails ==========
@@ -1739,16 +1880,7 @@ app.post("/api/process-validation-and-send-emails", async (req, res) => {
     const allDetails = validationResults.map((r, index) => {
       const isViValid = r.isValid === true;
 
-      // Extract circle from message
-      let circle = "N/A";
-      if (isViValid) {
-        circle = "Vi";
-      } else if (r.message && r.message.includes("non Vi")) {
-        circle = "Non-Vi";
-      } else if (r.message && r.message.includes("must be 10 digits")) {
-        circle = "Invalid Format";
-      }
-
+      // Use r.circle directly from payload instead of overriding
       const isCircleMismatch = r.circleMatched === false;
       const isMRPNotFound = r.isMRPFound === false;
       const isMismatch = isCircleMismatch || isMRPNotFound;
@@ -1763,7 +1895,8 @@ app.post("/api/process-validation-and-send-emails", async (req, res) => {
         circleMatched: r.circleMatched === true,
         isMRPFound: r.isMRPFound,
         operatorName: isViValid ? "Vi" : "Unknown",
-        circle: circle,
+        circle: r.circle || "N/A", // Use circle from payload
+        actualCircle: r.actualCircle || "N/A", // Pass actualCircle from payload
         planName: isViValid ? "Recharge Plan" : "N/A",
         amount: r.amount || 0,
         benefit: r.benefit || (isViValid ? "Recharge Plan" : "N/A"),

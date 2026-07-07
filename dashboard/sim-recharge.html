@@ -435,7 +435,7 @@
     .upload-area {
       border: 2px dashed var(--border);
       border-radius: var(--radius);
-      padding: 40px 24px;
+      padding: 15px 15px;
       text-align: center;
       cursor: pointer;
       transition: all 0.25s;
@@ -2085,10 +2085,10 @@
       <input type="text" id="captchaInput" class="form-control" placeholder="Enter CAPTCHA code…" />
 
       <div class="action-buttons" style="justify-content: center">
-        <!-- <button class="btn btn-primary" onclick="submitCaptcha()">
+        <button class="btn btn-primary" onclick="submitCaptcha()">
             <i class="bi bi-box-arrow-in-right"></i> Login
-          </button> -->
-        <button class="btn btn-muted" onclick="closeCaptcha()">Cancel</button>
+          </button>
+        <!-- <button class="btn btn-muted" onclick="closeCaptcha()">Cancel</button> -->
       </div>
     </div>
   </div>
@@ -2498,7 +2498,8 @@ inputRows.forEach((row) => {
         
           testCardsData = matched.map((r, idx) => {
             const inp = r.input;
-             const pretestVal = "yes";
+            const pretestVal = "yes";
+            // const pretestVal = "no";
             // const pretestVal = String(inp["Pretest"] || "").trim().toLowerCase();
             const rechargeVal = String(inp["Recharge"] || "").trim().toLowerCase();
             const swiftVal = String(inp["SWIFT"] || "").trim().toLowerCase();
@@ -2696,12 +2697,12 @@ inputRows.forEach((row) => {
 
     function closeCircleDiscrepancyModal() {
       document.getElementById("circleDiscrepancyOverlay").classList.remove("visible");
-      addLog("Start cancelled by user due to circle discrepancy.", "warning");
+      // addLog("Start cancelled by user due to circle discrepancy.", "warning");
     }
 
     async function confirmStartAfterDiscrepancy() {
       document.getElementById("circleDiscrepancyOverlay").classList.remove("visible");
-      addLog(" User confirmed to proceed despite circle discrepancy.", "info");
+      addLog(" User confirmed to proceed.", "info");
       await proceedStartUAT();
     }
 
@@ -2866,53 +2867,102 @@ inputRows.forEach((row) => {
     }
 
     function buildTestCardHTML(t, serialNo) {
-      const colHtml = (label, key, status) => {
-        const cfg = colStatusConfig(status);
-        return `<div class="status-col ${cfg.cssClass}">
-            <div class="status-col-label">${label}</div>
-            <div class="status-col-badge ${cfg.cssClass}">${cfg.icon} ${cfg.text}</div>
-          </div>`;
-      };
-      const overall = overallStatusConfig(t.overallStatus);
-      return `<div class="test-card-header">
-          <div style="display:flex; align-items:center; gap:10px;">
-            <span class="test-card-id">#${serialNo}</span>
-            <span class="test-card-msisdn">${t.msisdn || "—"}</span>
-          </div>
-          <span class="test-card-vi-status"><i class="bi bi-check-circle-fill"></i> ${t.viStatus || "Valid Vi"}</span>
-        </div>
-        <div class="test-card-body">
-   <div style="display:flex;">
-  <div class="test-info-item">
-    <span class="test-info-label">Circle</span>
-    <span class="test-info-value">${t.circle || "—"}</span>
+  const colHtml = (label, key, status) => {
+    const cfg = colStatusConfig(status);
+    return `<div class="status-col ${cfg.cssClass}">
+      <div class="status-col-label">${label}</div>
+      <div class="status-col-badge ${cfg.cssClass}">${cfg.icon} ${cfg.text}</div>
+    </div>`;
+  };
+  const overall = overallStatusConfig(t.overallStatus);
+  
+  // Debug log to check pretest status
+  console.log(`Building card for ${t.msisdn}: pretest status = ${t.colStatus.pretest}`);
+  
+  return `<div class="test-card-header">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <span class="test-card-id">#${serialNo}</span>
+      <span class="test-card-msisdn">${t.msisdn || "—"}</span>
+    </div>
+    <span class="test-card-vi-status"><i class="bi bi-check-circle-fill"></i> ${t.viStatus || "Valid Vi"}</span>
   </div>
-
-  <div style="margin-left:10px; border-left:2px solid #dc3545; height:50px;"></div>
-
-  <div class="test-info-item" style="margin-left:10px; background:#f8d7da; padding:2px 6px; border-radius:4px; height:50px;">
-    <span class="test-info-label" style="color:#b71c1c;">
-      Actual Circle
-    </span>
-    <span class="test-info-value mrp" style="color:#b71c1c;">${t.actualCircle || "—"}</span>
+  <div class="test-card-body">
+    <div style="display:flex;">
+      <div class="test-info-item">
+        <span class="test-info-label">Circle</span>
+        <span class="test-info-value">${t.circle || "—"}</span>
+      </div>
+      <div style="margin-left:10px; border-left:2px solid #dc3545; height:50px;"></div>
+      <div class="test-info-item" style="margin-left:10px; background:#f8d7da; padding:2px 6px; border-radius:4px; height:50px;">
+        <span class="test-info-label" style="color:#b71c1c;">Actual Circle</span>
+        <span class="test-info-value mrp" style="color:#b71c1c;">${t.actualCircle || "—"}</span>
+      </div>
+    </div>
+    <div class="test-info-item"><span class="test-info-label">Recharge MRP</span><span class="test-info-value mrp">₹${t.rechargeMRP || "—"}</span></div>
+    <div class="test-info-item"><span class="test-info-label">Benefit</span><span class="test-info-value benefit">${t.benefit || "—"}</span></div>
   </div>
-</div>
-          <div class="test-info-item"><span class="test-info-label">Recharge MRP</span><span class="test-info-value mrp">₹${t.rechargeMRP || "—"}</span></div>
-          <div class="test-info-item"><span class="test-info-label">Benefit</span><span class="test-info-value benefit">${t.benefit || "—"}</span></div>
-        </div>
-        <div class="test-status-grid">
-          ${colHtml("PreTest", "in", t.colStatus.pretest)}
-          ${colHtml("Recharge", "recharge", t.colStatus.recharge)}
-          ${colHtml("SWIFT", "swift", t.colStatus.swift)}
-          ${colHtml("IN", "in", t.colStatus.in)}
-          ${colHtml("UPSS", "in", t.colStatus.upss)}
-          ${colHtml("Vi App", "viApp", t.colStatus.viApp)}
-        </div>
-        <div class="test-card-footer">
-          <div class="overall-status ${t.overallStatus}">${overall.icon}<span>${overall.text}</span></div>
-          <span class="test-timestamp">${t.completedAt || t.startedAt || "Waiting to start"}</span>
-        </div>`;
-    }
+  <div class="test-status-grid">
+    ${colHtml("PreTest", "pretest", t.colStatus.pretest)}
+    ${colHtml("Recharge", "recharge", t.colStatus.recharge)}
+    ${colHtml("SWIFT", "swift", t.colStatus.swift)}
+    ${colHtml("IN", "in", t.colStatus.in)}
+    ${colHtml("UPSS", "upss", t.colStatus.upss)}
+    ${colHtml("Vi App", "viApp", t.colStatus.viApp)}
+  </div>
+  <div class="test-card-footer">
+    <div class="overall-status ${t.overallStatus}">${overall.icon}<span>${overall.text}</span></div>
+    <span class="test-timestamp">${t.completedAt || t.startedAt || "Waiting to start"}</span>
+  </div>`;
+}
+
+//     function buildTestCardHTML(t, serialNo) {
+//       const colHtml = (label, key, status) => {
+//         const cfg = colStatusConfig(status);
+//         return `<div class="status-col ${cfg.cssClass}">
+//             <div class="status-col-label">${label}</div>
+//             <div class="status-col-badge ${cfg.cssClass}">${cfg.icon} ${cfg.text}</div>
+//           </div>`;
+//       };
+//       const overall = overallStatusConfig(t.overallStatus);
+//       return `<div class="test-card-header">
+//           <div style="display:flex; align-items:center; gap:10px;">
+//             <span class="test-card-id">#${serialNo}</span>
+//             <span class="test-card-msisdn">${t.msisdn || "—"}</span>
+//           </div>
+//           <span class="test-card-vi-status"><i class="bi bi-check-circle-fill"></i> ${t.viStatus || "Valid Vi"}</span>
+//         </div>
+//         <div class="test-card-body">
+//    <div style="display:flex;">
+//   <div class="test-info-item">
+//     <span class="test-info-label">Circle</span>
+//     <span class="test-info-value">${t.circle || "—"}</span>
+//   </div>
+
+//   <div style="margin-left:10px; border-left:2px solid #dc3545; height:50px;"></div>
+
+//   <div class="test-info-item" style="margin-left:10px; background:#f8d7da; padding:2px 6px; border-radius:4px; height:50px;">
+//     <span class="test-info-label" style="color:#b71c1c;">
+//       Actual Circle
+//     </span>
+//     <span class="test-info-value mrp" style="color:#b71c1c;">${t.actualCircle || "—"}</span>
+//   </div>
+// </div>
+//           <div class="test-info-item"><span class="test-info-label">Recharge MRP</span><span class="test-info-value mrp">₹${t.rechargeMRP || "—"}</span></div>
+//           <div class="test-info-item"><span class="test-info-label">Benefit</span><span class="test-info-value benefit">${t.benefit || "—"}</span></div>
+//         </div>
+//         <div class="test-status-grid">
+//           ${colHtml("PreTest", "in", t.colStatus.pretest)}
+//           ${colHtml("Recharge", "recharge", t.colStatus.recharge)}
+//           ${colHtml("SWIFT", "swift", t.colStatus.swift)}
+//           ${colHtml("IN", "in", t.colStatus.in)}
+//           ${colHtml("UPSS", "in", t.colStatus.upss)}
+//           ${colHtml("Vi App", "viApp", t.colStatus.viApp)}
+//         </div>
+//         <div class="test-card-footer">
+//           <div class="overall-status ${t.overallStatus}">${overall.icon}<span>${overall.text}</span></div>
+//           <span class="test-timestamp">${t.completedAt || t.startedAt || "Waiting to start"}</span>
+//         </div>`;
+//     }
 
     function colStatusConfig(status) {
       const map = {
@@ -3011,9 +3061,9 @@ inputRows.forEach((row) => {
         if (!apiRes)
           viChip = `<span class="match-chip no">❌ Bad Format</span>`;
         else if (r._isViValid)
-          viChip = `<span class="match-chip yes" title="${escHtml(apiRes.message || "")}">✅ Valid Vi</span>`;
+          viChip = `<span class="match-chip yes" title="${escHtml(apiRes.message || "")}"> Valid Vi</span>`;
         else
-          viChip = `<span class="match-chip no" title="${escHtml(apiRes.message || "")}">❌ Invalid Vi</span>`;
+          viChip = `<span class="match-chip no" title="${escHtml(apiRes.message || "")}">Invalid Vi</span>`;
 
         html += `<tr>
             <td>${i + 1}</td>
@@ -3219,18 +3269,51 @@ inputRows.forEach((row) => {
           }
           break;
 
+       
         case "col_update":
-          if (extra.col && extra.colStatus) {
-            const colUpdates = {};
-            colUpdates[extra.col] = extra.colStatus;
+        if (extra.col && extra.colStatus) {
+          const colUpdates = {};
+          colUpdates[extra.col] = extra.colStatus;
+
+          // Mandatory-test failure (Recharge OR PreTest) cascades to the whole row.
+          const isMandatoryFailure =
+            (extra.col === "recharge" && extra.colStatus === "failed") ||
+            (extra.col === "pretest" && extra.colStatus === "failed");
+
+          if (isMandatoryFailure) {
+            const t = testCardsData.find((x) => x.rowIndex === rowIndex);
+            if (t) {
+              Object.keys(t.colStatus).forEach((key) => {
+                if (key !== extra.col && t.colStatus[key] === "pending") {
+                  colUpdates[key] = "skipped";
+                }
+              });
+            }
+
             updateData.colStatus = colUpdates;
-            const currentStatus =
-              testCardsData.find((t) => t.rowIndex === rowIndex)
-                ?.overallStatus || "pending";
-            badge.textContent =
-              currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1);
+            updateData.overallStatus = "failed";
+            updateData.completedAt = new Date().toLocaleTimeString();
+
+            card.classList.add("rc-failed");
+            badge.classList.add("failed");
+            badge.textContent = "❌ Failed";
+            msg.textContent =
+              extra.message ||
+              (extra.col === "pretest" ? "PreTest failed — row stopped" : "Recharge failed — row stopped");
+            msg.classList.add("visible");
+
+            if (!ref.counted) {
+              ref.counted = true;
+              incrementExecuted();
+              incrementFailed();
+            }
+          } else {
+            updateData.colStatus = colUpdates;
+            const currentStatus = testCardsData.find((t) => t.rowIndex === rowIndex)?.overallStatus || "pending";
+            badge.textContent = currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1);
           }
-          break;
+        }
+        break;
 
         case "login_retry":
           addLog(` Attempt ${data.attempt}/${data.maxAttempts}: ${data.reason}`, "warning");

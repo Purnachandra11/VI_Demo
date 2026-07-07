@@ -114,7 +114,8 @@ export const config = {
     console.log('[WDIO] Batch finished — browser session can be closed manually.');
   },
 
-  logLevel: 'info',
+  // logLevel: 'info',
+logLevel: 'silent', 
   bail: 0,
   baseUrl: 'https://swiftcrm.vodafoneidea.in',
   waitforTimeout: 30000,
