@@ -2,14 +2,14 @@
   {
     "rowIndex": 0,
     "srNo": 1,
-    "msisdn": "7039719774",
-    "circle": "MUM",
-    "rechargeMRP": "179",
-    "recharge": "no",
+    "msisdn": "8399930232",
+    "circle": "ASM",
+    "rechargeMRP": "149",
+    "recharge": "yes",
     "inFlag": "yes",
     "swift": "yes",
-    "viApp": "no",
-    "planBenefit": "UL+300SMS+1GB||28D",
-    "rechargeNotification": "Rs179 recharged! Enjoy 1GB + Unlimited Calls + 300 SMS. Validity: 28 Days. Click bit.ly/GetViApp to check balance,expiry,offers & more"
+    "viApp": "yes",
+    "planBenefit": "UL+1GB+100SMS||28D",
+    "rechargeNotification": "Rs 149 recharge done! Unlimited Calls+100SMS+1GB. Validity 28D.Click bit.ly/GetViApp for more information"
   }
 ]

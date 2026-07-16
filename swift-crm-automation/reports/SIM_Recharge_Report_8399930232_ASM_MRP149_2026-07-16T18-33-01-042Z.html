@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8">
+    <title>UAT Recharge Report - 8399930232</title>
+    <style>
+      
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; padding: 20px; color: #333; line-height: 1.5; }
+      .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+      h1 { color: #f38328; border-bottom: 3px solid #f38328; padding-bottom: 10px; margin-bottom: 15px; font-size: 22px; }
+      h2 { color: #333; margin: 25px 0 10px 0; padding: 8px 0; border-bottom: 2px solid #eee; font-size: 16px; page-break-after: avoid; }
+      h3 { color: #555; margin: 18px 0 10px 0; font-size: 14px; page-break-after: avoid; }
+      table { width: 100%; border-collapse: collapse; margin: 10px 0 20px 0; font-size: 11px; page-break-inside: avoid; max-width: 100%; }
+      th { background: #f38328; color: white; padding: 8px 10px; text-align: left; font-weight: 600; font-size: 10px; }
+      td { padding: 6px 10px; border-bottom: 1px solid #eee; font-size: 11px; }
+      tr:nth-child(even) { background: #f9f9f9; }
+      .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; }
+      .badge-pass { background: #e8f5e9; color: #2e7d32; }
+      .badge-fail { background: #fdecea; color: #c0392b; }
+      .badge-skip { background: #f5f5f5; color: #888; }
+      .badge-error { background: #fff3e0; color: #e65100; }
+      .badge-critical { background: #fdecea; color: #c0392b; font-weight: 700; }
+      .badge-high { background: #ffebee; color: #c62828; }
+      .badge-medium { background: #fff3e0; color: #e65100; }
+      .badge-low { background: #f5f5f5; color: #888; }
+      .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin: 15px 0 25px 0; }
+      .summary-item { background: #f8f5f0; padding: 12px; border-radius: 6px; text-align: center; border-left: 4px solid #f38328; }
+      .summary-item .number { font-size: 24px; font-weight: 700; color: #f38328; }
+      .summary-item .label { font-size: 11px; color: #888; margin-top: 4px; }
+      .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 11px; color: #888; }
+      .info-box { background: #f8f5f0; padding: 12px; border-radius: 6px; margin: 10px 0; border-left: 4px solid #f38328; font-size: 11px; }
+      .info-box strong { color: #f38328; }
+      .header-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+      .header-row .mrp-badge { background: #f38328; color: white; padding: 4px 14px; border-radius: 20px; font-weight: 600; font-size: 13px; }
+      .in-details-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; margin: 10px 0; }
+      .in-detail-item { background: #f8f5f0; padding: 6px 10px; border-radius: 4px; border-left: 3px solid #f38328; }
+      .in-detail-item strong { display: block; font-size: 10px; color: #888; text-transform: uppercase; }
+      .in-detail-item span { font-size: 12px; font-weight: 500; }
+      .screenshot-container { display: flex; flex-direction: column; gap: 15px; margin: 15px 0 25px 0; }
+      .screenshot-item { background: #faf8f5; border: 1px solid #e0ddd8; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+      .screenshot-item .screenshot-image { width: 100%; max-width: 100%; height: auto; display: block; margin: 0 auto; background: #f0f0f0; }
+      .screenshot-item .screenshot-image img { width: 100%; height: auto; max-height: 500px; object-fit: contain; display: block; background: #ffffff; }
+      .screenshot-item .screenshot-caption { padding: 10px 15px; background: #f5f3f0; border-top: 1px solid #e0ddd8; font-size: 11px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+      .screenshot-item .screenshot-caption .step-name { font-weight: 600; color: #f38328; }
+      .screenshot-item .screenshot-caption .step-detail-text { color: #555; }
+      .screenshot-item .screenshot-caption .step-time { color: #888; font-size: 10px; }
+      .screenshot-counter { background: #f38328; color: white; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+      .no-screenshots { color: #888; font-style: italic; padding: 20px; text-align: center; background: #f9f9f9; border-radius: 8px; }
+      .flow-box { background: #f5f8fa; padding: 15px; border-radius: 6px; margin: 10px 0; font-family: monospace; font-size: 13px; line-height: 1.8; border: 1px solid #e0e0e0; }
+      .flow-step { padding: 4px 0; }
+      .root-cause-box { background: #fdecea; padding: 20px; border-radius: 8px; border-left: 4px solid #c0392b; margin: 15px 0; }
+      .root-cause-box h3 { color: #c0392b; }
+      .recommendation-high { background: #ffebee; border-left: 4px solid #c62828; padding: 12px; margin: 8px 0; border-radius: 4px; }
+      .recommendation-medium { background: #fff3e0; border-left: 4px solid #e65100; padding: 12px; margin: 8px 0; border-radius: 4px; }
+      .recommendation-low { background: #f5f5f5; border-left: 4px solid #888; padding: 12px; margin: 8px 0; border-radius: 4px; }
+      .verdict-box { text-align: center; padding: 30px; background: #fdecea; border-radius: 8px; border: 2px solid #c0392b; margin: 20px 0; }
+      .verdict-box .verdict-status { font-size: 48px; }
+      .verdict-box .verdict-text { font-size: 24px; font-weight: 700; color: #c0392b; }
+      
+    </style>
+  </head>
+  <body>
+  <div class="container">
+    <div class="header-row">
+      <h1>UAT Recharge Report</h1>
+      <span class="mrp-badge">&#8377;149</span>
+    </div>
+    <p style="color: #888; margin-bottom: 20px;">MSISDN: <strong>8399930232</strong> | Circle: <strong>ASM</strong> | Generated: 17/7/2026, 12:03:01 am</p>
+
+    <!-- Summary -->
+    <div class="summary-grid">
+      <div class="summary-item">
+        <div class="number">149</div>
+        <div class="label">Recharge MRP</div>
+      </div>
+      <div class="summary-item">
+        <div class="number">3</div>
+        <div class="label">UAT Results</div>
+      </div>
+      <div class="summary-item">
+        <div class="number">1</div>
+        <div class="label">IN Results</div>
+      </div>
+      <div class="summary-item">
+        <div class="number">0</div>
+        <div class="label">VI App Results</div>
+      </div>
+      <div class="summary-item">
+        <div class="number">27</div>
+        <div class="label">Screenshots</div>
+      </div>
+    </div>
+
+    <!-- Input Data -->
+    <h2>Test Case Details</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>MSISDN</strong></td><td>8399930232</td></tr>
+        <tr><td><strong>Circle</strong></td><td>ASM</td></tr>
+        <tr><td><strong>Recharge MRP</strong></td><td>&#8377;149</td></tr>
+        <tr><td><strong>Recharge</strong></td><td>&#10003; Yes</td></tr>
+        <tr><td><strong>SWIFT</strong></td><td>&#10003; Yes</td></tr>
+        <tr><td><strong>IN</strong></td><td>&#10003; Yes</td></tr>
+        <tr><td><strong>Vi App</strong></td><td>&#10003; Yes</td></tr>
+        <tr><td><strong>Plan Benefit</strong></td><td>UL+1GB+300SMS||28D</td></tr>
+        <tr><td><strong>Recharge Notification</strong></td><td>Rs 149 recharge done! Unlimited Calls+300SMS+1GB. Validity 28D.Click bit.ly/GetViApp for more information</td></tr>
+      </tbody>
+    </table>
+
+    <!-- Tabs -->
+    <div class="tab-container">
+      <button class="tab-btn active" onclick="switchTab('swift')">SWIFT Results</button>
+      <button class="tab-btn" onclick="switchTab('pretest')">PreTest Results</button>
+      <button class="tab-btn" onclick="switchTab('in')">IN Results</button>
+      <button class="tab-btn" onclick="switchTab('screenshots')">Screenshots</button>
+    </div>
+
+    <!-- Tab 1: SWIFT Results -->
+    <div id="tab-swift" class="tab-content active">
+      <h2>SWIFT UAT Execution Results</h2>
+  
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Transaction ID</th>
+            <th>Activation</th>
+            <th>Validity</th>
+            <th>IN</th>
+            <th>SWIFT</th>
+            <th>Vi App</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+      
+            <tr>
+              <td>1</td>
+              <td><small>21678478417</small></td>
+              <td>16 Jul '26 07.20 PM</td>
+              <td>28 Days</td>
+              <td><span class="badge badge-skip">Skip</span></td>
+              <td><span class="badge badge-fail">Fail</span></td>
+              <td>Pass</td>
+              <td><small>Activation date "16 Jul '26 07.20 PM" is not today (Fri Jul 17 2026)</small></td>
+            </tr>
+          
+            <tr>
+              <td>2</td>
+              <td><small>21636064962</small></td>
+              <td>02 Jul '26 12.04 PM</td>
+              <td>28 Days</td>
+              <td><span class="badge badge-skip">Skip</span></td>
+              <td><span class="badge badge-fail">Fail</span></td>
+              <td>Pending</td>
+              <td><small>Activation date "02 Jul '26 12.04 PM" is not today (Fri Jul 17 2026)</small></td>
+            </tr>
+          
+            <tr>
+              <td>3</td>
+              <td><small>21592966128</small></td>
+              <td>20 Jun '26 11.23 AM</td>
+              <td>28 Days</td>
+              <td><span class="badge badge-skip">Skip</span></td>
+              <td><span class="badge badge-skip">Mismatch</span></td>
+              <td>Pending</td>
+              <td><small>MRP/Core Balance did not match target (149)</small></td>
+            </tr>
+          
+        </tbody>
+      </table>
+      <h3>Offer History Details</h3>
+      <div class="info-box">
+        <strong>Transaction ID:</strong> 21678478417<br>
+        <strong>Activation:</strong> 16 Jul '26 07.20 PM<br>
+        <strong>Validity:</strong> 28 Days<br>
+        <strong>Benefits:</strong> Get Unlimited Calls + 1GB Data + 300SMS. Pack Validity - 28 Days. Data tariff post quota completion will be charged at 50p/MB. Post SMS quota charging will be   Re 1 local  Re 1.5 STD per SMS.<br>
+        <strong>Recharge Notification:</strong> Rs 149 recharge done! Unlimited Calls+300SMS+1GB. Validity 28D.Click bit.ly/GetViApp for more information<br>
+        <strong>IN Status:</strong> Skip<br>
+        <strong>SWIFT Status:</strong> Fail
+      </div>
+            
+      <div class="info-box">
+        <strong>Transaction ID:</strong> 21636064962<br>
+        <strong>Activation:</strong> 02 Jul '26 12.04 PM<br>
+        <strong>Validity:</strong> 28 Days<br>
+        <strong>Benefits:</strong> Get Unlimited Calls + 1GB Data + 300SMS. Pack Validity - 28 Days. Data tariff post quota completion will be charged at 50p/MB. Post SMS quota charging will be   Re 1 local  Re 1.5 STD per SMS.<br>
+        <strong>Recharge Notification:</strong> Rs 149 recharge done! Unlimited Calls+300SMS+1GB. Validity 28D.Click bit.ly/GetViApp for more information<br>
+        <strong>IN Status:</strong> Skip<br>
+        <strong>SWIFT Status:</strong> Fail
+      </div>
+            
+      <div class="info-box">
+        <strong>Transaction ID:</strong> 21592966128<br>
+        <strong>Activation:</strong> 20 Jun '26 11.23 AM<br>
+        <strong>Validity:</strong> 28 Days<br>
+        <strong>Benefits:</strong> Callertunes With Unlimited Song Change on Vi App at Rs. 47 for 28 days. Benefits will be active within 2 hours post recharge.<br>
+        <strong>Recharge Notification:</strong> Rs 149 recharge done! Unlimited Calls+300SMS+1GB. Validity 28D.Click bit.ly/GetViApp for more information<br>
+        <strong>IN Status:</strong> Skip<br>
+        <strong>SWIFT Status:</strong> Mismatch
+      </div>
+            
+    </div>
+
+    <!-- Tab: PreTest Total Usage -->
+    <div id="tab-pretest" class="tab-content">
+      <h2>PreTest — Total Usage (Voice / Data / SMS)</h2>
+  <p style="color: #888;">No PreTest results found for this MSISDN.</p>
+    </div>
+
+    <!-- Tab: IN Results -->
+    <div id="tab-in" class="tab-content">
+      <h2>IN Test Results</h2>
+  
+      <div class="info-box">
+        <strong>Status:</strong> <span class="badge badge-pass">Pass</span>
+        <strong style="margin-left: 20px;">Customer:</strong> Moloy Chatterjee TEST
+        <strong style="margin-left: 20px;">Circle:</strong> ASM
+      </div>
+
+      <h3>Account Overview</h3>
+      <div class="in-details-grid">
+        <div class="in-detail-item"><strong>Activation Date</strong><span>30 Nov '18</span></div>
+        <div class="in-detail-item"><strong>Service Removal On</strong><span>27 Nov '26</span></div>
+        <div class="in-detail-item"><strong>Supervision Expires On</strong><span>12 Aug '26</span></div>
+        <div class="in-detail-item"><strong>Main Balance</strong><span>38.47 INR</span></div>
+        <div class="in-detail-item"><strong>Service Fee Expires On</strong><span>19 Aug '26</span></div>
+        <div class="in-detail-item"><strong>Subscriber Status</strong><span>Active</span></div>
+        <div class="in-detail-item"><strong>Credit Clearance On</strong><span>27 Nov '26</span></div>
+        <div class="in-detail-item"><strong>Core Balance</strong><span> 38.47</span></div>
+        <div class="in-detail-item"><strong>Service Validity</strong><span>12 Aug '26</span></div>
+        <div class="in-detail-item"><strong>Account Status</strong><span>Active</span></div>
+        <div class="in-detail-item"><strong>User Type</strong><span>Pack User</span></div>
+      </div>
+  
+      <h3>Dedicated Accounts (2)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>DA Name</th>
+            <th>DA ID</th>
+            <th>Start Date</th>
+            <th>Expiry Date</th>
+            <th>DA Value</th>
+            <th>Unit</th>
+            <th>Type</th>
+          </tr>
+        </thead>
+        <tbody>
+      
+            <tr>
+              <td>176_FixedSMS</td>
+              <td>176</td>
+              <td>01 Jan '01 | 12.00 PM</td>
+              <td>12 Aug '26 | 12.00 PM</td>
+              <td>300</td>
+              <td>UNIT</td>
+              <td>5</td>
+            </tr>
+              
+            <tr>
+              <td>233_UL_Fixed_Data</td>
+              <td>233</td>
+              <td>01 Jan '01 | 12.00 PM</td>
+              <td>12 Aug '26 | 12.00 PM</td>
+              <td>1024</td>
+              <td>MB</td>
+              <td>6</td>
+            </tr>
+              
+        </tbody>
+      </table>
+            
+      <h3>Offers (6)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Offer Name</th>
+            <th>Offer ID</th>
+            <th>Product ID</th>
+            <th>Start Date & Time</th>
+            <th>End Date & Time</th>
+            <th>Offer Type</th>
+          </tr>
+        </thead>
+        <tbody>
+      
+            <tr>
+              <td>1_DEFAULT</td>
+              <td>1</td>
+              <td>NA</td>
+              <td>20 Feb '23 | 11.59 PM</td>
+              <td>31 Dec '99 | 11.59 PM</td>
+              <td>0</td>
+            </tr>
+              
+            <tr>
+              <td>5_4G_TAG</td>
+              <td>5</td>
+              <td>NA</td>
+              <td>05 Aug '25 | 11.59 PM</td>
+              <td>31 Dec '99 | 11.59 PM</td>
+              <td>0</td>
+            </tr>
+              
+            <tr>
+              <td>41119003_UL_Voice_Home</td>
+              <td>41119003</td>
+              <td>NA</td>
+              <td>16 Jul '26 | 06.20 PM</td>
+              <td>12 Aug '26 | 11.59 PM</td>
+              <td>2</td>
+            </tr>
+              
+            <tr>
+              <td>41133000_UL_Voice_Roam</td>
+              <td>41133000</td>
+              <td>NA</td>
+              <td>16 Jul '26 | 06.20 PM</td>
+              <td>12 Aug '26 | 11.59 PM</td>
+              <td>2</td>
+            </tr>
+              
+            <tr>
+              <td>42309176_FixedSMS</td>
+              <td>42309176</td>
+              <td>NA</td>
+              <td>01 Jan '01 | 11.59 PM</td>
+              <td>12 Aug '26 | 11.59 PM</td>
+              <td>0</td>
+            </tr>
+              
+            <tr>
+              <td>43334442_UL_Fixed_Data</td>
+              <td>43334442</td>
+              <td>NA</td>
+              <td>01 Jan '01 | 11.59 PM</td>
+              <td>12 Aug '26 | 11.59 PM</td>
+              <td>0</td>
+            </tr>
+              
+        </tbody>
+      </table>
+            
+    </div>
+
+    <!-- Tab: Screenshots -->
+    <div id="tab-screenshots" class="tab-content">
+      <h2>Screenshots (27)</h2>
+      <div class="screenshot-container">
+  
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\subscriber_8399930232_2026-07-16T18-28-00-832Z.png" alt="Subscriber Info" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#1</span>
+              <span class="step-name">Subscriber Info</span>
+              <span class="step-detail-text">&mdash; subscriber_8399930232_2026-07-16T18-28-00-832Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:58:07 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\alertbar_8399930232_2026-07-16T18-28-00-832Z.png" alt="Alert Bar" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#2</span>
+              <span class="step-name">Alert Bar</span>
+              <span class="step-detail-text">&mdash; alertbar_8399930232_2026-07-16T18-28-00-832Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:58:08 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\fullpage_8399930232_2026-07-16T18-28-00-832Z.png" alt="Full Page" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#3</span>
+              <span class="step-name">Full Page</span>
+              <span class="step-detail-text">&mdash; fullpage_8399930232_2026-07-16T18-28-00-832Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:58:08 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_3_8399930232_2026-07-16T18-28-08-790Z.png" alt="Row1_Step3_Subscriber_Info" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#4</span>
+              <span class="step-name">Row1_Step3_Subscriber_Info</span>
+              <span class="step-detail-text">&mdash; screenshot_3_8399930232_2026-07-16T18-28-08-790Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:58:09 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_4_8399930232_2026-07-16T18-28-17-234Z.png" alt="IN_Step1_Search_MSISDN" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#5</span>
+              <span class="step-name">IN_Step1_Search_MSISDN</span>
+              <span class="step-detail-text">&mdash; screenshot_4_8399930232_2026-07-16T18-28-17-234Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:58:17 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_5_8399930232_2026-07-16T18-28-26-593Z.png" alt="IN_Step2_Click_Search" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#6</span>
+              <span class="step-name">IN_Step2_Click_Search</span>
+              <span class="step-detail-text">&mdash; screenshot_5_8399930232_2026-07-16T18-28-26-593Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:58:26 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\subscriber_8399930232_2026-07-16T18-28-26-865Z.png" alt="Subscriber Info" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#7</span>
+              <span class="step-name">Subscriber Info</span>
+              <span class="step-detail-text">&mdash; subscriber_8399930232_2026-07-16T18-28-26-865Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:58:33 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\alertbar_8399930232_2026-07-16T18-28-26-865Z.png" alt="Alert Bar" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#8</span>
+              <span class="step-name">Alert Bar</span>
+              <span class="step-detail-text">&mdash; alertbar_8399930232_2026-07-16T18-28-26-865Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:58:34 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\fullpage_8399930232_2026-07-16T18-28-26-865Z.png" alt="Full Page" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#9</span>
+              <span class="step-name">Full Page</span>
+              <span class="step-detail-text">&mdash; fullpage_8399930232_2026-07-16T18-28-26-865Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:58:34 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_6_8399930232_2026-07-16T18-28-34-760Z.png" alt="IN_Step3_Subscriber_Info" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#10</span>
+              <span class="step-name">IN_Step3_Subscriber_Info</span>
+              <span class="step-detail-text">&mdash; screenshot_6_8399930232_2026-07-16T18-28-34-760Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:58:35 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_7_8399930232_2026-07-16T18-28-35-186Z.png" alt="IN_Step4_Recharges_Benefits" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#11</span>
+              <span class="step-name">IN_Step4_Recharges_Benefits</span>
+              <span class="step-detail-text">&mdash; screenshot_7_8399930232_2026-07-16T18-28-35-186Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:58:35 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_8_8399930232_2026-07-16T18-28-38-322Z.png" alt="IN_Step5_Customer_IN_Profile" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#12</span>
+              <span class="step-name">IN_Step5_Customer_IN_Profile</span>
+              <span class="step-detail-text">&mdash; screenshot_8_8399930232_2026-07-16T18-28-38-322Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:58:38 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_9_8399930232_2026-07-16T18-28-38-632Z.png" alt="IN_Step6_Product_Overview" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#13</span>
+              <span class="step-name">IN_Step6_Product_Overview</span>
+              <span class="step-detail-text">&mdash; screenshot_9_8399930232_2026-07-16T18-28-38-632Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:58:38 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_10_8399930232_2026-07-16T18-28-40-035Z.png" alt="IN_Step7_Account_Overview" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#14</span>
+              <span class="step-name">IN_Step7_Account_Overview</span>
+              <span class="step-detail-text">&mdash; screenshot_10_8399930232_2026-07-16T18-28-40-035Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:58:40 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_11_8399930232_2026-07-16T18-28-43-135Z.png" alt="IN_Step8_Dedicated_Account_Tab" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#15</span>
+              <span class="step-name">IN_Step8_Dedicated_Account_Tab</span>
+              <span class="step-detail-text">&mdash; screenshot_11_8399930232_2026-07-16T18-28-43-135Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:58:43 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_12_8399930232_2026-07-16T18-28-44-192Z.png" alt="IN_Step8_1_Other_Offers_DA" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#16</span>
+              <span class="step-name">IN_Step8_1_Other_Offers_DA</span>
+              <span class="step-detail-text">&mdash; screenshot_12_8399930232_2026-07-16T18-28-44-192Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:58:44 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_13_8399930232_2026-07-16T18-28-47-259Z.png" alt="IN_Step9_Offer_Tab" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#17</span>
+              <span class="step-name">IN_Step9_Offer_Tab</span>
+              <span class="step-detail-text">&mdash; screenshot_13_8399930232_2026-07-16T18-28-47-259Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:58:47 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_14_8399930232_2026-07-16T18-28-49-266Z.png" alt="IN_Step9_1_Other_Offers_OfferTab" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#18</span>
+              <span class="step-name">IN_Step9_1_Other_Offers_OfferTab</span>
+              <span class="step-detail-text">&mdash; screenshot_14_8399930232_2026-07-16T18-28-49-266Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:58:49 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_15_8399930232_2026-07-16T18-28-51-916Z.png" alt="IN_Step10_IN_Profile_Button" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#19</span>
+              <span class="step-name">IN_Step10_IN_Profile_Button</span>
+              <span class="step-detail-text">&mdash; screenshot_15_8399930232_2026-07-16T18-28-51-916Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:58:52 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\subscriber_8399930232_2026-07-16T18-29-44-484Z.png" alt="Subscriber Info" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#20</span>
+              <span class="step-name">Subscriber Info</span>
+              <span class="step-detail-text">&mdash; subscriber_8399930232_2026-07-16T18-29-44-484Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:59:51 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\alertbar_8399930232_2026-07-16T18-29-44-484Z.png" alt="Alert Bar" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#21</span>
+              <span class="step-name">Alert Bar</span>
+              <span class="step-detail-text">&mdash; alertbar_8399930232_2026-07-16T18-29-44-484Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:59:52 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\fullpage_8399930232_2026-07-16T18-29-44-484Z.png" alt="Full Page" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#22</span>
+              <span class="step-name">Full Page</span>
+              <span class="step-detail-text">&mdash; fullpage_8399930232_2026-07-16T18-29-44-484Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:59:52 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_16_8399930232_2026-07-16T18-29-52-326Z.png" alt="SWIFT_Step2_Click_Search" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#23</span>
+              <span class="step-name">SWIFT_Step2_Click_Search</span>
+              <span class="step-detail-text">&mdash; screenshot_16_8399930232_2026-07-16T18-29-52-326Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:59:52 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_17_8399930232_2026-07-16T18-29-52-733Z.png" alt="SWIFT_Step3_Recharges_Benefits" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#24</span>
+              <span class="step-name">SWIFT_Step3_Recharges_Benefits</span>
+              <span class="step-detail-text">&mdash; screenshot_17_8399930232_2026-07-16T18-29-52-733Z.png</span>
+            </span>
+            <span class="step-time">7/16/2026, 11:59:53 PM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_18_8399930232_2026-07-16T18-30-10-459Z.png" alt="SWIFT_Step4_Active_Offers" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#25</span>
+              <span class="step-name">SWIFT_Step4_Active_Offers</span>
+              <span class="step-detail-text">&mdash; screenshot_18_8399930232_2026-07-16T18-30-10-459Z.png</span>
+            </span>
+            <span class="step-time">7/17/2026, 12:00:10 AM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_19_8399930232_2026-07-16T18-30-13-284Z.png" alt="SWIFT_Step5_Offer_History" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#26</span>
+              <span class="step-name">SWIFT_Step5_Offer_History</span>
+              <span class="step-detail-text">&mdash; screenshot_19_8399930232_2026-07-16T18-30-13-284Z.png</span>
+            </span>
+            <span class="step-time">7/17/2026, 12:00:13 AM</span>
+          </div>
+        </div>
+          
+        <div class="screenshot-item">
+          <div class="screenshot-image">
+            <img src="D:\New VI UAT PROJECT\WIP\Automation Folder\VI Demo 31.05.2026\VI Demo\swift-crm-automation\screenshots\screenshot_20_8399930232_2026-07-16T18-30-39-824Z.png" alt="SWIFT_Step6_Offer_History_Details" loading="lazy">
+          </div>
+          <div class="screenshot-caption">
+            <span>
+              <span class="screenshot-counter">#27</span>
+              <span class="step-name">SWIFT_Step6_Offer_History_Details</span>
+              <span class="step-detail-text">&mdash; screenshot_20_8399930232_2026-07-16T18-30-39-824Z.png</span>
+            </span>
+            <span class="step-time">7/17/2026, 12:00:40 AM</span>
+          </div>
+        </div>
+          
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>Report generated by VI Sim Automation Platform</p>
+      <p>&copy; 2026 QDegrees Services Pvt. Ltd.</p>
+    </div>
+  </div>
+
+  <script>
+  function switchTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(el => {
+      el.classList.remove('active');
+    });
+    document.getElementById('tab-' + tabName).classList.add('active');
+
+    document.querySelectorAll('.tab-btn').forEach(el => {
+      el.classList.remove('active');
+    });
+    document.querySelectorAll('.tab-btn').forEach(el => {
+      if (el.textContent.toLowerCase().includes(tabName.toLowerCase())) {
+        el.classList.add('active');
+      }
+    });
+  }
+  </script>
+  <style>
+    .tab-container { display: flex; gap: 10px; margin: 15px 0; flex-wrap: wrap; }
+    .tab-btn { padding: 8px 20px; background: #f0f0f0; border: none; border-radius: 20px; cursor: pointer; font-weight: 500; font-size: 13px; transition: all 0.3s; }
+    .tab-btn:hover { background: #e0e0e0; }
+    .tab-btn.active { background: #f38328; color: white; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+  </style>
+  </body>
+  </html>

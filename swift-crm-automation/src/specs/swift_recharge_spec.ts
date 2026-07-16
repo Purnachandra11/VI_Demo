@@ -859,8 +859,8 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
       const swiftFlag = (row.swift || '').toLowerCase();
       const rechargeFlag = (row.recharge || '').toLowerCase();
       // const pretestFlag = (row.pretest || '').toLowerCase();
-      const pretestFlag = 'yes'; 
-      // const pretestFlag = 'no'; 
+      // const pretestFlag = 'yes'; 
+      const pretestFlag = 'no'; 
 
       console.log(`\n===== Row ${srNo}/${matchedRows.length} =====`);
       console.log(`MSISDN: ${row.msisdn}`);

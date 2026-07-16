@@ -12,9 +12,9 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
     />
-    <!-- FIXED: Uncommented XLSX library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
+      /* ... (all existing styles remain the same) ... */
       *,
       *::before,
       *::after {
@@ -133,7 +133,6 @@
         100% {
           transform: translate(0, 0);
         }
-
         50% {
           transform: translate(20px, 15px);
         }
@@ -144,13 +143,11 @@
         100% {
           transform: translate(0, 0);
         }
-
         50% {
           transform: translate(-15px, 20px);
         }
       }
 
-      /* ── HEADER ── */
       .mainHeader {
         background: var(--white);
         border-bottom: 1px solid var(--border);
@@ -257,7 +254,6 @@
         color: var(--white);
       }
 
-      /* ── LOGIN STATUS BADGE ── */
       .login-badge {
         display: flex;
         align-items: center;
@@ -319,7 +315,6 @@
         100% {
           opacity: 1;
         }
-
         50% {
           opacity: 0.4;
         }
@@ -330,13 +325,11 @@
         100% {
           opacity: 1;
         }
-
         50% {
           opacity: 0.3;
         }
       }
 
-      /* ── PAGE WRAP ── */
       .page-wrap {
         flex: 1;
         padding: 30px 40px 60px;
@@ -347,7 +340,6 @@
         z-index: 1;
       }
 
-      /* ── SECTION HEADING ── */
       .section-heading {
         margin-bottom: 28px;
       }
@@ -369,7 +361,6 @@
         color: var(--muted);
       }
 
-      /* ── CARD ── */
       .card {
         background: var(--white);
         border: 1px solid var(--border);
@@ -407,7 +398,6 @@
         line-height: 1.6;
       }
 
-      /* ── STAT STRIP ── */
       .stat-strip {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -448,7 +438,6 @@
         margin-top: 2px;
       }
 
-      /* ── UPLOAD AREA ── */
       .upload-area {
         border: 2px dashed var(--border);
         border-radius: var(--radius);
@@ -507,7 +496,6 @@
         color: white;
       }
 
-      /* ── BUTTONS ── */
       .action-buttons {
         display: flex;
         gap: 10px;
@@ -582,14 +570,12 @@
         font-size: 12px;
       }
 
-      /* ── DIVIDER ── */
       hr.divider {
         border: none;
         border-top: 1px solid var(--border);
         margin: 22px 0;
       }
 
-      /* ── PROGRESS BAR ── */
       .progress-section {
         margin-top: 16px;
         padding: 12px 0;
@@ -623,7 +609,6 @@
         color: var(--muted);
       }
 
-      /* ── LOG PANEL ── */
       .log-panel {
         background: #1a1510;
         color: #d4c9ba;
@@ -691,7 +676,6 @@
         gap: 10px;
       }
 
-      /* ── STATUS BOX ── */
       .status-box {
         padding: 13px 16px;
         border-radius: var(--radius-sm);
@@ -725,7 +709,6 @@
         color: #7b1c1c;
       }
 
-      /* ── SCREENSHOT GRID ── */
       .screenshots-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
@@ -761,7 +744,6 @@
         font-weight: 500;
       }
 
-      /* ── PREVIEW SECTION ── */
       .preview-section {
         margin-top: 32px;
         display: none;
@@ -966,12 +948,10 @@
         font-size: 13px;
       }
 
-      /* ── SKELETON ── */
       @keyframes shimmer {
         0% {
           background-position: -600px 0;
         }
-
         100% {
           background-position: 600px 0;
         }
@@ -1042,7 +1022,6 @@
         }
       }
 
-      /* ── PER-ROW STATUS PANEL ── */
       .row-status-panel {
         margin-top: 0;
       }
@@ -1195,7 +1174,6 @@
         100% {
           opacity: 1;
         }
-
         50% {
           opacity: 0.45;
         }
@@ -1250,7 +1228,62 @@
         font-weight: 700;
       }
 
-      /* ── CAPTCHA / OTP OVERLAY ── */
+      /* ── Status Detail Table ── */
+      .status-detail-table {
+        margin-top: 8px;
+        padding-left: 34px;
+        font-size: 11px;
+        border-collapse: collapse;
+        width: 100%;
+        max-width: 600px;
+      }
+
+      .status-detail-table td {
+        padding: 2px 8px 2px 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+      }
+
+      .status-detail-table .col-label {
+        font-weight: 600;
+        color: var(--muted);
+        width: 80px;
+      }
+
+      .status-detail-table .col-status {
+        font-weight: 600;
+        width: 70px;
+      }
+
+      .status-detail-table .col-detail {
+        color: var(--muted);
+        font-size: 10px;
+      }
+
+      .status-detail-table .status-pass {
+        color: var(--success);
+      }
+
+      .status-detail-table .status-fail {
+        color: var(--danger);
+      }
+
+      .status-detail-table .status-skip {
+        color: var(--muted);
+      }
+
+      .status-detail-table .status-pending {
+        color: #888;
+      }
+
+      .status-detail-table .status-running {
+        color: var(--info);
+        animation: blink-badge 0.85s infinite;
+      }
+
+      .status-detail-table .status-waiting {
+        color: var(--warn);
+      }
+
       .overlay-wrap {
         display: none;
         position: fixed;
@@ -1267,7 +1300,6 @@
 
       .captcha-box {
         background: var(--white);
-        /* padding: 32px 28px; */
         padding: 20px 20px;
         border-radius: var(--radius);
         width: 420px;
@@ -1327,7 +1359,6 @@
         border-color: var(--orange);
       }
 
-      /* ── FOOTER ── */
       .footerMain {
         background: #fff;
         border-top: 1px solid var(--border);
@@ -1371,7 +1402,6 @@
         .page-wrap {
           padding: 24px 20px 48px;
         }
-
         .navbar {
           padding: 12px 20px;
         }
@@ -1405,23 +1435,11 @@
         color: var(--danger);
       }
 
-      /* ── TEST CARDS ── */
       .test-cards-container {
         display: flex;
         flex-direction: column;
         gap: 16px;
-        /* max-height: 65vh;
-        overflow-y: auto; */
         padding-right: 4px;
-      }
-
-      .test-cards-container::-webkit-scrollbar {
-        width: 5px;
-      }
-
-      .test-cards-container::-webkit-scrollbar-thumb {
-        background: var(--border);
-        border-radius: 4px;
       }
 
       .test-card {
@@ -1429,7 +1447,6 @@
         border: 1.5px solid var(--border);
         border-radius: var(--radius);
         padding: 0;
-        /* overflow: hidden; */
         transition: all 0.3s ease;
         box-shadow: var(--shadow);
         position: relative;
@@ -1802,10 +1819,9 @@
       <div class="deco-chip"></div>
     </div>
 
-    <!-- HEADER -->
     <header class="mainHeader">
       <nav class="navbar">
-        <a class="brandWrap" href="index.html">
+       <a class="brandWrap" href="index.html">
       <div class="logoContainer">
           <img src="./vi-logo.svg" alt="VI Logo" class="viLogo">
         <img src="https://qdegrees.com/img/logo.svg" alt="QDegrees Logo" class="brandLogo qdegreesLogo">   
@@ -1830,7 +1846,6 @@
       </nav>
     </header>
 
-    <!-- PAGE -->
     <main class="page-wrap">
       <div class="section-heading">
         <img
@@ -1839,14 +1854,13 @@
           alt=""
           onerror="this.style.display = 'none'"
         />
-        <h2>Segmented Offers UAT Automation</h2>
+        <h2>MRP Recharge UAT Automation</h2>
         <p>
-          Upload test data and execute automated recharge UAT for SWIFT CRM, IN, UPSS
+          Upload test data and execute automated recharge UAT for SWIFT CRM, IN,
           and VI Application.
         </p>
       </div>
 
-      <!-- Stat strip -->
       <div class="stat-strip">
         <div class="stat-card">
           <div class="stat-label">Test Cases</div>
@@ -1859,18 +1873,17 @@
           <div class="stat-sub">rows completed</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Matched test runs and Passed</div>
+          <div class="stat-label">Passed</div>
           <div class="stat-value" style="color: #43a047" id="statPassed">0</div>
           <div class="stat-sub">rows successful</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Unmatched test runs and Failed</div>
+          <div class="stat-label">Failed</div>
           <div class="stat-value" style="color: #c0392b" id="statFailed">0</div>
           <div class="stat-sub">rows failed</div>
         </div>
       </div>
 
-      <!-- STEP 1: Upload -->
       <div class="card">
         <div class="card-title">
           <span class="step-pill">STEP 1</span>
@@ -1919,7 +1932,6 @@
         </div>
       </div>
 
-      <!-- PREVIEW SECTION -->
       <div class="preview-section" id="previewSection">
         <div class="preview-heading">
           <div class="line"></div>
@@ -1942,7 +1954,6 @@
           </div>
         </div>
 
-        <!-- Skeleton loader -->
         <div id="validationLoader" style="display: none">
           <div class="validation-banner">
             <span class="spin-ring"></span>
@@ -1962,9 +1973,7 @@
           </div>
         </div>
 
-        <!-- Real tables -->
         <div id="tablesContainer" style="display: none">
-          <!-- Matched -->
           <div class="card" id="matchedCard">
             <div class="card-title">
               <span class="step-pill">STEP 2</span>
@@ -1981,7 +1990,6 @@
             </div>
           </div>
 
-          <!-- Unmatched -->
           <div class="card">
             <div class="card-title">
               Unmatched Test Cases
@@ -1997,7 +2005,6 @@
             </div>
           </div>
 
-          <!-- STEP 3: Execution -->
           <div class="card">
             <div class="card-title">
               <span class="step-pill">STEP 3</span>
@@ -2029,7 +2036,6 @@
               </button>
             </div>
 
-            <!-- Row status panel -->
             <div
               class="row-status-panel"
               id="rowStatusPanel"
@@ -2045,7 +2051,6 @@
         </div>
       </div>
 
-      <!-- STEP 4: Logs -->
       <div class="card">
         <div class="card-title">
           <span class="step-pill">STEP 4</span>
@@ -2072,39 +2077,14 @@
 
         <div class="log-footer">
           <span></span>
-          <!-- <button
-            class="btn btn-success btn-sm"
-            id="downloadReportBtn"
-            style="display: none"
-            onclick="downloadReport()"
-          >
-            <i class="bi bi-download"></i> Download Latest Report
-          </button> -->
         </div>
         <div
           id="reportDownloadContainer"
           style="margin-top: 10px; display: none"
         ></div>
-
-        <hr class="divider" style="margin: 20px 0 14px" />
-
-        <!-- <div class="card-title" style="margin-bottom: 12px; font-size: 13px; border: none; padding: 0">
-        <i class="bi bi-images"></i> Screenshots
-      </div>
-      <div id="screenshotsContainer">
-        <p style="
-              color: var(--muted);
-              font-size: 13px;
-              text-align: center;
-              padding: 12px 0;
-            ">
-          Screenshots will appear here during execution.
-        </p>
-      </div> -->
       </div>
     </main>
 
-    <!-- CAPTCHA overlay -->
     <div class="overlay-wrap" id="captchaOverlay">
       <div class="captcha-box">
         <h3>SWIFT CRM Login</h3>
@@ -2171,7 +2151,6 @@
       </div>
     </div>
 
-    <!-- OTP overlay -->
     <div class="overlay-wrap" id="otpOverlay">
       <div class="captcha-box">
         <h3>VI App OTP Verification</h3>
@@ -2193,7 +2172,6 @@
       </div>
     </div>
 
-    <!-- CIRCLE CONFIRMATION -->
     <div class="overlay-wrap" id="circleDiscrepancyOverlay">
       <div class="captcha-box" style="width: 860px; text-align: left">
         <h3 style="text-align: center; color: #40930d">
@@ -2215,7 +2193,6 @@
             margin-bottom: 18px;
           "
         >
-          <!-- rows injected via JS -->
         </div>
 
         <div class="action-buttons" style="justify-content: center">
@@ -2232,9 +2209,6 @@
       </div>
     </div>
 
-    <!-- Add this right before the closing </body> tag in sim-recharge.html -->
-
-    <!-- VPN CONNECTION OVERLAY -->
     <div class="overlay-wrap" id="vpnOverlay">
       <div
         class="captcha-box"
@@ -2323,7 +2297,6 @@
       </div>
     </div>
 
-    <!-- FOOTER -->
     <footer class="footerMain">
       <div class="footer-content">
         <p>
@@ -2339,7 +2312,6 @@
       </div>
     </footer>
 
-    <!-- SCRIPTS -->
     <script>
       /* ============================================================
        STATE
@@ -2353,10 +2325,38 @@
       let testCardsData = [];
       let isFileProcessing = false;
       let matchedRowsData = [];
-      // VPN Status Check
       let vpnCheckInterval = null;
       let vpnElapsedSeconds = 0;
 
+      /* ============================================================
+       DOM REFS
+    ============================================================ */
+      const fileInput = document.getElementById("fileInput");
+      const fileNameDisplay = document.getElementById("fileNameDisplay");
+      const startBtn = document.getElementById("startBtn");
+      const stopBtn = document.getElementById("stopBtn");
+      const statusBox = document.getElementById("statusBox");
+      const progressSection = document.getElementById("progressSection");
+      const progressBar = document.getElementById("progressBar");
+      const progressPercent = document.getElementById("progressPercent");
+      const progressAction = document.getElementById("progressAction");
+      const progressStatus = document.getElementById("progressStatus");
+      const logPanel = document.getElementById("logPanel");
+      const captchaOverlay = document.getElementById("captchaOverlay");
+      const captchaImage = document.getElementById("captchaImage");
+      const captchaInput = document.getElementById("captchaInput");
+      const otpOverlay = document.getElementById("otpOverlay");
+      const otpInput = document.getElementById("otpInput");
+      const otpMessage = document.getElementById("otpMessage");
+      const loginBadge = document.getElementById("loginBadge");
+      const loginBadgeText = document.getElementById("loginBadgeText");
+      const rowStatusPanel = document.getElementById("rowStatusPanel");
+      const rowCardsList = document.getElementById("rowCardsList");
+      const testCardsContainer = document.getElementById("testCardsContainer");
+
+      /* ============================================================
+       VPN FUNCTIONS
+    ============================================================ */
       function showVPNOverlay() {
         document.getElementById("vpnOverlay").classList.add("visible");
         startVPNTimer();
@@ -2395,7 +2395,6 @@
       }
 
       function startVPNStatusPolling() {
-        // Check every 5 seconds
         if (vpnCheckInterval) clearInterval(vpnCheckInterval);
         vpnCheckInterval = setInterval(checkVPNStatusManually, 5000);
       }
@@ -2422,12 +2421,9 @@
             document.getElementById("vpnMessage").textContent =
               "✅ VPN connection detected! Automation will continue...";
 
-            // Hide overlay after 2 seconds
             setTimeout(() => {
               hideVPNOverlay();
-              // Resume the test if it was waiting
               if (window._pendingWsSession) {
-                // Send resume command
                 const ws = window._pendingWsSession;
                 if (ws.readyState === WebSocket.OPEN) {
                   ws.send(JSON.stringify({ type: "resume" }));
@@ -2446,72 +2442,32 @@
         }
       }
 
+      /* ============================================================
+       FILE HANDLING
+    ============================================================ */
       function lockUpload() {
         isFileProcessing = true;
-
         const dropZone = document.getElementById("dropZone");
         const fileInputEl = document.getElementById("fileInput");
-
         if (dropZone) {
           dropZone.style.pointerEvents = "none";
           dropZone.style.opacity = "0.6";
           dropZone.style.cursor = "not-allowed";
         }
-
         if (fileInputEl) fileInputEl.disabled = true;
       }
 
       function unlockUpload() {
         isFileProcessing = false;
-
         const dropZone = document.getElementById("dropZone");
         const fileInputEl = document.getElementById("fileInput");
-
         if (dropZone) {
           dropZone.style.pointerEvents = "";
           dropZone.style.opacity = "";
           dropZone.style.cursor = "";
         }
-
         if (fileInputEl) fileInputEl.disabled = false;
       }
-
-      /* ============================================================
-       DOM REFS
-    ============================================================ */
-      const fileInput = document.getElementById("fileInput");
-      const fileNameDisplay = document.getElementById("fileNameDisplay");
-      const startBtn = document.getElementById("startBtn");
-      const stopBtn = document.getElementById("stopBtn");
-      const statusBox = document.getElementById("statusBox");
-      const progressSection = document.getElementById("progressSection");
-      const progressBar = document.getElementById("progressBar");
-      const progressPercent = document.getElementById("progressPercent");
-      const progressAction = document.getElementById("progressAction");
-      const progressStatus = document.getElementById("progressStatus");
-      const logPanel = document.getElementById("logPanel");
-      const screenshotsContainer = document.getElementById(
-        "screenshotsContainer",
-      );
-      const downloadReportBtn = document.getElementById("downloadReportBtn")  || {style: { display: 'none' } };
-      const reportDownloadContainer = document.getElementById(
-        "reportDownloadContainer",
-      );
-      const captchaOverlay = document.getElementById("captchaOverlay");
-      const captchaImage = document.getElementById("captchaImage");
-      const captchaInput = document.getElementById("captchaInput");
-      const otpOverlay = document.getElementById("otpOverlay");
-      const otpInput = document.getElementById("otpInput");
-      const otpMessage = document.getElementById("otpMessage");
-      const loginBadge = document.getElementById("loginBadge");
-      const loginBadgeText = document.getElementById("loginBadgeText");
-      const rowStatusPanel = document.getElementById("rowStatusPanel");
-      const rowCardsList = document.getElementById("rowCardsList");
-      const testCardsContainer = document.getElementById("testCardsContainer");
-
-      /* ============================================================
-       FIXED: FILE HANDLING
-    ============================================================ */
 
       fileInput.addEventListener("change", function (e) {
         const f = e.target.files[0];
@@ -2623,13 +2579,16 @@
 
       async function pollLoginStatus() {
         try {
+          const r = await fetch("/api/swift/login-status");
           if (!r.ok) return;
           const d = await r.json();
           if (d.isLoggedIn) {
             const since = d.lastLoginAt
               ? " since " + new Date(d.lastLoginAt).toLocaleTimeString()
               : "";
-            setLoginBadge("logged-in", "Logged In – SWIFT CRM" + since);
+            setLoginBadge("logged-in", "🔒 Logged In – SWIFT CRM" + since);
+          } else {
+            setLoginBadge("checking", "Waiting for login...");
           }
         } catch (_) {
           setLoginBadge("checking", "SWIFT CRM Login");
@@ -2642,6 +2601,9 @@
         if (!isRunning) pollLoginStatus();
       }, 5000);
 
+      /* ============================================================
+       EXCEL PARSING
+    ============================================================ */
       async function parseExcelPreview(file) {
         const reader = new FileReader();
         reader.onload = async function (e) {
@@ -2690,7 +2652,7 @@
 
             document.getElementById("previewSection").classList.add("visible");
             document.getElementById("loaderMsg").textContent =
-              `Validating ${inputRows.length} ${inputRows.length !== 1 ? "s" : ""} number via Vi Number System…`;
+              `Validating ${inputRows.length} number(s) via Vi Number System…`;
             document.getElementById("validationLoader").style.display = "block";
             document.getElementById("tablesContainer").style.display = "none";
 
@@ -2732,7 +2694,6 @@
               if (!isMRPFound) {
                 reasons.push("MRP not found in plan sheet");
               } else if (!isMasterCircleMatch) {
-                // reasons.push(`Circle not matched — expected "${excelCircle}", found in master: "${masterCircle}"`);
                 reasons.push(
                   `Circle not matched — Plan not found in expected "${excelCircle}"`,
                 );
@@ -2836,10 +2797,11 @@
                   upss: upssVal === "yes" ? "pending" : "skipped",
                   viApp: viAppVal === "yes" ? "pending" : "skipped",
                   pretest: pretestVal === "yes" ? "pending" : "skipped",
-              },
+                },
                 overallStatus: "pending",
                 startedAt: null,
                 completedAt: null,
+                statusDetails: {},
               };
             });
 
@@ -2857,7 +2819,6 @@
             );
             startBtn.disabled = matched.length === 0;
 
-            // ✅ FIXED: Send emails after validation with proper error handling
             if (
               bulkResult &&
               bulkResult.results &&
@@ -2865,8 +2826,6 @@
             ) {
               const enriched = resultsList.map((r, i) => {
                 const row = sentRows[i];
-
-                // ✅ Safely handle undefined row
                 if (!row) {
                   return {
                     ...r,
@@ -2966,7 +2925,7 @@
           return null;
         }
         addLog(
-          `Sending ${numbers.length} VI SIM number${numbers.length !== 1 ? "" : ""}${numbers.length !== 1 ? "s" : ""} for bulk validation in VI System...`,
+          `Sending ${numbers.length} VI SIM number(s) for bulk validation in VI System...`,
           "info",
         );
         try {
@@ -2987,6 +2946,9 @@
         }
       }
 
+      /* ============================================================
+       START / STOP UAT
+    ============================================================ */
       async function startUAT() {
         if (!selectedFile || isRunning) return;
 
@@ -3019,21 +2981,20 @@
               <span>Actual Circle</span>
               <span>Recharge MRP (₹)</span>
             </div>
- 
-         ${rows
-           .filter((t) => t.circleMatched === true)
-           .map(
-             (t, index) => `
-        <div class="discrepancy-row match">
-        <span>${index + 1}</span>
-        <span class="discrepancy-msisdn">${t.msisdn || "—"}</span>
-        <span>${t.circle || "—"}</span>
-        <span style="font-weight:600; color:#198754;">${t.actualCircle || "—"}</span>
-        <span>${t.rechargeMRP || "—"}</span>
-        </div>
-        `,
-           )
-           .join("")}
+            ${rows
+              .filter((t) => t.circleMatched === true)
+              .map(
+                (t, index) => `
+              <div class="discrepancy-row match">
+                <span>${index + 1}</span>
+                <span class="discrepancy-msisdn">${t.msisdn || "—"}</span>
+                <span>${t.circle || "—"}</span>
+                <span style="font-weight:600; color:#198754;">${t.actualCircle || "—"}</span>
+                <span>${t.rechargeMRP || "—"}</span>
+              </div>
+            `,
+              )
+              .join("")}
           `;
       }
 
@@ -3047,7 +3008,7 @@
         document
           .getElementById("circleDiscrepancyOverlay")
           .classList.remove("visible");
-        addLog(" User confirmed to proceed.", "info");
+        addLog("✅ User confirmed to proceed.", "info");
         await proceedStartUAT();
       }
 
@@ -3094,7 +3055,7 @@
           inFlag: t.in,
           upss: t.upss,
           pretest: t.pretest,
-          planBenefit: t.benefit || "N/A", // ✅ ADD THIS
+          planBenefit: t.benefit || "N/A",
           rechargeNotification: t.rechargeNotification || "N/A",
         }));
         formData.append("matchedRows", JSON.stringify(matchedRowsPayload));
@@ -3138,7 +3099,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ sessionId }),
           });
-          addLog("Stop command sent.", "warning");
+          addLog("⏹ Stop command sent.", "warning");
         } catch (_) {}
         if (ws) {
           ws.close();
@@ -3173,7 +3134,6 @@
             const data = JSON.parse(e.data);
             handleWsMessage(data);
 
-            // Check for VPN required message from orchestrator
             if (data.type === "vpn_required") {
               showVPNOverlay();
               window._pendingWsSession = ws;
@@ -3216,63 +3176,95 @@
         }
       }
 
+      /* ============================================================
+       UPDATE ROW CARD WITH DETAILED STATUS TABLE
+    ============================================================ */
       function updateRowCardHTML(rowIndex) {
   const ref = rowCardMap[rowIndex];
   if (!ref) return;
-
+  
   const testCardData = testCardsData.find((t) => t.rowIndex === rowIndex);
   if (!testCardData) return;
-
-  const colStatuses = testCardData.colStatus || {
-    pretest: "pending",
-    recharge: "pending",
-    swift: "pending",
-    in: "pending",
-    upss: "pending",
-    viApp: "pending",
-  };
-
+  
+  const colStatuses = testCardData.colStatus || {};
+  const statusDetails = testCardData.statusDetails || {};
+  
   const row = matchedRowsData.find((r) => r.rowIndex === rowIndex);
   if (!row) return;
-
-  const metaDiv = ref.card.querySelector('.rc-meta');
+  
+  const metaDiv = ref.card.querySelector(".rc-meta");
   if (metaDiv) {
     const rechargeValue = row.recharge || row.Recharge || "";
     const isRechargeYes = String(rechargeValue).toLowerCase().trim() === "yes";
-
-    const pretestStatus = colStatuses.pretest || "pending";
-    const rechargeStatus = colStatuses.recharge || "pending";
-    const swiftStatus = colStatuses.swift || "pending";
-    const inStatus = colStatuses.in || "pending";
-    const upssStatus = colStatuses.upss || "pending";
-    const viAppStatus = colStatuses.viApp || "pending";
-
-    // Helper to get status class and emoji
-    const getStatusDisplay = (status) => {
-      const map = {
-        pending: { class: '', emoji: '⏳', text: 'Pending' },
-        running: { class: 'rc-running', emoji: '🔄', text: 'Running' },
-        waiting: { class: 'rc-waiting', emoji: '✉️', text: 'Waiting' },
-        completed: { class: 'rc-recharge-yes', emoji: '✅', text: 'Completed' },
-        failed: { class: 'rc-failed', emoji: '❌', text: 'Failed' },
-        skipped: { class: '', emoji: '⊘', text: 'Skipped' }
-      };
-      return map[status] || map.pending;
+    
+    // Status labels with emojis
+    const statusMap = {
+      pending: { emoji: '⏳', text: 'Pending', class: '' },
+      running: { emoji: '🔄', text: 'Running', class: 'status-running' },
+      waiting: { emoji: '✉️', text: 'Waiting', class: 'status-waiting' },
+      completed: { emoji: '✅', text: 'Pass', class: 'status-pass' },
+      pass: { emoji: '✅', text: 'Pass', class: 'status-pass' },
+      failed: { emoji: '❌', text: 'Fail', class: 'status-fail' },
+      fail: { emoji: '❌', text: 'Fail', class: 'status-fail' },
+      skipped: { emoji: '⏭️', text: 'Skipped', class: 'status-skip' }
     };
-
+    
+    const getStatusDisplay = (status) => {
+      return statusMap[status] || statusMap.pending;
+    };
+    
+    // Build the status table HTML
+    const statusTableHTML = `
+      <div style="margin-top: 8px; width: 100%; overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden;">
+          <thead>
+            <tr style="background: var(--cream-dk);">
+              <th style="padding: 6px 10px; text-align: left; font-weight: 600; border-bottom: 1px solid var(--border);">Test Column</th>
+              <th style="padding: 6px 10px; text-align: left; font-weight: 600; border-bottom: 1px solid var(--border);">Status</th>
+              <th style="padding: 6px 10px; text-align: left; font-weight: 600; border-bottom: 1px solid var(--border);">Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${['pretest', 'recharge', 'swift', 'in', 'upss', 'viApp'].map(col => {
+              const status = colStatuses[col] || 'pending';
+              const display = getStatusDisplay(status);
+              const detail = statusDetails[col] || '';
+              const label = col === 'pretest' ? 'PreTest' : 
+                           col === 'viApp' ? 'Vi App' : 
+                           col.toUpperCase();
+              return `
+                <tr style="border-bottom: 1px solid var(--border);">
+                  <td style="padding: 5px 10px; font-weight: 600; color: var(--text);">${label}</td>
+                  <td style="padding: 5px 10px;">
+                    <span class="${display.class}">${display.emoji} ${display.text}</span>
+                  </td>
+                  <td style="padding: 5px 10px; color: var(--muted); font-size: 10px;">${detail || '—'}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+          <tfoot>
+            <tr style="background: var(--cream);">
+              <td colspan="3" style="padding: 6px 10px; font-weight: 600;">
+                Overall Status: <span class="rc-status-badge ${testCardData.overallStatus || 'pending'}">${testCardData.overallStatus || 'Pending'}</span>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    `;
+    
     metaDiv.innerHTML = `
-      <span>Recharge MRP ₹${row.rechargeMRP || row["Recharge MRP"] || "—"}</span>
-      <span>Circle ${row.circle || row.CIRCLE || "—"}</span>
-      ${isRechargeYes ? `<span class="rc-recharge-yes">🔁 Recharge: Yes</span>` : `<span>🔁 Recharge: No</span>`}
-      <span class="${getStatusDisplay(pretestStatus).class}">🔍 PreTest: ${getStatusDisplay(pretestStatus).emoji} ${getStatusDisplay(pretestStatus).text}</span>
-      <span class="${getStatusDisplay(rechargeStatus).class}">🔁 Recharge: ${getStatusDisplay(rechargeStatus).emoji} ${getStatusDisplay(rechargeStatus).text}</span>
-      <span class="${getStatusDisplay(swiftStatus).class}">⚡ SWIFT: ${getStatusDisplay(swiftStatus).emoji} ${getStatusDisplay(swiftStatus).text}</span>
-      <span class="${getStatusDisplay(inStatus).class}">⚡ IN: ${getStatusDisplay(inStatus).emoji} ${getStatusDisplay(inStatus).text}</span>
-      <span class="${getStatusDisplay(upssStatus).class}">📦 UPSS: ${getStatusDisplay(upssStatus).emoji} ${getStatusDisplay(upssStatus).text}</span>
-      <span class="${getStatusDisplay(viAppStatus).class}">📱 Vi App: ${getStatusDisplay(viAppStatus).emoji} ${getStatusDisplay(viAppStatus).text}</span>
+      <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:8px;">
+        <span>Recharge MRP ₹${row.rechargeMRP || row["Recharge MRP"] || "—"}</span>
+        <span>Circle ${row.circle || row.CIRCLE || "—"}</span>
+        ${isRechargeYes ? `<span class="rc-recharge-yes">🔁 Recharge: Yes</span>` : `<span>🔁 Recharge: No</span>`}
+        <span>MSISDN: ${row.msisdn || "—"}</span>
+      </div>
+      ${statusTableHTML}
     `;
   }
-
+  
   // Update badge
   const badge = ref.badge;
   if (badge) {
@@ -3283,11 +3275,13 @@
       running: "⟳ Running",
       waiting: "Awaiting Recharge",
       completed: "✅ Completed",
-      failed: "❌ Failed"
+      pass: "✅ Passed",
+      failed: "❌ Failed",
+      fail: "❌ Failed"
     };
     badge.textContent = statusLabels[status] || "Pending";
   }
-
+  
   // Update card class
   const card = ref.card;
   if (card) {
@@ -3295,18 +3289,203 @@
   }
 }
 
+      function formatStatusEmoji(status) {
+        const map = {
+          pending: "⏳",
+          running: "🔄",
+          waiting: "✉️",
+          completed: "✅",
+          failed: "❌",
+          skipped: "⏭️",
+          pass: "✅",
+        };
+        return map[status] || "⏳";
+      }
 
-      function formatStatus(status) {
-        const labels = {
+      function formatStatusText(status) {
+        const map = {
           pending: "Pending",
           running: "Running",
           waiting: "Waiting",
-          completed: "Completed",
-          failed: "Failed",
+          completed: "Pass",
+          failed: "Fail",
           skipped: "Skipped",
+          pass: "Pass",
         };
-        return labels[status] || status || "Pending";
+        return map[status] || status || "Pending";
       }
+
+      /* ============================================================
+       UPDATE COLUMN STATUS - MAIN ENTRY POINT
+    ============================================================ */
+      function updateColumnStatus(rowIndex, col, status, detail = "") {
+        const t = testCardsData.find((x) => x.rowIndex === rowIndex);
+        if (!t) return;
+
+        // Update the column status
+        t.colStatus[col] = status;
+
+        // Store detail if provided
+        if (detail) {
+          if (!t.statusDetails) t.statusDetails = {};
+          t.statusDetails[col] = detail;
+        }
+
+        // Check if all required tests are completed
+        const requiredTests = [];
+        if (t.recharge === "yes") requiredTests.push("recharge");
+        if (t.swift === "yes") requiredTests.push("swift");
+        if (t.in === "yes") requiredTests.push("in");
+        if (t.viApp === "yes") requiredTests.push("viApp");
+        if (t.pretest === "yes") requiredTests.push("pretest");
+
+        const allCompleted = requiredTests.every(
+          (test) =>
+            t.colStatus[test] === "completed" ||
+            t.colStatus[test] === "pass" ||
+            t.colStatus[test] === "skipped",
+        );
+
+        const anyFailed = Object.values(t.colStatus).some(
+          (s) => s === "failed" || s === "fail",
+        );
+
+        if (anyFailed) {
+          t.overallStatus = "failed";
+        } else if (allCompleted) {
+          t.overallStatus = "completed";
+        } else if (status === "running") {
+          t.overallStatus = "running";
+        } else if (status === "waiting") {
+          t.overallStatus = "waiting";
+        }
+
+        // Update the test card UI
+        updateTestCard(rowIndex, {
+          colStatus: t.colStatus,
+          overallStatus: t.overallStatus,
+          statusDetails: t.statusDetails,
+        });
+
+        // Update the row card meta section
+        updateRowCardHTML(rowIndex);
+      }
+
+     function updateRowCard(rowIndex, status, extra = {}) {
+  const ref = rowCardMap[rowIndex];
+  if (!ref) return;
+  const { card, badge, msg } = ref;
+
+  card.classList.remove(
+    "rc-running",
+    "rc-waiting",
+    "rc-completed",
+    "rc-failed",
+  );
+  badge.className = "rc-status-badge";
+
+  switch (status) {
+    case "running":
+      card.classList.add("rc-running");
+      badge.classList.add("running");
+      badge.textContent = "⟳ Running";
+      if (msg) msg.classList.remove("visible");
+      break;
+
+    case "waiting_recharge_confirm":
+      card.classList.add("rc-waiting");
+      badge.classList.add("waiting");
+      badge.textContent = "Awaiting Recharge";
+      if (msg) {
+        msg.textContent = extra.message || "Recharge under processing";
+        msg.classList.add("visible");
+      }
+      break;
+
+    case "completed":
+      card.classList.add("rc-completed");
+      badge.classList.add("completed");
+      badge.textContent = "✅ Completed";
+      if (msg) msg.classList.remove("visible");
+      if (!ref.counted) {
+        ref.counted = true;
+        incrementExecuted();
+        incrementPassed();
+      }
+      break;
+
+    case "failed":
+      card.classList.add("rc-failed");
+      badge.classList.add("failed");
+      badge.textContent = "❌ Failed";
+      if (msg) {
+        msg.textContent = extra.error || "Test failed";
+        msg.classList.add("visible");
+      }
+      if (!ref.counted) {
+        ref.counted = true;
+        incrementExecuted();
+        incrementFailed();
+      }
+      break;
+
+    case "col_update":
+      // 🔥 FIX: For col_update, we need to update the card with the new status
+      // The detailed status table is handled by updateRowCardHTML
+      // But we also need to update the badge to reflect the overall status
+      
+      // Get the latest test card data
+      const testCardData = testCardsData.find((t) => t.rowIndex === rowIndex);
+      if (testCardData) {
+        const overallStatus = testCardData.overallStatus || "pending";
+        badge.className = `rc-status-badge ${overallStatus}`;
+        const statusLabels = {
+          pending: "Pending",
+          running: "⟳ Running",
+          waiting: "Awaiting Recharge",
+          completed: "✅ Completed",
+          pass: "✅ Passed",
+          failed: "❌ Failed",
+          fail: "❌ Failed"
+        };
+        badge.textContent = statusLabels[overallStatus] || "Pending";
+        card.className = `row-card rc-${overallStatus}`;
+        
+        // If there's a message for this specific column update, show it
+        if (extra.message && extra.col) {
+          const colName = extra.col === 'pretest' ? 'PreTest' :
+                         extra.col === 'viApp' ? 'Vi App' :
+                         extra.col.toUpperCase();
+          const statusEmoji = extra.colStatus === 'completed' || extra.colStatus === 'pass' ? '✅' :
+                             extra.colStatus === 'failed' || extra.colStatus === 'fail' ? '❌' :
+                             extra.colStatus === 'skipped' ? '⏭️' : '⏳';
+          // Only show in message if it's a failure or special status
+          if (extra.colStatus === 'failed' || extra.colStatus === 'fail') {
+            msg.textContent = `❌ ${colName}: ${extra.message}`;
+            msg.classList.add("visible");
+          } else if (extra.colStatus === 'waiting') {
+            msg.textContent = `✉️ ${colName}: ${extra.message}`;
+            msg.classList.add("visible");
+          } else {
+            msg.classList.remove("visible");
+          }
+        }
+      }
+      break;
+
+    default:
+      badge.classList.add("pending");
+      badge.textContent = "Pending";
+  }
+
+  // 🔥 CRITICAL: Always update the detailed HTML regardless of the status
+  // This ensures the status table reflects the latest column statuses
+  updateRowCardHTML(rowIndex);
+
+  if (status === "running" || status === "waiting_recharge_confirm") {
+    card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+}
 
       /* ============================================================
        TEST CARDS
@@ -3333,11 +3512,10 @@
           return `<div class="status-col ${cfg.cssClass}">
             <div class="status-col-label">${label}</div>
             <div class="status-col-badge ${cfg.cssClass}">${cfg.icon} ${cfg.text}</div>
-        </div>`;
+          </div>`;
         };
         const overall = overallStatusConfig(t.overallStatus);
 
-        // Get actual status for each column
         const pretestStatus = t.colStatus.pretest || "pending";
         const rechargeStatus = t.colStatus.recharge || "pending";
         const swiftStatus = t.colStatus.swift || "pending";
@@ -3346,39 +3524,63 @@
         const viAppStatus = t.colStatus.viApp || "pending";
 
         return `<div class="test-card-header">
-        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="display:flex; align-items:center; gap:10px;">
             <span class="test-card-id">#${serialNo}</span>
             <span class="test-card-msisdn">${t.msisdn || "—"}</span>
+          </div>
+          <span class="test-card-vi-status"><i class="bi bi-check-circle-fill"></i> ${t.viStatus || "Valid Vi"}</span>
         </div>
-        <span class="test-card-vi-status"><i class="bi bi-check-circle-fill"></i> ${t.viStatus || "Valid Vi"}</span>
-    </div>
-    <div class="test-card-body">
-        <div style="display:flex;">
+        <div class="test-card-body">
+          <div style="display:flex;">
             <div class="test-info-item">
-                <span class="test-info-label">Circle</span>
-                <span class="test-info-value">${t.circle || "—"}</span>
+              <span class="test-info-label">Circle</span>
+              <span class="test-info-value">${t.circle || "—"}</span>
             </div>
             <div style="margin-left:10px; border-left:2px solid #dc3545; height:50px;"></div>
             <div class="test-info-item" style="margin-left:10px; background:#f8d7da; padding:2px 6px; border-radius:4px; height:50px;">
-                <span class="test-info-label" style="color:#b71c1c;">Actual Circle</span>
-                <span class="test-info-value mrp" style="color:#b71c1c;">${t.actualCircle || "—"}</span>
+              <span class="test-info-label" style="color:#b71c1c;">Actual Circle</span>
+              <span class="test-info-value mrp" style="color:#b71c1c;">${t.actualCircle || "—"}</span>
             </div>
+          </div>
+          <div class="test-info-item"><span class="test-info-label">Recharge MRP</span><span class="test-info-value mrp">₹${t.rechargeMRP || "—"}</span></div>
+          <div class="test-info-item"><span class="test-info-label">Benefit</span><span class="test-info-value benefit">${t.benefit || "—"}</span></div>
         </div>
-        <div class="test-info-item"><span class="test-info-label">Recharge MRP</span><span class="test-info-value mrp">₹${t.rechargeMRP || "—"}</span></div>
-        <div class="test-info-item"><span class="test-info-label">Benefit</span><span class="test-info-value benefit">${t.benefit || "—"}</span></div>
-    </div>
-    <div class="test-status-grid">
-        ${colHtml("PreTest", "pretest", pretestStatus)}
-        ${colHtml("Recharge", "recharge", rechargeStatus)}
-        ${colHtml("SWIFT", "swift", swiftStatus)}
-        ${colHtml("IN", "in", inStatus)}
-        ${colHtml("UPSS", "upss", upssStatus)}
-        ${colHtml("Vi App", "viApp", viAppStatus)}
-    </div>
-    <div class="test-card-footer">
-        <div class="overall-status ${t.overallStatus}">${overall.icon}<span>${overall.text}</span></div>
-        <span class="test-timestamp">${t.completedAt || t.startedAt || "Waiting to start"}</span>
-    </div>`;
+        <div class="test-status-grid">
+          ${colHtml("PreTest", "pretest", pretestStatus)}
+          ${colHtml("Recharge", "recharge", rechargeStatus)}
+          ${colHtml("SWIFT", "swift", swiftStatus)}
+          ${colHtml("IN", "in", inStatus)}
+          ${colHtml("UPSS", "upss", upssStatus)}
+          ${colHtml("Vi App", "viApp", viAppStatus)}
+        </div>
+        <div class="test-card-footer">
+          <div class="overall-status ${t.overallStatus}">${overall.icon}<span>${overall.text}</span></div>
+          <span class="test-timestamp">${t.completedAt || t.startedAt || "Waiting to start"}</span>
+        </div>`;
+      }
+
+      function updateTestCard(rowIndex, updates) {
+        const t = testCardsData.find((x) => x.rowIndex === rowIndex);
+        if (!t) return;
+
+        if (updates.colStatus) {
+          Object.assign(t.colStatus, updates.colStatus);
+        }
+        if (updates.statusDetails) {
+          if (!t.statusDetails) t.statusDetails = {};
+          Object.assign(t.statusDetails, updates.statusDetails);
+        }
+        if (updates.overallStatus) t.overallStatus = updates.overallStatus;
+        if (updates.startedAt) t.startedAt = updates.startedAt;
+        if (updates.completedAt) t.completedAt = updates.completedAt;
+
+        const card = document.getElementById(`testCard-${rowIndex}`);
+        if (!card) return;
+
+        const serialNo =
+          testCardsData.findIndex((x) => x.rowIndex === rowIndex) + 1;
+        card.className = `test-card ${t.overallStatus}`;
+        card.innerHTML = buildTestCardHTML(t, serialNo);
       }
 
       function colStatusConfig(status) {
@@ -3393,6 +3595,8 @@
           completed: { cssClass: "col-completed", icon: "✅", text: "Done" },
           failed: { cssClass: "col-failed", icon: "❌", text: "Fail" },
           skipped: { cssClass: "col-skipped", icon: "⊘", text: "N/A" },
+          pass: { cssClass: "col-completed", icon: "✅", text: "Pass" },
+          fail: { cssClass: "col-failed", icon: "❌", text: "Fail" },
         };
         return map[status] || map.pending;
       }
@@ -3417,26 +3621,6 @@
         return map[status] || map.pending;
       }
 
-      function updateTestCard(rowIndex, updates) {
-        const t = testCardsData.find((x) => x.rowIndex === rowIndex);
-        if (!t) return;
-
-        if (updates.colStatus) {
-            Object.assign(t.colStatus, updates.colStatus);
-        }
-
-        if (updates.overallStatus) t.overallStatus = updates.overallStatus;
-        if (updates.startedAt) t.startedAt = updates.startedAt;
-        if (updates.completedAt) t.completedAt = updates.completedAt;
-
-        const card = document.getElementById(`testCard-${rowIndex}`);
-        if (!card) return;
-
-        const serialNo = testCardsData.findIndex((x) => x.rowIndex === rowIndex) + 1;
-        card.className = `test-card ${t.overallStatus}`;
-        card.innerHTML = buildTestCardHTML(t, serialNo);
-    }
-
       /* ============================================================
        UNMATCHED TABLE
     ============================================================ */
@@ -3455,9 +3639,9 @@
           if (!apiRes)
             viChip = `<span class="match-chip no">❌ Bad Format</span>`;
           else if (r._isViValid)
-            viChip = `<span class="match-chip yes" title="${escHtml(apiRes.message || "")}"> Valid Vi</span>`;
+            viChip = `<span class="match-chip yes" title="${escHtml(apiRes.message || "")}">✅ Valid Vi</span>`;
           else
-            viChip = `<span class="match-chip no" title="${escHtml(apiRes.message || "")}">Invalid Vi</span>`;
+            viChip = `<span class="match-chip no" title="${escHtml(apiRes.message || "")}">❌ Invalid Vi</span>`;
 
           html += `<tr>
             <td>${i + 1}</td>
@@ -3474,9 +3658,8 @@
       }
 
       /* ============================================================
-        STATS MANAGEMENT
+       STATS MANAGEMENT
     ============================================================ */
-
       function resetStats() {
         document.getElementById("statTotal").textContent =
           testCardsData.length || "—";
@@ -3509,7 +3692,6 @@
       /* ============================================================
        ROW STATUS CARDS
     ============================================================ */
-
       function renderRowPlan(rows) {
         matchedRowsData = rows;
 
@@ -3540,27 +3722,59 @@
             upss: "pending",
             viApp: "pending",
           };
+          const statusDetails = testCardData?.statusDetails || {};
 
           const card = document.createElement("div");
           card.className = "row-card";
           card.dataset.rowIndex = row.rowIndex;
           card.innerHTML = `
-          <div class="rc-top">
-            <span class="rc-sr">#${row.srNo || index + 1}</span>
-            <span class="rc-msisdn">${row.msisdn || "—"}</span>
-            <span class="rc-spinner"></span>
-            <span class="rc-status-badge pending" id="rcbadge-${row.rowIndex}">Pending</span>
-          </div>
-          <div class="rc-meta">
-            <span>Recharge MRP ₹${row.rechargeMRP || row["Recharge MRP"] || "—"}</span>
-            <span>Circle ${row.circle || row.CIRCLE || "—"}</span>
-            ${isRechargeYes ? `<span class="rc-recharge-yes">🔁 Recharge: Yes</span>` : `<span>🔁 Recharge: No</span>`}
-            <span class="${colStatuses.swift === "completed" ? "rc-recharge-yes" : ""}">⚡ SWIFT: ${formatStatus(colStatuses.swift)}</span>
-            <span class="${colStatuses.in === "completed" ? "rc-recharge-yes" : ""}">⚡ IN: ${formatStatus(colStatuses.in)}</span>
-            <span class="${colStatuses.viApp === "completed" ? "rc-recharge-yes" : ""}">📱 Vi App: ${formatStatus(colStatuses.viApp)}</span>
-          </div>
-          <div class="rc-msg" id="rcmsg-${row.rowIndex}"></div>
-        `;
+            <div class="rc-top">
+              <span class="rc-sr">#${row.srNo || index + 1}</span>
+              <span class="rc-msisdn">${row.msisdn || "—"}</span>
+              <span class="rc-spinner"></span>
+              <span class="rc-status-badge pending" id="rcbadge-${row.rowIndex}">Pending</span>
+            </div>
+            <div class="rc-meta">
+              <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:6px;">
+                <span>Recharge MRP ₹${row.rechargeMRP || row["Recharge MRP"] || "—"}</span>
+                <span>Circle ${row.circle || row.CIRCLE || "—"}</span>
+                ${isRechargeYes ? `<span class="rc-recharge-yes">🔁 Recharge: Yes</span>` : `<span>🔁 Recharge: No</span>`}
+              </div>
+              <table class="status-detail-table">
+                <tr>
+                  <td class="col-label">PreTest</td>
+                  <td class="col-status status-${colStatuses.pretest || 'pending'}">${formatStatusEmoji(colStatuses.pretest)} ${formatStatusText(colStatuses.pretest)}</td>
+                  <td class="col-detail">${statusDetails.pretest || ''}</td>
+                </tr>
+                <tr>
+                  <td class="col-label">Recharge</td>
+                  <td class="col-status status-${colStatuses.recharge || 'pending'}">${formatStatusEmoji(colStatuses.recharge)} ${formatStatusText(colStatuses.recharge)}</td>
+                  <td class="col-detail">${statusDetails.recharge || ''}</td>
+                </tr>
+                <tr>
+                  <td class="col-label">SWIFT</td>
+                  <td class="col-status status-${colStatuses.swift || 'pending'}">${formatStatusEmoji(colStatuses.swift)} ${formatStatusText(colStatuses.swift)}</td>
+                  <td class="col-detail">${statusDetails.swift || ''}</td>
+                </tr>
+                <tr>
+                  <td class="col-label">IN</td>
+                  <td class="col-status status-${colStatuses.in || 'pending'}">${formatStatusEmoji(colStatuses.in)} ${formatStatusText(colStatuses.in)}</td>
+                  <td class="col-detail">${statusDetails.in || ''}</td>
+                </tr>
+                <tr>
+                  <td class="col-label">UPSS</td>
+                  <td class="col-status status-${colStatuses.upss || 'pending'}">${formatStatusEmoji(colStatuses.upss)} ${formatStatusText(colStatuses.upss)}</td>
+                  <td class="col-detail">${statusDetails.upss || ''}</td>
+                </tr>
+                <tr>
+                  <td class="col-label">Vi App</td>
+                  <td class="col-status status-${colStatuses.viApp || 'pending'}">${formatStatusEmoji(colStatuses.viApp)} ${formatStatusText(colStatuses.viApp)}</td>
+                  <td class="col-detail">${statusDetails.viApp || ''}</td>
+                </tr>
+              </table>
+            </div>
+            <div class="rc-msg" id="rcmsg-${row.rowIndex}"></div>
+          `;
           rowCardsList.appendChild(card);
           rowCardMap[row.rowIndex] = {
             card: card,
@@ -3571,290 +3785,17 @@
         });
       }
 
-      function updateRowCard(rowIndex, status, extra = {}) {
-  const ref = rowCardMap[rowIndex];
-  if (!ref) return;
-  const { card, badge, msg } = ref;
-
-  card.classList.remove(
-    "rc-running",
-    "rc-waiting",
-    "rc-completed",
-    "rc-failed",
-  );
-  badge.className = "rc-status-badge";
-
-  const updateData = {};
-
-  switch (status) {
-    case "running":
-      card.classList.add("rc-running");
-      badge.classList.add("running");
-      badge.textContent = "⟳ Running";
-      msg.classList.remove("visible");
-      updateData.overallStatus = "running";
-      updateData.startedAt = new Date().toLocaleTimeString();
-      break;
-
-    case "waiting_recharge_confirm":
-      card.classList.add("rc-waiting");
-      badge.classList.add("waiting");
-      badge.textContent = "Awaiting Recharge";
-      msg.textContent = extra.message || "Recharge under processing";
-      msg.classList.add("visible");
-      updateData.overallStatus = "waiting";
-      break;
-
-    case "completed":
-      card.classList.add("rc-completed");
-      badge.classList.add("completed");
-      badge.textContent = "✅ Completed";
-      msg.classList.remove("visible");
-      updateData.overallStatus = "completed";
-      updateData.completedAt = new Date().toLocaleTimeString();
-
-      if (extra.cols) {
-        const colUpdates = {};
-        extra.cols.forEach((col) => {
-          if (["recharge", "swift", "in", "viApp"].includes(col)) {
-            colUpdates[col] = "completed";
-          }
-        });
-        if (Object.keys(colUpdates).length > 0) {
-          updateData.colStatus = colUpdates;
-        }
-      }
-
-      if (!ref.counted) {
-        ref.counted = true;
-        incrementExecuted();
-        incrementPassed();
-      }
-      break;
-
-    case "failed":
-      card.classList.add("rc-failed");
-      badge.classList.add("failed");
-
-      const isPreTestFailure =
-        extra.isPreTestFailure ||
-        (extra.error &&
-          (extra.error.includes("PreTest") ||
-            extra.error.includes("SIM Not Clean") ||
-            extra.error.includes("active usage")));
-
-      if (isPreTestFailure) {
-        badge.textContent = "❌ PreTest Failed";
-        msg.textContent = extra.error || "PreTest Failed - SIM Not Clean";
-        msg.classList.add("visible");
-      } else {
-        badge.textContent = "❌ Failed";
-        if (extra.error) {
-          msg.textContent = extra.error;
-          msg.classList.add("visible");
-        }
-      }
-
-      updateData.overallStatus = "failed";
-      updateData.completedAt = new Date().toLocaleTimeString();
-
-      if (extra.cols) {
-        const colUpdates = {};
-        extra.cols.forEach((col) => {
-          if (["recharge", "swift", "in", "viApp"].includes(col)) {
-            colUpdates[col] = "failed";
-          }
-        });
-        if (Object.keys(colUpdates).length > 0) {
-          updateData.colStatus = colUpdates;
-        }
-      }
-
-      if (!ref.counted) {
-        ref.counted = true;
-        incrementExecuted();
-        incrementFailed();
-      }
-      break;
-
-    // ═══════════════════════════════════════════════════════════════
-    // 🔥 FIXED: col_update case - properly updates the card state
-    // ═══════════════════════════════════════════════════════════════
-    case "col_update":
-      if (extra.col && extra.colStatus) {
-        const t = testCardsData.find((x) => x.rowIndex === rowIndex);
-        if (t) {
-          // Update the colStatus in testCardsData
-          t.colStatus[extra.col] = extra.colStatus;
-
-          // Recalculate overall status
-          const requiredTests = [];
-          if (t.recharge === "yes") requiredTests.push("recharge");
-          if (t.swift === "yes") requiredTests.push("swift");
-          if (t.in === "yes") requiredTests.push("in");
-          if (t.viApp === "yes") requiredTests.push("viApp");
-          if (t.pretest === "yes") requiredTests.push("pretest");
-
-          const allCompleted = requiredTests.every(test => 
-            t.colStatus[test] === "completed" || t.colStatus[test] === "skipped"
-          );
-          const anyFailed = Object.values(t.colStatus).some(s => s === "failed");
-
-          let newOverallStatus = t.overallStatus;
-          if (anyFailed) {
-            newOverallStatus = "failed";
-          } else if (allCompleted) {
-            newOverallStatus = "completed";
-          } else if (extra.colStatus === "running") {
-            newOverallStatus = "running";
-          } else if (extra.colStatus === "waiting") {
-            newOverallStatus = "waiting";
-          }
-
-          t.overallStatus = newOverallStatus;
-
-          // Update the row card meta section with new statuses
-          updateRowCardHTML(rowIndex);
-
-          // Update the test card with the new status
-          updateTestCard(rowIndex, {
-            colStatus: t.colStatus,
-            overallStatus: newOverallStatus
-          });
-
-          // 🔥 CRITICAL: Update the badge and card based on new overall status
-          badge.className = `rc-status-badge ${newOverallStatus}`;
-          const statusLabels = {
-            pending: "Pending",
-            running: "⟳ Running",
-            waiting: "Awaiting Recharge",
-            completed: "✅ Completed",
-            failed: "❌ Failed"
-          };
-          badge.textContent = statusLabels[newOverallStatus] || "Pending";
-
-          // Update card class
-          card.className = `row-card rc-${newOverallStatus}`;
-
-          // Handle the message display
-          if (newOverallStatus === "waiting") {
-            msg.textContent = extra.message || "Waiting for recharge confirmation...";
-            msg.classList.add("visible");
-          } else {
-            msg.classList.remove("visible");
-          }
-
-          // Update stats if completed
-          if (newOverallStatus === "completed" && !ref.counted) {
-            ref.counted = true;
-            incrementExecuted();
-            incrementPassed();
-          } else if (newOverallStatus === "failed" && !ref.counted) {
-            ref.counted = true;
-            incrementExecuted();
-            incrementFailed();
-          }
-        }
-      }
-      break;
-
-    default:
-      badge.classList.add("pending");
-      badge.textContent = "Pending";
-  }
-
-  if (Object.keys(updateData).length > 0) {
-    updateTestCard(rowIndex, updateData);
-  }
-
-  if (status === "running" || status === "waiting_recharge_confirm") {
-    card.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
-}
-
-      function updateColumnStatus(rowIndex, col, status) {
-  const t = testCardsData.find(x => x.rowIndex === rowIndex);
-  if (t) {
-    // Update the column status
-    t.colStatus[col] = status;
-    
-    // Check if all required tests are completed
-    const requiredTests = [];
-    if (t.recharge === "yes") requiredTests.push("recharge");
-    if (t.swift === "yes") requiredTests.push("swift");
-    if (t.in === "yes") requiredTests.push("in");
-    if (t.viApp === "yes") requiredTests.push("viApp");
-    if (t.pretest === "yes") requiredTests.push("pretest");
-
-    const allCompleted = requiredTests.every(test => 
-      t.colStatus[test] === "completed" || t.colStatus[test] === "skipped"
-    );
-
-    const anyFailed = Object.values(t.colStatus).some(s => s === "failed");
-    
-    if (anyFailed) {
-      t.overallStatus = "failed";
-    } else if (allCompleted) {
-      t.overallStatus = "completed";
-    } else {
-      t.overallStatus = "running";
-    }
-    
-    // Update the test card UI
-    updateTestCard(rowIndex, {
-      colStatus: t.colStatus,
-      overallStatus: t.overallStatus
-    });
-    
-    // Update the row card meta section
-    updateRowCardHTML(rowIndex);
-  }
-  
-  // Update the row card with the column status change
-  updateRowCard(rowIndex, "col_update", { col, colStatus: status });
-}
-
-      function updateRowComplete(rowIndex, success = true, results = {}) {
-        const cols = [];
-        const colUpdates = {};
-
-        if (results.recharge !== undefined) {
-          colUpdates.recharge = results.recharge ? "completed" : "failed";
-          cols.push("recharge");
-        }
-        if (results.swift !== undefined) {
-          colUpdates.swift = results.swift ? "completed" : "failed";
-          cols.push("swift");
-        }
-        if (results.in !== undefined) {
-          colUpdates.in = results.in ? "completed" : "failed";
-          cols.push("in");
-        }
-        if (results.viApp !== undefined) {
-          colUpdates.viApp = results.viApp ? "completed" : "failed";
-          cols.push("viApp");
-        }
-
-        const status = success ? "completed" : "failed";
-        const extra = {
-          cols,
-          error: results.error || null,
-        };
-
-        Object.keys(colUpdates).forEach((col) => {
-          updateColumnStatus(rowIndex, col, colUpdates[col]);
-        });
-
-        updateRowCard(rowIndex, status, extra);
-      }
-
+      /* ============================================================
+       WS MESSAGE HANDLER
+    ============================================================ */
       function handleWsMessage(data) {
-          console.log('[WS] Received:', data);
+        console.log("[WS] Received:", data);
+
         switch (data.type) {
           case "login_status":
             if (data.status === "logged_in") {
               setLoginBadge("logged-in", "🔒 Logged In – SWIFT CRM");
-              addLog(" SWIFT CRM login successful!", "success");
+              addLog("✅ SWIFT CRM login successful!", "success");
               setStatus("Logged in — proceeding with tests", "success");
             } else if (data.status === "logged_out") {
               setLoginBadge(
@@ -3865,7 +3806,7 @@
               setStatus("Please log in via the popup", "warning");
             } else if (data.status === "not_logged_in") {
               setLoginBadge("checking", "Waiting for login...");
-              addLog(" Waiting for manual login via popup...", "info");
+              addLog("⏳ Waiting for manual login via popup...", "info");
               setStatus("Please enter credentials in the popup", "info");
             } else {
               setLoginBadge("checking", data.detail || "Checking…");
@@ -3887,33 +3828,26 @@
             break;
 
           case "row_status":
-            // Enhanced handling for failed status
             if (data.status === "failed") {
-              // Check if this is a PreTest failure
               const isPreTestFailure =
                 data.error &&
                 (data.error.includes("PreTest") ||
                   data.error.includes("SIM Not Clean") ||
                   data.error.includes("active usage"));
 
-              // Update the row card with failure details
               updateRowCard(data.rowIndex, "failed", {
                 error: data.error || "Test failed",
                 isPreTestFailure: isPreTestFailure,
               });
 
-              // Update the test card to show failed state
               updateTestCard(data.rowIndex, {
                 overallStatus: "failed",
                 completedAt: new Date().toLocaleTimeString(),
-                detail: data.error || "Test failed",
               });
 
-              // Update stats
               incrementExecuted();
               incrementFailed();
 
-              // Show status message
               if (isPreTestFailure) {
                 setStatus(
                   `❌ PreTest Failed for row ${data.rowIndex + 1}: ${data.error || "SIM Not Clean"}`,
@@ -3933,11 +3867,8 @@
                   "error",
                 );
               }
-
-              // Fetch report files
               fetchReportFiles();
             } else {
-              // Handle other statuses normally
               updateRowCard(data.rowIndex, data.status, data);
               if (data.status === "completed") {
                 fetchReportFiles();
@@ -3949,145 +3880,90 @@
             updateRowCard(data.rowIndex, "completed", data);
             break;
 
-            case "col_status":
-      // 🔥 FIX: Handle column status updates
-      if (data.rowIndex !== undefined && data.col) {
-        const rowIndex = data.rowIndex;
-        const col = data.col;
-        const status = data.status;
-        const message = data.message || '';
-        
-        console.log(`[WS] col_status: Row ${rowIndex + 1}, ${col} -> ${status}`);
-        
-        // Update the column status in the test card data
-        const t = testCardsData.find((x) => x.rowIndex === rowIndex);
-        if (t) {
-          t.colStatus[col] = status;
-          
-          // Update the test card UI
-          updateTestCard(rowIndex, { colStatus: t.colStatus });
-          
-          // Update the row card meta section
-          updateRowCardHTML(rowIndex);
-          
-          // Update the row card status panel
-          updateRowCard(rowIndex, "col_update", { col: col, colStatus: status, message: message });
-          
-          // Add log message for the status change
-          const statusEmoji = status === 'completed' ? '✅' : 
-                              status === 'failed' ? '❌' : 
-                              status === 'running' ? '🔄' : '⏳';
-          addLog(`${statusEmoji} ${col.toUpperCase()}: ${status} for ${t.msisdn}`, 
-                 status === 'completed' ? 'success' : 
-                 status === 'failed' ? 'error' : 
-                 status === 'running' ? 'info' : 'warning');
-        }
-      }
-      break;
+          // Replace the col_status case in your handleWsMessage function with this:
 
-    //         case "col_status":
-    //   if (data.rowIndex !== undefined && data.col) {
-    //     // 🔥 FIX: Update the column status in the UI
-    //     updateColumnStatus(data.rowIndex, data.col, data.status);
-        
-    //     // Update the test card
-    //     const t = testCardsData.find((x) => x.rowIndex === data.rowIndex);
-    //     if (t) {
-    //       t.colStatus[data.col] = data.status;
-    //       updateTestCard(data.rowIndex, { colStatus: t.colStatus });
-    //     }
-        
-    //     // Add log message for the status change
-    //     addLog(`📊 Row ${data.rowIndex + 1} - ${data.col.toUpperCase()}: ${data.status}`, 
-    //            data.status === 'completed' ? 'success' : data.status === 'failed' ? 'error' : 'info');
-        
-    //     // Update the row card status panel
-    //     updateRowCard(data.rowIndex, "col_update", { col: data.col, colStatus: data.status });
-    //   }
-    //   break;
+         case "col_status":
+  // 🔥 FIX: Handle column status updates
+  if (data.rowIndex !== undefined && data.col) {
+    const rowIndex = data.rowIndex;
+    const col = data.col;
+    const status = data.status;
+    const message = data.message || '';
+    
+    console.log(`[WS] col_status: Row ${rowIndex + 1}, ${col} -> ${status}`);
+    
+    // Update the column status in the test card data
+    const t = testCardsData.find((x) => x.rowIndex === rowIndex);
+    if (t) {
+      // Update the column status
+      t.colStatus[col] = status;
       
-    // case "row_status":
-    //   // Handle row status updates
-    //   if (data.status === "running") {
-    //     updateRowCard(data.rowIndex, "running");
-    //     updateTestCard(data.rowIndex, { overallStatus: "running" });
-    //   } else if (data.status === "waiting_recharge_confirm") {
-    //     updateRowCard(data.rowIndex, "waiting_recharge_confirm", data);
-    //     updateTestCard(data.rowIndex, { overallStatus: "waiting" });
-    //   } else if (data.status === "completed") {
-    //     updateRowCard(data.rowIndex, "completed", data);
-    //     updateTestCard(data.rowIndex, { overallStatus: "completed" });
-    //   } else if (data.status === "failed") {
-    //     updateRowCard(data.rowIndex, "failed", data);
-    //     updateTestCard(data.rowIndex, { overallStatus: "failed" });
-    //   }
-    //   break;
-
-          // case "col_status":
-          //   if (data.rowIndex !== undefined && data.col) {
-          //     // Special handling for Pretest failure - skip all other columns
-          //     if (data.col === "pretest" && data.status === "failed") {
-          //       // Update the pretest column to failed
-          //       updateColumnStatus(data.rowIndex, "pretest", "failed");
-
-          //       // Find the test card and skip all other pending tests
-          //       const t = testCardsData.find(
-          //         (x) => x.rowIndex === data.rowIndex,
-          //       );
-          //       if (t) {
-          //         // Mark all other columns as skipped
-          //         const skippedCols = [];
-          //         Object.keys(t.colStatus).forEach((key) => {
-          //           if (key !== "pretest" && t.colStatus[key] === "pending") {
-          //             t.colStatus[key] = "skipped";
-          //             skippedCols.push(key);
-          //             // Update each column status in UI
-          //             updateColumnStatus(data.rowIndex, key, "skipped");
-          //           }
-          //         });
-
-          //         // Update overall status to failed
-          //         updateTestCard(data.rowIndex, {
-          //           overallStatus: "failed",
-          //           completedAt: new Date().toLocaleTimeString(),
-          //           detail: data.message || "PreTest Failed - SIM Not Clean",
-          //         });
-
-          //         // Update row card
-          //         updateRowCard(data.rowIndex, "failed", {
-          //           error: data.message || "PreTest Failed - SIM Not Clean",
-          //           isPreTestFailure: true,
-          //         });
-
-          //         // Update stats (only once)
-          //         const ref = rowCardMap[data.rowIndex];
-          //         if (ref && !ref.counted) {
-          //           ref.counted = true;
-          //           incrementExecuted();
-          //           incrementFailed();
-          //         }
-
-          //         // Log the skipped columns
-          //         if (skippedCols.length > 0) {
-          //           addLog(
-          //             `⏭ Skipped tests for row ${data.rowIndex + 1}: ${skippedCols.join(", ")} (PreTest failed)`,
-          //             "warning",
-          //           );
-          //         }
-          //       }
-          //     } else {
-          //       // Normal column status update
-          //       updateColumnStatus(data.rowIndex, data.col, data.status);
-          //     }
-          //   }
-          //   break;
+      // Store detail if provided
+      if (message) {
+        if (!t.statusDetails) t.statusDetails = {};
+        t.statusDetails[col] = message;
+      }
+      
+      // Check if all required tests are completed
+      const requiredTests = [];
+      if (t.recharge === "yes") requiredTests.push("recharge");
+      if (t.swift === "yes") requiredTests.push("swift");
+      if (t.in === "yes") requiredTests.push("in");
+      if (t.viApp === "yes") requiredTests.push("viApp");
+      if (t.pretest === "yes") requiredTests.push("pretest");
+      
+      const allCompleted = requiredTests.every(
+        test => t.colStatus[test] === "completed" || t.colStatus[test] === "pass" || t.colStatus[test] === "skipped"
+      );
+      
+      const anyFailed = Object.values(t.colStatus).some(s => s === "failed" || s === "fail");
+      
+      let newOverallStatus = t.overallStatus;
+      if (anyFailed) {
+        newOverallStatus = "failed";
+      } else if (allCompleted) {
+        newOverallStatus = "completed";
+      } else if (status === "running") {
+        newOverallStatus = "running";
+      } else if (status === "waiting") {
+        newOverallStatus = "waiting";
+      }
+      
+      t.overallStatus = newOverallStatus;
+      
+      // Update the test card UI
+      updateTestCard(rowIndex, {
+        colStatus: t.colStatus,
+        overallStatus: t.overallStatus,
+        statusDetails: t.statusDetails
+      });
+      
+      // 🔥 CRITICAL: Update the row card with the new status
+      // This will trigger updateRowCardHTML which renders the detailed table
+      updateRowCard(rowIndex, "col_update", { 
+        col: col, 
+        colStatus: status, 
+        message: message 
+      });
+      
+      // Add log message for the status change
+      const statusEmoji = status === 'completed' || status === 'pass' ? '✅' : 
+                          status === 'failed' || status === 'fail' ? '❌' : 
+                          status === 'running' ? '🔄' : 
+                          status === 'waiting' ? '✉️' : '⏳';
+      addLog(`${statusEmoji} ${col.toUpperCase()}: ${status} for ${t.msisdn}${message ? ' — ' + message : ''}`, 
+            status === 'completed' || status === 'pass' ? 'success' : 
+            status === 'failed' || status === 'fail' ? 'error' : 
+            status === 'running' ? 'info' : 'warning');
+    }
+  }
+  break;
 
           case "test_status":
             updateTestCard(data.rowIndex, {
               overallStatus: data.overallStatus,
               startedAt: data.startedAt,
               completedAt: data.completedAt,
-              detail: data.detail,
             });
             break;
 
@@ -4117,21 +3993,6 @@
         }
       }
 
-      function colStatusConfig(status) {
-        const map = {
-          pending: { cssClass: "col-pending", icon: "⏳", text: "Pending" },
-          running: {
-            cssClass: "col-running",
-            icon: '<span class="col-spinner"></span>',
-            text: "Running",
-          },
-          waiting: { cssClass: "col-waiting", icon: "✉️", text: "Waiting" },
-          completed: { cssClass: "col-completed", icon: "✅", text: "Done" },
-          failed: { cssClass: "col-failed", icon: "❌", text: "Fail" },
-          skipped: { cssClass: "col-skipped", icon: "⊘", text: "N/A" },
-        };
-        return map[status] || map.pending;
-      }
       /* ============================================================
        CAPTCHA
     ============================================================ */
@@ -4156,7 +4017,7 @@
           usernameLabel.style.display = "none";
           passwordLabel.style.display = "none";
           document.querySelector(".captcha-box h3").textContent =
-            " CAPTCHA Verification";
+            "CAPTCHA Verification";
           document.querySelector(".captcha-box p").textContent =
             "Please enter the characters shown in the image.";
         }
@@ -4270,7 +4131,6 @@
         document
           .getElementById("captchaInput")
           .addEventListener("keydown", handleCaptchaKeydown);
-        addLoginButton();
         pollLoginStatus();
       });
 
@@ -4326,7 +4186,7 @@
         line.innerHTML = `<span class="log-timestamp">[${time}]</span> ${message}`;
         logPanel.appendChild(line);
         logPanel.scrollTop = logPanel.scrollHeight;
-        while (logPanel.children.length > 5000000)
+        while (logPanel.children.length > 5000)
           logPanel.removeChild(logPanel.firstChild);
       }
 
@@ -4355,8 +4215,11 @@
        SCREENSHOTS
     ============================================================ */
       function updateScreenshots(screenshots) {
+        const container = document.getElementById("screenshotsContainer");
+        if (!container) return;
         if (!screenshots || !screenshots.length) {
-          screenshotsContainer.innerHTML = `<p style="color:var(--muted);font-size:13px;text-align:center;padding:12px 0;">No screenshots yet.</p>`;
+          container.innerHTML =
+            '<p style="color:var(--muted);font-size:13px;text-align:center;padding:12px 0;">No screenshots yet.</p>';
           return;
         }
         const grid = document.createElement("div");
@@ -4368,8 +4231,8 @@
           item.onclick = () => window.open(s.url || s, "_blank");
           grid.appendChild(item);
         });
-        screenshotsContainer.innerHTML = "";
-        screenshotsContainer.appendChild(grid);
+        container.innerHTML = "";
+        container.appendChild(grid);
       }
 
       /* ============================================================
@@ -4381,17 +4244,16 @@
         stopBtn.disabled = true;
         setStatus(
           data.success
-            ? " UAT completed successfully."
+            ? "✅ UAT completed successfully."
             : `❌ UAT ended: ${data.message}`,
           data.success ? "success" : "error",
         );
         progressAction.textContent = data.success ? "Complete" : "Stopped";
         progressStatus.textContent = data.success
-          ? " All rows processed"
+          ? "All rows processed"
           : "❌ Check logs";
         progressBar.style.width = "100%";
         progressPercent.textContent = "100%";
-        downloadReportBtn.style.display = "inline-block";
         addLog(
           data.message || "UAT suite finished.",
           data.success ? "success" : "error",
@@ -4409,12 +4271,6 @@
     ============================================================ */
       async function sendEmailsAfterValidation(validationResults) {
         if (!validationResults || !validationResults.length) return;
-        const validCount = validationResults.filter(
-          (r) => r.isValid === true,
-        ).length;
-        const invalidCount = validationResults.filter(
-          (r) => r.isValid === false,
-        ).length;
         try {
           const response = await fetch(
             "/api/process-validation-and-send-emails",
@@ -4430,7 +4286,7 @@
           const data = await response.json();
           if (data.success) {
             addLog(
-              `Emails sent: ${data.summary.emailsSuccessful}/${data.summary.emailsSent} successful.`,
+              `📧 Emails sent: ${data.summary.emailsSuccessful}/${data.summary.emailsSent} successful.`,
               "success",
             );
             if (data.summary.validCount)
@@ -4439,7 +4295,6 @@
             if (data.summary.invalidCount)
               document.getElementById("statFailed").textContent =
                 data.summary.invalidCount;
-            downloadReportBtn.style.display = "inline-block";
           } else {
             addLog(
               `❌ Email sending failed: ${data.message || "Unknown error"}`,
@@ -4448,44 +4303,6 @@
           }
         } catch (error) {
           addLog(`❌ Email API error: ${error.message}`, "error");
-        }
-      }
-
-      /* ============================================================
-       MANUAL LOGIN
-    ============================================================ */
-      async function triggerManualLogin() {
-        try {
-          const response = await fetch("/api/swift/manual-login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ loggedIn: true }),
-          });
-          const result = await response.json();
-          if (result.success) {
-            addLog(
-              "✅ Manual login confirmed — proceeding with automation",
-              "success",
-            );
-            setLoginBadge("logged-in", "Logged In – SWIFT CRM");
-          }
-        } catch (error) {
-          addLog(`❌ Manual login trigger failed: ${error.message}`, "error");
-        }
-      }
-
-      function addLoginButton() {
-        const loginBtn = document.createElement("button");
-        loginBtn.onclick = triggerManualLogin;
-
-        const navRight = document.querySelector(".nav-right");
-        if (navRight) {
-          const backBtn = navRight.querySelector(".btn-back");
-          if (backBtn) {
-            navRight.insertBefore(loginBtn, backBtn);
-          } else {
-            navRight.appendChild(loginBtn);
-          }
         }
       }
 
@@ -4534,26 +4351,27 @@
             const sourceLabel =
               report.source === "finalreports" ? "Row bundle" : "Report";
             return `
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; margin-top:8px; border:1px solid var(--border); border-radius:8px; background:var(--cream);">
-              <div style="min-width:0; flex:1;">
-                <div style="font-size:12px; font-weight:600; color:var(--text-dark); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${label}</div>
-                <div style="font-size:11px; color:var(--muted);">${sourceLabel} • ZIP</div>
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; margin-top:8px; border:1px solid var(--border); border-radius:8px; background:var(--cream);">
+                <div style="min-width:0; flex:1;">
+                  <div style="font-size:12px; font-weight:600; color:var(--text-dark); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${label}</div>
+                  <div style="font-size:11px; color:var(--muted);">${sourceLabel} • ZIP</div>
+                </div>
+                <button class="btn btn-muted btn-sm" style="flex-shrink:0;" onclick="window.open('/api/swift/report/file/${encodeURIComponent(report.name)}','_blank')">
+                  <i class="bi bi-download"></i> Download
+                </button>
               </div>
-              <button class="btn btn-muted btn-sm" style="flex-shrink:0;" onclick="window.open('/api/swift/report/file/${encodeURIComponent(report.name)}','_blank')">
-                <i class="bi bi-download"></i> Download
-              </button>
-            </div>`;
+            `;
           })
           .join("");
 
         reportDownloadContainer.innerHTML = `
-          <div class="row-status-panel" id="rowStatusPanel" style="margin-top: 24px;">
+          <div style="margin-top: 24px;">
             <div class="card">
-              <div class="card-title" style="display: flex; align-items: center; width: 100%;">
+              <div class="card-title">
                 Available Row Report Bundles
               </div>
               <div class="card-content" style="padding-top: 4px;">
-                <div class="row-cards-list" id="rowCardsList">
+                <div class="row-cards-list">
                   ${rows}
                 </div>
               </div>
@@ -4561,18 +4379,6 @@
           </div>
         `;
         reportDownloadContainer.style.display = "block";
-      }
-
-      function downloadReport() {
-        window.location.href = "/api/swift/report/latest";
-      }
-
-      function yesNoIcon(val) {
-        return String(val || "")
-          .trim()
-          .toLowerCase() === "yes"
-          ? `<span class="match-chip yes">✅ Yes</span>`
-          : `<span class="match-chip no">❌ No</span>`;
       }
 
       function escHtml(str) {
@@ -4584,11 +4390,8 @@
       }
 
       document.addEventListener("DOMContentLoaded", function () {
-        addLoginButton();
         pollLoginStatus();
       });
-
-
     </script>
   </body>
 </html>
