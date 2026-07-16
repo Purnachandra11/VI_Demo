@@ -1,13 +1,22 @@
 package com.telecom.utils;
 
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.FileInputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
 /**
- *  CORRECTED EXCEL READER FOR YOUR FORMAT
+ * ✅ CORRECTED EXCEL READER FOR YOUR FORMAT
  * Excel Columns: Test Type | A Party Number | Recipient | Group Name | Message type | Message | Direction
  */
 public class EnhancedExcelReader {
@@ -50,7 +59,7 @@ public class EnhancedExcelReader {
             }
             
             System.out.println("=".repeat(100));
-            System.out.println(" Successfully loaded " + testCases.size() + " SMS tests\n");
+            System.out.println("✅ Successfully loaded " + testCases.size() + " SMS tests\n");
             printSMSTestSummary(testCases);
             
         } catch (Exception e) {
@@ -62,7 +71,7 @@ public class EnhancedExcelReader {
     }
     
     /**
-     *  EXTRACT SMS TEST CASE - CORRECTED FOR YOUR EXCEL FORMAT
+     * ✅ EXTRACT SMS TEST CASE - CORRECTED FOR YOUR EXCEL FORMAT
      * 
      * Your Excel Format:
      * Column 0: Test Type (Individual/Group)
@@ -75,7 +84,7 @@ public class EnhancedExcelReader {
      */
     private static Map<String, Object> extractSMSTestCase(Row row, Map<String, Integer> columnMap) {
         try {
-            //  READ COLUMNS ACCORDING TO YOUR EXCEL
+            // ✅ READ COLUMNS ACCORDING TO YOUR EXCEL
             String testType = getCellValue(row.getCell(columnMap.getOrDefault("test type", 0))).toUpperCase();
             String aPartyNumber = cleanPhoneNumber(getCellValue(row.getCell(columnMap.getOrDefault("a party number", 1))));
             String recipient = cleanPhoneNumber(getCellValue(row.getCell(columnMap.getOrDefault("recipient", 2))));
@@ -84,8 +93,8 @@ public class EnhancedExcelReader {
             String message = getCellValue(row.getCell(columnMap.getOrDefault("message", 5)));
             String direction = getCellValue(row.getCell(columnMap.getOrDefault("direction", 6))).toUpperCase();
             
-            //  CRITICAL: For Individual tests, recipient = B Party Number
-            //  CRITICAL: For Group tests, use group name
+            // ✅ CRITICAL: For Individual tests, recipient = B Party Number
+            // ✅ CRITICAL: For Group tests, use group name
             
             // Determine if it's individual or group based on Test Type column
             boolean isIndividual = testType.contains("INDIVIDUAL");
@@ -97,22 +106,22 @@ public class EnhancedExcelReader {
                 isIndividual = !isGroup;
             }
             
-            //  For INDIVIDUAL tests: recipient column is the B Party Number
+            // ✅ For INDIVIDUAL tests: recipient column is the B Party Number
             String bPartyNumber = isIndividual ? recipient : "";
             
             // Validate required fields
             if (aPartyNumber.isEmpty()) {
-                System.out.println(" Skipping test - No A Party number");
+                System.out.println("⚠️ Skipping test - No A Party number");
                 return null;
             }
             
             if (isIndividual && bPartyNumber.isEmpty()) {
-                System.out.println(" Skipping individual SMS - No B Party number (recipient)");
+                System.out.println("⚠️ Skipping individual SMS - No B Party number (recipient)");
                 return null;
             }
             
             if (isGroup && (groupName.isEmpty() || groupName.equals("-"))) {
-                System.out.println(" Skipping group SMS - No group name");
+                System.out.println("⚠️ Skipping group SMS - No group name");
                 return null;
             }
             
@@ -136,7 +145,7 @@ public class EnhancedExcelReader {
             // Determine if incoming
             boolean isIncoming = direction.contains("INCOMING");
             
-            //  BUILD TEST CASE
+            // ✅ BUILD TEST CASE
             Map<String, Object> testCase = new HashMap<>();
             testCase.put("testType", testType);
             testCase.put("isIndividual", isIndividual);
@@ -152,7 +161,7 @@ public class EnhancedExcelReader {
             testCase.put("direction", direction);
             testCase.put("isIncoming", isIncoming);
             
-            //  GENERATE TEST NAME
+            // ✅ GENERATE TEST NAME
             if (isIndividual) {
                 String phoneSuffix = bPartyNumber.length() > 4 ? 
                     bPartyNumber.substring(bPartyNumber.length() - 4) : bPartyNumber;
@@ -174,7 +183,7 @@ public class EnhancedExcelReader {
     }
     
     /**
-     *  Normalize message type
+     * ✅ Normalize message type
      */
     private static String normalizeMessageType(String messageType) {
         if (messageType == null || messageType.trim().isEmpty()) return "text";
@@ -193,10 +202,10 @@ public class EnhancedExcelReader {
     }
     
     /**
-     *  LOG SMS TEST CASE
+     * ✅ LOG SMS TEST CASE
      */
     private static void logSMSTestCase(Map<String, Object> testCase) {
-        String emoji = (Boolean) testCase.get("isIndividual") ? "" : "👥";
+        String emoji = (Boolean) testCase.get("isIndividual") ? "📱" : "👥";
         String direction = (Boolean) testCase.get("isIncoming") ? "← INCOMING" : "→ OUTGOING";
         String messageType = ((String) testCase.get("messageType")).toUpperCase();
         String typeEmoji = messageType.equals("VOICE") ? "🎤" : messageType.equals("MMS") ? "🖼️" : "💬";
@@ -237,7 +246,7 @@ public class EnhancedExcelReader {
     }
     
     /**
-     *  PRINT SMS TEST SUMMARY
+     * ✅ PRINT SMS TEST SUMMARY
      */
     private static void printSMSTestSummary(List<Map<String, Object>> testCases) {
         long individualCount = testCases.stream().filter(t -> (Boolean) t.get("isIndividual")).count();
@@ -249,27 +258,27 @@ public class EnhancedExcelReader {
         long mmsCount = testCases.stream().filter(t -> "mms".equals(t.get("messageType"))).count();
         
         System.out.println("📊 SMS TEST SUMMARY:");
-        System.out.println("┌┐");
+        System.out.println("┌─────────────────────────────────────────────────────────────────┐");
         System.out.println("│ TEST TYPE BREAKDOWN                                             │");
-        System.out.println("├┤");
-        System.out.println("│  Individual SMS:    " + String.format("%-41d", individualCount) + "│");
+        System.out.println("├─────────────────────────────────────────────────────────────────┤");
+        System.out.println("│ 📱 Individual SMS:    " + String.format("%-41d", individualCount) + "│");
         System.out.println("│ 👥 Group SMS:         " + String.format("%-41d", groupCount) + "│");
-        System.out.println("└┘");
+        System.out.println("└─────────────────────────────────────────────────────────────────┘");
         
-        System.out.println("\n┌┐");
+        System.out.println("\n┌─────────────────────────────────────────────────────────────────┐");
         System.out.println("│ DIRECTION BREAKDOWN                                             │");
-        System.out.println("├┤");
+        System.out.println("├─────────────────────────────────────────────────────────────────┤");
         System.out.println("│ 📤 Outgoing:          " + String.format("%-41d", outgoingCount) + "│");
-        System.out.println("│  Incoming:          " + String.format("%-41d", incomingCount) + "│");
-        System.out.println("└┘");
+        System.out.println("│ 📥 Incoming:          " + String.format("%-41d", incomingCount) + "│");
+        System.out.println("└─────────────────────────────────────────────────────────────────┘");
         
-        System.out.println("\n┌┐");
+        System.out.println("\n┌─────────────────────────────────────────────────────────────────┐");
         System.out.println("│ MESSAGE TYPE BREAKDOWN                                          │");
-        System.out.println("├┤");
+        System.out.println("├─────────────────────────────────────────────────────────────────┤");
         System.out.println("│ 💬 Text Messages:     " + String.format("%-41d", textCount) + "│");
         System.out.println("│ 🎤 Voice Messages:    " + String.format("%-41d", voiceCount) + "│");
         System.out.println("│ 🖼️ MMS Messages:      " + String.format("%-41d", mmsCount) + "│");
-        System.out.println("└┘");
+        System.out.println("└─────────────────────────────────────────────────────────────────┘");
         
         // Group by A Party Number
         Map<String, Long> byAParty = testCases.stream()
@@ -279,13 +288,13 @@ public class EnhancedExcelReader {
             ));
         
         if (!byAParty.isEmpty()) {
-            System.out.println("\n┌┐");
+            System.out.println("\n┌─────────────────────────────────────────────────────────────────┐");
             System.out.println("│ TESTS BY A-PARTY NUMBER                                         │");
-            System.out.println("├┤");
+            System.out.println("├─────────────────────────────────────────────────────────────────┤");
             byAParty.forEach((aParty, count) -> {
                 System.out.println("│ " + String.format("%-55s", aParty + ": " + count + " tests") + " │");
             });
-            System.out.println("└┘");
+            System.out.println("└─────────────────────────────────────────────────────────────────┘");
         }
         
         System.out.println();
@@ -301,7 +310,7 @@ public class EnhancedExcelReader {
             
             Sheet sheet = workbook.getSheet("SIM_Auto_Latch");
             if (sheet == null) {
-                System.out.println(" Sheet 'SIM_Auto_Latch' not found in Excel file");
+                System.out.println("⚠️ Sheet 'SIM_Auto_Latch' not found in Excel file");
                 return testCases;
             }
             
@@ -398,7 +407,7 @@ public class EnhancedExcelReader {
                 }
             }
             
-            System.out.println(" Read " + testCases.size() + " SIM auto-latch test cases from Excel");
+            System.out.println("✅ Read " + testCases.size() + " SIM auto-latch test cases from Excel");
             
         } catch (Exception e) {
             System.out.println("❌ Error reading SIM auto-latch test data: " + e.getMessage());
@@ -446,7 +455,7 @@ public class EnhancedExcelReader {
             }
             
             System.out.println("=".repeat(100));
-            System.out.println(" Successfully loaded " + testCases.size() + " calling tests\n");
+            System.out.println("✅ Successfully loaded " + testCases.size() + " calling tests\n");
             printCallingTestSummary(testCases);
             
         } catch (Exception e) {
@@ -577,11 +586,11 @@ public class EnhancedExcelReader {
                     dataTest.put("criteria", criteria.isEmpty() ? "Data consumption validation" : criteria);
                     dataTests.add(dataTest);
                     
-                    System.out.println(" " + scenario + " | " + targetGB + " GB | " + durationMin + " min");
+                    System.out.println("✅ " + scenario + " | " + targetGB + " GB | " + durationMin + " min");
                 }
             }
             
-            System.out.println(" Loaded " + dataTests.size() + " data usage tests");
+            System.out.println("✅ Loaded " + dataTests.size() + " data usage tests");
             
         } catch (Exception e) {
             System.out.println("❌ Error reading data usage test data: " + e.getMessage());
@@ -712,7 +721,7 @@ public class EnhancedExcelReader {
             
             return Double.parseDouble(cleaned);
         } catch (NumberFormatException e) {
-            System.out.println(" Warning: Cannot parse double value '" + value + "', using default: " + defaultValue);
+            System.out.println("⚠️ Warning: Cannot parse double value '" + value + "', using default: " + defaultValue);
             return defaultValue;
         }
     }
@@ -729,7 +738,7 @@ public class EnhancedExcelReader {
             case "VIDEO": return "📹";
             case "VOLTE": return "📞";
             case "CONFERENCE": return "👥";
-            default: return "";
+            default: return "📱";
         }
     }
 }    

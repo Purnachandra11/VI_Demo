@@ -162,10 +162,52 @@ app.get("/dashboard", (req, res) => {
 const pendingRecharges = new Map();
 
 // Expose this map so mailService can register transaction details
-// when it builds the confirm URL.
+// when it builds the PreTest failure email sent URL.
 global.pendingRecharges = pendingRecharges;
 
 const VI_RECHARGE_URL = "https://www.myvi.in/prepaid/online-mobile-recharge";
+
+app.get('/recharge/confirm/:txnId', (req, res) => {
+  const txnId = req.params.txnId;
+  const detail = global.pendingRecharges.get(txnId) || {};
+  
+  // Get the session ID from the URL query parameter
+  const sessionId = req.query.sessionId || '';
+  
+  const mobileNumber = detail.mobileNumber || '';
+  const viUrlWithNumber = mobileNumber
+    ? `${VI_RECHARGE_URL}?mobileNumber=${encodeURIComponent(mobileNumber)}`
+    : VI_RECHARGE_URL;
+  
+  const confirmApiUrl = `/api/recharge/confirm/${encodeURIComponent(txnId)}`;
+  
+  let html = fs.readFileSync(
+    path.join(__dirname, 'recharge-confirm.html'),
+    'utf8'
+  );
+  
+  // Inject values as inline script right before </head>
+  const injection = `
+    <script>
+      window.__TXN_ID__ = ${JSON.stringify(txnId)};
+      window.__MOBILE_NUMBER__ = ${JSON.stringify(mobileNumber)};
+      window.__AMOUNT__ = ${JSON.stringify(detail.amount || "")};
+      window.__CIRCLE__ = ${JSON.stringify(detail.circle || "")};
+      window.__BENEFIT__ = ${JSON.stringify(detail.benefit || "")};
+      window.__VI_STATUS__ = ${JSON.stringify(detail.viStatus || "")};
+      window.__SR_NO__ = ${JSON.stringify(detail.srNo || "")};
+      window.__VI_URL__ = ${JSON.stringify(viUrlWithNumber)};
+      window.__CONFIRM_API_URL__ = ${JSON.stringify(confirmApiUrl)};
+      window.__SESSION_ID__ = ${JSON.stringify(sessionId)};
+      window.__WS_URL__ = ${JSON.stringify(`ws://localhost:5174/swift-ws`)};
+    </script>
+  </head>`;
+  
+  html = html.replace('</head>', injection);
+  
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+});
 
 // ========== Recharge Confirm Page (popup -> redirect to Vi site) ==========
 // app.get('/recharge/confirm/:txnId', (req, res) => {
@@ -1328,7 +1370,7 @@ function checkCircleMatch(actualCircle, expectedCircleRaw) {
     expectedCircleCode: expectedCode,
     actualCircleCode: actualCircle.code,
     actualCircleText: actualCircle.rawText,
-    circleMatched: matched,
+    circleMatched: matched,  
     circleMessage: matched
       ? `Circle matched (${actualCircle.code})`
       : `Input number with circle is not matched — actual circle: ${actualCircle.rawText} (${actualCircle.code}), expected: ${expectedCode}`,
@@ -3444,6 +3486,162 @@ function handleDefaultConnection(ws) {
   });
 }
 
+// function handleSwiftConnection(ws, request) {
+//   const url = new URL(request.url, "http://localhost");
+//   const sessionId = url.searchParams.get("sessionId");
+
+//   if (!sessionId) {
+//     ws.close(1008, "Session ID required");
+//     return;
+//   }
+
+//   console.log(`[SWIFT] 🔌 New client connected: ${sessionId}`);
+//   swiftClients.set(sessionId, ws);
+
+//   let orchestrator = null;
+
+//   // Look up the file for THIS session specifically
+//   const uploadPath = swiftUploadPaths.get(sessionId) || null;
+//   if (!uploadPath) {
+//     console.warn(`[SWIFT] ⚠️ No upload found for session: ${sessionId}`);
+//   }
+
+//   ws.on("message", async (message) => {
+//     try {
+//       const data = JSON.parse(message);
+
+//       if (data.type === "start" && uploadPath) {
+//         console.log(`[SWIFT] 🚀 Starting automation...`);
+//         const viAppOtp = data.viAppOtp || null;
+
+//         // Point 2: pull this session's frontend-validated matched rows
+//         // (set during /api/swift/upload) and pass them through so the
+//         // orchestrator never falls back to re-deriving rows from Excel
+//         // unless the frontend genuinely didn't send any.
+//         const matchedRowsForSession = swiftMatchedRows.get(sessionId) || null;
+
+//         // Create clients set for this session
+//         const clientSet = new Set();
+//         clientSet.add(ws);
+
+//         orchestrator = new SwiftCrmOrchestrator(
+//           uploadPath,
+//           clientSet,
+//           __dirname,
+//           viAppOtp,
+//           matchedRowsForSession,
+//         );
+//         swiftSessions.set(sessionId, { orchestrator, ws });
+
+//         // Do NOT await — fires in background so this handler
+//         // stays free to process incoming OTP / CAPTCHA messages
+//         orchestrator.runRechargeUAT().catch((error) => {
+//           console.error(`[SWIFT] ❌ Automation error:`, error);
+//           if (ws.readyState === WebSocket.OPEN) {
+//             ws.send(
+//               JSON.stringify({
+//                 type: "complete",
+//                 success: false,
+//                 message: error.message,
+//               }),
+//             );
+//           }
+//         });
+//       } else if (data.type === "captcha" && orchestrator) {
+//         console.log(`[SWIFT]  CAPTCHA received: ${data.answer}`);
+
+//         // Store credentials for the orchestrator (if provided)
+//         if (data.username && data.password) {
+//           orchestrator._pendingLoginCredentials = {
+//             username: data.username,
+//             password: data.password,
+//           };
+//           console.log(`[SWIFT]  Stored login credentials for orchestrator`);
+//         }
+
+//         await orchestrator.setCaptchaAnswer(data.answer);
+//       } else if (data.type === "otp" && orchestrator) {
+//         console.log(`[SWIFT]  OTP received: ${data.otp}`);
+//         await orchestrator.setOtp(data.otp);
+//       } else if (data.type === "stop") {
+//         // ── Stop request from frontend ─────────────────────────────────
+//         console.log(`[SWIFT] ⏹ Stop requested for session ${sessionId}`);
+//         if (orchestrator && orchestrator.currentWdioProcess) {
+//           try {
+//             orchestrator.currentWdioProcess.kill("SIGTERM");
+//           } catch (_) {}
+//         }
+//         if (orchestrator) {
+//           try {
+//             orchestrator.stopPolling();
+//           } catch (_) {}
+//         }
+//         if (ws.readyState === WebSocket.OPEN) {
+//           ws.send(
+//             JSON.stringify({
+//               type: "complete",
+//               success: false,
+//               message: "Stopped by user",
+//             }),
+//           );
+//         }
+//       }
+//     } catch (error) {
+//       console.error(`[SWIFT] ❌ WebSocket error:`, error);
+//     }
+//   });
+
+//   ws.on("close", () => {
+//     console.log(`[SWIFT] 👋 Client disconnected: ${sessionId}`);
+//     swiftClients.delete(sessionId);
+//     swiftSessions.delete(sessionId);
+//     swiftUploadPaths.delete(sessionId);
+//     swiftMatchedRows.delete(sessionId);
+//   });
+
+//   ws.on("error", (error) => {
+//     console.error(`[SWIFT] ❌ WebSocket error:`, error);
+//     swiftClients.delete(sessionId);
+//     swiftSessions.delete(sessionId);
+//     swiftUploadPaths.delete(sessionId);
+//   });
+// }
+
+// Add this inside the WebSocket message handling section (around line 500+)
+
+// ─── WebSocket recharge confirmation handler ───
+// Add this case to the ws.on('message') handler in handleSwiftConnection
+
+// case 'recharge_confirmed': {
+//   const { msisdn, txnId, confirmed } = data;
+//   console.log(`[SWIFT] 🔄 Recharge confirmed via WebSocket: ${msisdn}, TXN: ${txnId}`);
+  
+//   // Write confirmation file for WDIO
+//   try {
+//     const commDir = path.join(__dirname, '..', 'swift-crm-automation', 'comm');
+//     fs.mkdirSync(commDir, { recursive: true });
+//     fs.writeFileSync(
+//       path.join(commDir, 'recharge_confirmed.json'),
+//       JSON.stringify({
+//         msisdn,
+//         txnId,
+//         confirmed: true,
+//         timestamp: Date.now(),
+//         source: 'websocket'
+//       }, null, 2)
+//     );
+//     console.log(`[SWIFT] ✅ Confirmation file written for ${msisdn} via WebSocket`);
+//   } catch (err) {
+//     console.error(`[SWIFT] Failed to write confirmation file: ${err.message}`);
+//   }
+  
+//   // Notify orchestrator if running
+//   if (orchestrator && orchestrator.currentWdioProcess) {
+//     // The WDIO process will pick up the file on its next poll
+//     console.log(`[SWIFT] Confirmation notification sent to orchestrator`);
+//   }
+//   break;
+// }
 function handleSwiftConnection(ws, request) {
   const url = new URL(request.url, "http://localhost");
   const sessionId = url.searchParams.get("sessionId");
@@ -3543,7 +3741,43 @@ function handleSwiftConnection(ws, request) {
             }),
           );
         }
+      } 
+      // ─── NEW: Handle recharge confirmation via WebSocket ───
+      else if (data.type === "recharge_confirmed") {
+        const { msisdn, txnId, confirmed } = data;
+        console.log(`[SWIFT] 🔄 Recharge confirmed via WebSocket: ${msisdn}, TXN: ${txnId}`);
+        
+        // Write confirmation file for WDIO
+        try {
+          const commDir = path.join(__dirname, '..', 'swift-crm-automation', 'comm');
+          fs.mkdirSync(commDir, { recursive: true });
+          fs.writeFileSync(
+            path.join(commDir, 'recharge_confirmed.json'),
+            JSON.stringify({
+              msisdn,
+              txnId,
+              confirmed: true,
+              timestamp: Date.now(),
+              source: 'websocket'
+            }, null, 2)
+          );
+          console.log(`[SWIFT] ✅ Confirmation file written for ${msisdn} via WebSocket`);
+        } catch (err) {
+          console.error(`[SWIFT] Failed to write confirmation file: ${err.message}`);
+        }
+        
+        // Send acknowledgment back to the client
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: 'recharge_confirmed_ack',
+            msisdn,
+            confirmed: true,
+            timestamp: Date.now()
+          }));
+        }
       }
+      // ─── END NEW CASE ───
+
     } catch (error) {
       console.error(`[SWIFT] ❌ WebSocket error:`, error);
     }
@@ -3583,6 +3817,8 @@ function broadcastProgress(progressData) {
     }
   });
 }
+
+
 
 // Modified progress update endpoint
 app.post("/api/progress/update", (req, res) => {
@@ -3664,9 +3900,73 @@ function parseAndBroadcastLogs(stdout, deviceId) {
   });
 }
 
-/** WDIO test execution with real-time WebSocket streaming  */
-app.post("/api/test-command", upload.single("file"), async (req, res) => {
+// /** WDIO test execution with real-time WebSocket streaming  */
+// app.post("/api/test-command", upload.single("file"), async (req, res) => {
+//   try {
+//     const deviceId = req.body.deviceId;
+//     const aPartyNumber = req.body.phone;
+//     const testType = req.body.testType;
+
+//     if (!testType) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "testType is required" });
+//     }
+
+//     // Special handling for Bill Validation
+//     if (deviceId === "SIEBEL_SCRM") {
+//       const commDir = path.join(SIEBEL_PROJECT_ROOT, "comm");
+//       if (fs.existsSync(commDir)) {
+//         const files = fs.readdirSync(commDir);
+//         files.forEach((file) => {
+//           const filePath = path.join(commDir, file);
+//           fs.unlinkSync(filePath);
+//         });
+//       } else {
+//         fs.mkdirSync(commDir, { recursive: true });
+//       }
+
+//       // If a file was uploaded, save it to the expected location
+//       if (req.file) {
+//         const targetPath = path.join(
+//           SIEBEL_PROJECT_ROOT,
+//           "test_data",
+//           "input_data.xlsx",
+//         );
+//         const targetDir = path.dirname(targetPath);
+//         if (!fs.existsSync(targetDir))
+//           fs.mkdirSync(targetDir, { recursive: true });
+
+//         fs.copyFileSync(req.file.path, targetPath);
+//         console.log(`Input file saved to: ${targetPath}`);
+//       }
+//       const options = {
+//         deviceId: "SIEBEL_SCRM",
+//       };
+
+//       executeWdioProcess(
+//         options,
+//         res,
+//         "SIEBEL_SCRM",
+//         "siebel_invoice_validation",
+//       );
+//       return;
+//     }
+
+//     const options = enrichPartiesFromDeviceMap(deviceId, aPartyNumber);
+//     console.log(`Executing WDIO test: ${testType}`, options);
+
+//     executeWdioProcess(options, res, deviceId, testType);
+//   } catch (err) {
+//     console.error("Error:", err);
+//     res.status(500).json({ status: "error", message: err.message });
+//   }
+// });
+
+
+app.post("/api/test-command", upload.single('file'), async (req, res) => {
   try {
+    let cmd = '';
     const deviceId = req.body.deviceId;
     const aPartyNumber = req.body.phone;
     const testType = req.body.testType;
@@ -3677,53 +3977,105 @@ app.post("/api/test-command", upload.single("file"), async (req, res) => {
         .json({ success: false, message: "testType is required" });
     }
 
-    // Special handling for Bill Validation
-    if (deviceId === "SIEBEL_SCRM") {
-      const commDir = path.join(SIEBEL_PROJECT_ROOT, "comm");
-      if (fs.existsSync(commDir)) {
-        const files = fs.readdirSync(commDir);
-        files.forEach((file) => {
-          const filePath = path.join(commDir, file);
-          fs.unlinkSync(filePath);
+    // console.log("nainji");
+    let raw = fs.readFileSync("../automation/controller/device-sim-map.json", "utf8");
+    console.log(raw,"raw");
+    let aplha = ['b', 'c', 'd']
+    let deviceCommand = `-DaPartyDevice=${deviceId} -DaPartyNumber=${aPartyNumber}`
+    raw = JSON.parse(raw)
+    let temp = raw.filter((ele) => { return ele.id != deviceId }).map((e, index) => { return ` -D${aplha[index]}PartyDevice=${e.id} -D${aplha[index]}PartyNumber=${e.sim}  -D${aplha[index]}Partytype=${e.type}` })
+
+    deviceCommand += temp;
+    switch (testType) {
+      case 'sms':
+        cmd = "cd .. && mvn clean test -Dtest=SMSTest " + deviceCommand
+        break;
+
+      case 'calling':
+        cmd = "cd .. && mvn clean test -Dtest=CallingTest " + deviceCommand
+        break;
+
+      case 'simToolkit':
+        cmd = `cd .. && mvn clean test -Dtest=SIMToolkitCaptureTest -Dudid=${deviceId} -DaPartyNumber=${aPartyNumber} `;
+        break;
+
+      case 'calling-sms':
+        cmd = `cd .. && mvn clean test -Dtest=${"CallingTest,SMSTest"} -DdeviceId=${deviceId} -DaPartyNumber=${aPartyNumber}`
+        break;
+      
+      case 'incomingsms':
+        cmd = `cd .. && mvn clean test -Dtest=${"CallingTest,SMSTest"} -DdeviceId=${deviceId} -DaPartyNumber=${aPartyNumber}`
+        break;
+
+      case 'data':
+        cmd = "cd .. && mvn clean test -Dtest=DataUsageTest -DaPartyDevice=" + deviceId + " -DaPartyNumber=" + aPartyNumber
+        break;
+
+      case 'latch':
+        cmd = "cd .. && mvn clean test -Dtest=SIMAutoLatchTestSuite -DaPartyDevice=" + deviceId + " -DaPartyNumber=" + aPartyNumber
+        break;
+
+      case 'all':
+        cmd = `cd .. && mvn clean test -Dtest=${"CallingTest,SMSTest,DataUsageTest"} -DdeviceId=${deviceId} -DaPartyNumber=${aPartyNumber}`
+        break;
+
+      case 'calling-data':
+        cmd = `cd .. && mvn clean test -Dtest=${"CallingTest,DataUsageTest"} -DdeviceId=${deviceId} -DaPartyNumber=${aPartyNumber}`
+        break;
+
+      case 'sms-data':
+        cmd = `cd .. && mvn clean test -Dtest=${"SMSTest,DataUsageTest"} -DdeviceId=${deviceId} -DaPartyNumber=${aPartyNumber}`
+        break;
+
+      default:
+        return res.status(400).json({
+          success: false,
+          message: `Unsupported test type: ${testType}`
         });
-      } else {
-        fs.mkdirSync(commDir, { recursive: true });
-      }
-
-      // If a file was uploaded, save it to the expected location
-      if (req.file) {
-        const targetPath = path.join(
-          SIEBEL_PROJECT_ROOT,
-          "test_data",
-          "input_data.xlsx",
-        );
-        const targetDir = path.dirname(targetPath);
-        if (!fs.existsSync(targetDir))
-          fs.mkdirSync(targetDir, { recursive: true });
-
-        fs.copyFileSync(req.file.path, targetPath);
-        console.log(`Input file saved to: ${targetPath}`);
-      }
-      const options = {
-        deviceId: "SIEBEL_SCRM",
-      };
-
-      executeWdioProcess(
-        options,
-        res,
-        "SIEBEL_SCRM",
-        "siebel_invoice_validation",
-      );
-      return;
     }
 
-    const options = enrichPartiesFromDeviceMap(deviceId, aPartyNumber);
-    console.log(`Executing WDIO test: ${testType}`, options);
+    console.log(cmd)
+    
+    if (cmd == '') {
+      return res.status(400).json({
+        success: false,
+        message: "No command generated for the test type"
+      });
+    }
 
-    executeWdioProcess(options, res, deviceId, testType);
+    const result = await runCommand(cmd);
+
+    console.log("Exit Code:", result.code);
+    console.log("STDOUT:", result.stdout);
+    console.log("STDERR:", result.stderr);
+    console.log("Error:", result.error);
+
+    // If exit code is 0 => success
+    if (result.code === 0) {
+      res.status(200).json({
+        status: "success",
+        exitCode: result.code,
+        stdout: result.stdout.split('Appium service stopped')[1],
+        stderr: result.stderr,
+      });
+    } else {
+      res.status(500).json({
+        status: "failed",
+        exitCode: result.code,
+        stdout: result.stdout,
+        stderr: result.stderr,
+        error: result.error,
+      });
+    }
+
   } catch (err) {
     console.error("Error:", err);
-    res.status(500).json({ status: "error", message: err.message });
+
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong while running the command",
+      error: err.message,
+    });
   }
 });
 

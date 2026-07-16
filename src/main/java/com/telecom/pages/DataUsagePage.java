@@ -1,10 +1,12 @@
 package com.telecom.pages;
 
-import com.telecom.utils.ADBHelper;
-import io.appium.java_client.android.AndroidDriver;
 import java.util.HashMap;
 import java.util.Map;
-import com.telecom.utils.ProgressReporter;  
+
+import com.telecom.utils.ADBHelper;
+import com.telecom.utils.ProgressReporter;
+
+import io.appium.java_client.android.AndroidDriver;  
 
 /**
  * Measures data accurately from /proc/net/dev
@@ -67,7 +69,7 @@ public class DataUsagePage {
             String output = ADBHelper.executeCommand(command);
             
             if (output == null || output.isEmpty()) {
-                System.out.println("     Could not read /proc/net/dev");
+                System.out.println("   ⚠️  Could not read /proc/net/dev");
                 return;
             }
             
@@ -95,12 +97,12 @@ public class DataUsagePage {
             System.out.println("─".repeat(80));
             
         } catch (Exception e) {
-            System.out.println("     Debug failed: " + e.getMessage());
+            System.out.println("   ⚠️  Debug failed: " + e.getMessage());
         }
     }
     
     /**
-     *  ULTRA-SIMPLE: Just download via Chrome and measure
+     * ✅ ULTRA-SIMPLE: Just download via Chrome and measure
      */
     private Map<String, Object> executeTestFlow(String deviceId, String downloadUrl, 
                                                 int targetMB, int durationMin, double targetGB) {
@@ -128,7 +130,7 @@ public class DataUsagePage {
             Thread.sleep(1000);
             
             // STEP 3: Start download
-            System.out.println("\n STEP 3: Starting download");
+            System.out.println("\n📥 STEP 3: Starting download");
             System.out.println("   URL: " + downloadUrl);
             System.out.println("   Duration: " + durationMin + " minutes");
             
@@ -180,7 +182,7 @@ public class DataUsagePage {
             System.out.println("   Total:         " + formatBytes(totalConsumed));
             System.out.println("   Target:        " + targetMB + " MB");
             System.out.println("   Achievement:   " + String.format("%.1f%%", achievementPercent));
-            System.out.println("   Status:        " + (status.equals("SUCCESS") ? " SUCCESS" : "❌ FAILED"));
+            System.out.println("   Status:        " + (status.equals("SUCCESS") ? "✅ SUCCESS" : "❌ FAILED"));
             System.out.println("=".repeat(80));
             
             // Return results
@@ -264,7 +266,7 @@ public class DataUsagePage {
          );
          
      } catch (Exception e) {
-         System.out.println("    Monitoring error: " + e.getMessage());
+         System.out.println("   ⚠️ Monitoring error: " + e.getMessage());
          ProgressReporter.reportTestComplete(
              deviceId, 
              "data", 
@@ -283,7 +285,7 @@ public class DataUsagePage {
             String output = ADBHelper.executeCommand(command);
             
             if (output == null || output.trim().isEmpty()) {
-                System.out.println("     Could not read /proc/net/dev");
+                System.out.println("   ⚠️  Could not read /proc/net/dev");
                 return "rmnet_data0"; // Common fallback
             }
             
@@ -345,7 +347,7 @@ public class DataUsagePage {
             
             // If no interface found, try to find ANY interface with traffic
             if (activeInterface == null) {
-                System.out.println("     No standard mobile interface found, checking all interfaces...");
+                System.out.println("   ⚠️  No standard mobile interface found, checking all interfaces...");
                 
                 for (String line : output.split("\n")) {
                     if (!line.contains(":")) continue;
@@ -382,16 +384,16 @@ public class DataUsagePage {
             }
             
             if (activeInterface != null) {
-                System.out.println("    Selected interface: " + activeInterface + " (" + formatBytes(maxBytes) + ")");
+                System.out.println("   ✅ Selected interface: " + activeInterface + " (" + formatBytes(maxBytes) + ")");
                 return activeInterface;
             }
             
             // Last resort fallback
-            System.out.println("     No active interface found, using rmnet_data0");
+            System.out.println("   ⚠️  No active interface found, using rmnet_data0");
             return "rmnet_data0";
             
         } catch (Exception e) {
-            System.out.println("     Interface detection failed: " + e.getMessage());
+            System.out.println("   ⚠️  Interface detection failed: " + e.getMessage());
             return "rmnet_data0";
         }
     }
@@ -419,7 +421,7 @@ public class DataUsagePage {
             return 0;
             
         } catch (Exception e) {
-            System.out.println("     Error reading RX bytes: " + e.getMessage());
+            System.out.println("   ⚠️  Error reading RX bytes: " + e.getMessage());
             return 0;
         }
     }
@@ -447,7 +449,7 @@ public class DataUsagePage {
             return 0;
             
         } catch (Exception e) {
-            System.out.println("     Error reading TX bytes: " + e.getMessage());
+            System.out.println("   ⚠️  Error reading TX bytes: " + e.getMessage());
             return 0;
         }
     }
@@ -481,7 +483,7 @@ public class DataUsagePage {
     //             Thread.sleep(2000);
     //         }
             
-    //         System.out.println("    WiFi disabled");
+    //         System.out.println("   ✅ WiFi disabled");
     //         return true;
     //     } catch (Exception e) {
     //         return false;
@@ -493,7 +495,7 @@ public class DataUsagePage {
             System.out.println("\n📶 Re-enabling WiFi...");
             ADBHelper.executeCommand("adb -s " + deviceId + " shell svc wifi enable");
             Thread.sleep(3000);
-            System.out.println("    WiFi enabled");
+            System.out.println("   ✅ WiFi enabled");
         } catch (Exception e) {
             // Ignore
         }

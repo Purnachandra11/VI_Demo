@@ -379,15 +379,10 @@ buildConfirmUrl(detail, signToken) {
           .ptable tbody td:nth-child(7) { text-align: left; }
           .ptable tbody td:last-child { text-align: left; }
           .match-chip {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            white-space: nowrap;
+            
+            
+            
+            white-space:normal;text-align:left;line-height:1.5
           }
           .match-chip.yes {
             background: var(--success-bg);

@@ -1,14 +1,16 @@
 package com.telecom.core;
 
-import com.telecom.utils.ScreenshotUtils;
-import io.appium.java_client.AppiumDriver;
-import io.appium.java_client.pagefactory.AppiumFieldDecorator;
+import java.time.Duration;
+
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import java.time.Duration;
+import com.telecom.utils.ScreenshotUtils;
+
+import io.appium.java_client.AppiumDriver;
+import io.appium.java_client.pagefactory.AppiumFieldDecorator;
 
 public class BasePage {
     
@@ -16,7 +18,7 @@ public class BasePage {
     protected WebDriverWait wait;
     protected ScreenshotUtils screenshotUtils;
     
-    //  Accept ScreenshotUtils from test class
+    // ✅ Accept ScreenshotUtils from test class
     public BasePage(AppiumDriver driver, ScreenshotUtils screenshotUtils) {
         this.driver = driver;
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(30));

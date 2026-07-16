@@ -42,7 +42,7 @@ public class ImprovedADBAutoAnswer {
         monitorThread.setDaemon(true);
         monitorThread.start();
         
-        System.out.println(" Auto-answer service is now AGGRESSIVELY monitoring");
+        System.out.println("✅ Auto-answer service is now AGGRESSIVELY monitoring");
     }
     
     public void stop() {
@@ -92,7 +92,7 @@ public class ImprovedADBAutoAnswer {
                 
                 // Get incoming number
                 String incomingNumber = getIncomingNumber();
-                System.out.println(" Incoming from: " + incomingNumber);
+                System.out.println("📱 Incoming from: " + incomingNumber);
                 System.out.println("👤 Expected caller: " + expectedCaller);
                 
                 // ⚡ IMMEDIATE MULTI-METHOD ANSWER
@@ -100,7 +100,7 @@ public class ImprovedADBAutoAnswer {
                 
                 if (answered) {
                     callsAnswered++;
-                    System.out.println("   CALL ANSWERED SUCCESSFULLY!");
+                    System.out.println("✅ ✅ ✅ CALL ANSWERED SUCCESSFULLY!");
                     System.out.println("📊 Total calls answered: " + callsAnswered);
                     System.out.println("=".repeat(70) + "\n");
                     
@@ -134,7 +134,7 @@ public class ImprovedADBAutoAnswer {
 //        };
 //        
 //        for (int attempt = 1; attempt <= 1; attempt++) {
-//            System.out.println("\n ANSWER ROUND " + attempt + "/1:");
+//            System.out.println("\n🔄 ANSWER ROUND " + attempt + "/1:");
 //            
 //            for (int i = 0; i < answerMethods.length; i++) {
 //                try {
@@ -147,12 +147,12 @@ public class ImprovedADBAutoAnswer {
 //                    
 //                    boolean finished = process.waitFor(2, TimeUnit.SECONDS);
 //                    if (finished && process.exitValue() == 0) {
-//                        System.out.println("    Command executed successfully");
+//                        System.out.println("   ✅ Command executed successfully");
 //                        
 //                        // Quick check
 //                        Thread.sleep(500);
 //                        if (verifyCallAnswered()) {
-//                            System.out.println("    CALL ANSWERED WITH METHOD " + (i + 1) + "!");
+//                            System.out.println("   ✅✅ CALL ANSWERED WITH METHOD " + (i + 1) + "!");
 //                            return true;
 //                        }
 //                    }
@@ -161,7 +161,7 @@ public class ImprovedADBAutoAnswer {
 //                    Thread.sleep(300);
 //                    
 //                } catch (Exception e) {
-//                    System.out.println("    Method " + (i + 1) + " failed: " + e.getMessage());
+//                    System.out.println("   ⚠️ Method " + (i + 1) + " failed: " + e.getMessage());
 //                }
 //            }
 //            
@@ -169,7 +169,7 @@ public class ImprovedADBAutoAnswer {
 //            try {
 //                Thread.sleep(1000);
 //                if (verifyCallAnswered()) {
-//                    System.out.println(" Call answered after round " + attempt);
+//                    System.out.println("✅ Call answered after round " + attempt);
 //                    return true;
 //                }
 //            } catch (Exception e) {
@@ -192,17 +192,17 @@ public class ImprovedADBAutoAnswer {
 
             Process process = pb.start();
             if (process.waitFor(2, TimeUnit.SECONDS) && process.exitValue() == 0) {
-                System.out.println("    Command executed");
+                System.out.println("   ✅ Command executed");
 
                 Thread.sleep(500);
                 if (verifyCallAnswered()) {
-                    System.out.println("    CALL ANSWERED!");
+                    System.out.println("   ✅✅ CALL ANSWERED!");
                     return true;
                 }
             }
 
         } catch (Exception e) {
-            System.out.println("    Failed: " + e.getMessage());
+            System.out.println("   ⚠️ Failed: " + e.getMessage());
         }
 
         return false;
@@ -239,7 +239,7 @@ public class ImprovedADBAutoAnswer {
                                callState.matches(".*mCallState.*1.*");
             
             if (isOffhook) {
-                System.out.println("    Verified via call state (OFFHOOK)");
+                System.out.println("   ✅ Verified via call state (OFFHOOK)");
                 return true;
             }
             
@@ -253,31 +253,31 @@ public class ImprovedADBAutoAnswer {
                                    audioState.contains("AUDIO_MODE_IN_COMMUNICATION");
             
             if (isInCallAudio) {
-                System.out.println("    Verified via audio mode (IN_CALL)");
+                System.out.println("   ✅ Verified via audio mode (IN_CALL)");
                 return true;
             }
             
             // Check 3: Call status via telecom service (most reliable)
             String telecomState = executeADBCommandQuick("dumpsys telecom | grep -E 'Call.*state'");
             if (telecomState.contains("ACTIVE") || telecomState.contains("CONNECTED")) {
-                System.out.println("    Verified via telecom (ACTIVE/CONNECTED)");
+                System.out.println("   ✅ Verified via telecom (ACTIVE/CONNECTED)");
                 return true;
             }
             
             // Check 4: Phone app state
             String phoneState = executeADBCommandQuick("dumpsys phone | grep -i state");
             if (phoneState.contains("OFFHOOK")) {
-                System.out.println("    Verified via phone state (OFFHOOK)");
+                System.out.println("   ✅ Verified via phone state (OFFHOOK)");
                 return true;
             }
             
-            System.out.println("    Call state not confirmed");
+            System.out.println("   ⚠️ Call state not confirmed");
             System.out.println("   Call state: " + callState);
             System.out.println("   Audio state: " + audioState.substring(0, Math.min(100, audioState.length())));
             return false;
             
         } catch (Exception e) {
-            System.out.println("    Verification error: " + e.getMessage());
+            System.out.println("   ⚠️ Verification error: " + e.getMessage());
             return false;
         }
     }

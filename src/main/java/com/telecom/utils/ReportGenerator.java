@@ -1,14 +1,31 @@
 package com.telecom.utils;
 
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import com.telecom.config.ConfigReader;
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import com.telecom.config.ConfigReader;
 
 /**
- *  ENHANCED REPORT GENERATOR WITH RING TIME & DIRECTION HANDLING
+ * ✅ ENHANCED REPORT GENERATOR WITH RING TIME & DIRECTION HANDLING
  */
 public class ReportGenerator {
     private static final String REPORT_DIR = "test-output/comprehensive-reports/";
@@ -22,13 +39,10 @@ public class ReportGenerator {
     // ========== ENHANCED CALLING REPORT WITH RING TIME & DIRECTION ==========
     
     /**
-     *  GENERATE ENHANCED CALLING EXCEL REPORT
+     * ✅ GENERATE ENHANCED CALLING EXCEL REPORT
      */
     public static String generateCallingExcelReport(List<Map<String, Object>> results) {
     	String dialingNumber = System.getProperty("aPartyNumber");
-        if (dialingNumber == null || dialingNumber.isEmpty()) {
-            dialingNumber = "unknown";
-        }
         String fileName = "Calling_Report_" + dialingNumber + "_" + FILE_DATE_FORMAT.format(new Date()) + ".xlsx";
         String filePath = REPORT_DIR + fileName;
         
@@ -91,7 +105,7 @@ public class ReportGenerator {
                 row.createCell(col++).setCellValue(getStringValue(result.get("callerNumber")));
                 row.createCell(col++).setCellValue(getStringValue(result.get("receiverNumber")));
                 
-                //  FIX: Clean network type display
+                // ✅ FIX: Clean network type display
                 String aPartyNetwork = cleanNetworkType(getStringValue(result.get("aPartyNetworkType")));
                 String bPartyNetwork = cleanNetworkType(getStringValue(result.get("bPartyNetworkType")));
                 
@@ -100,7 +114,7 @@ public class ReportGenerator {
                 row.createCell(col++).setCellValue(bPartyNetwork);
                 row.createCell(col++).setCellValue(getStringValue(result.get("bPartyVolteEnabled")));
                 
-                //  CRITICAL FIX: Use autoAnswerEnabled boolean, not autoAnswerStatus string
+                // ✅ CRITICAL FIX: Use autoAnswerEnabled boolean, not autoAnswerStatus string
                 boolean autoAnswerEnabled = getBooleanValue(result.get("autoAnswerEnabled"));
                 row.createCell(col++).setCellValue(autoAnswerEnabled ? "YES" : "NO");
                 
@@ -108,7 +122,7 @@ public class ReportGenerator {
 //                String handling = getStringValue(result.get("callHandling"));
 //                row.createCell(col++).setCellValue(handling);
                 
-                //  CRITICAL FIX: Use ringTime integer field
+                // ✅ CRITICAL FIX: Use ringTime integer field
                 int ringTime = getIntValue(result.get("ringTime"));
                 row.createCell(col++).setCellValue(ringTime);
                 
@@ -196,7 +210,7 @@ public class ReportGenerator {
                     row.createCell(col++).setCellValue("");
                 }
 
-             //  NEW: A Party MSISDN (renamed from Sender MSISDN)
+             // ✅ NEW: A Party MSISDN (renamed from Sender MSISDN)
                 String aPartyMSISDN = "";
                 if ("INCOMING".equals(direction)) {
                     // For incoming calls, A-Party is the receiver
@@ -242,7 +256,7 @@ public class ReportGenerator {
             }
             
             workbook.write(fos);
-            System.out.println(" Enhanced Calling Excel Report: " + filePath);
+            System.out.println("✅ Enhanced Calling Excel Report: " + filePath);
             return filePath;
             
         } catch (Exception e) {
@@ -254,13 +268,10 @@ public class ReportGenerator {
 
     
     /**
-     *  GENERATE ENHANCED HTML REPORT
+     * ✅ GENERATE ENHANCED HTML REPORT
      */
     public static String generateCallingHTMLReport(List<Map<String, Object>> results) {
     	String dialingNumber = System.getProperty("aPartyNumber");
-        if (dialingNumber == null || dialingNumber.isEmpty()) {
-            dialingNumber = "unknown";
-        }
         String fileName = "Calling_Report_" + dialingNumber + "_" + FILE_DATE_FORMAT.format(new Date()) + ".html";
         String filePath = REPORT_DIR + fileName;
         
@@ -272,7 +283,7 @@ public class ReportGenerator {
             writer.println(generateEnhancedCallingTable(results));
             writer.println("</div></body></html>");
             
-            System.out.println(" Calling HTML Report: " + filePath);
+            System.out.println("✅ Calling HTML Report: " + filePath);
             return filePath;
             
         } catch (Exception e) {
@@ -285,9 +296,6 @@ public class ReportGenerator {
     
     public static String generateSMSExcelReport(List<Map<String, Object>> results) {
         String dialingNumber = System.getProperty("aPartyNumber");
-        if (dialingNumber == null || dialingNumber.isEmpty()) {
-            dialingNumber = "unknown";
-        }
         
         String fileName = "SMS_Report_" + dialingNumber + "_" + FILE_DATE_FORMAT.format(new Date()) + ".xlsx";
         String filePath = REPORT_DIR + fileName;
@@ -322,7 +330,7 @@ public class ReportGenerator {
 //                "Delivery Time (ms)",
                 "Delivery Time (s)",
                 "Delivery Status",
-                "Verification Status",  //  NEW: Added verification status
+                "Verification Status",  // ✅ NEW: Added verification status
                 "Message Delivered",
                 "Total SMS",
                 "Successful SMS",
@@ -330,10 +338,10 @@ public class ReportGenerator {
                 "Test Start Time",
                 "Test End Time",
                 "Sender Timestamp",
-                "Receiver Time",       //  Formatted receiver time or status
+                "Receiver Time",       // ✅ Formatted receiver time or status
                 "Final Status",
                 "Comments"
-//              "Receiver Timestamp",  //  Receiver timestamp (long value)	
+//              "Receiver Timestamp",  // ✅ Receiver timestamp (long value)	
             };
             Row headerRow = sheet.createRow(0);
             for (int i = 0; i < headers.length; i++) {
@@ -469,7 +477,7 @@ public class ReportGenerator {
                 // Delivery Status
                 row.createCell(col++).setCellValue(getStringValue(result.get("deliveryStatus")));
                 
-             //  NEW: Verification Status
+             // ✅ NEW: Verification Status
                 row.createCell(col++).setCellValue(getStringValue(result.get("verificationStatus")));
                 
                 // Message Delivered
@@ -507,7 +515,7 @@ public class ReportGenerator {
                 }
                 row.createCell(col++).setCellValue(senderTime);
                 
-//             //  NEW: Receiver Timestamp (raw long value)
+//             // ✅ NEW: Receiver Timestamp (raw long value)
 //                Long receiverTimestamp = getLongValue(result.get("receiverTimestamp"));
 //                if (receiverTimestamp != null && receiverTimestamp > 0) {
 //                    row.createCell(col++).setCellValue(receiverTimestamp);
@@ -515,7 +523,7 @@ public class ReportGenerator {
 //                    row.createCell(col++).setCellValue("0");
 //                }
 
-                //  NEW: Receiver Time (formatted or status)
+                // ✅ NEW: Receiver Time (formatted or status)
                 String receiverTime = getStringValue(result.get("receiverTime"));
                 // Check if we have formatted time, otherwise use the status
                 if (receiverTime == null || receiverTime.isEmpty()) {
@@ -554,7 +562,7 @@ public class ReportGenerator {
             }
             
             workbook.write(fos);
-            System.out.println(" Enhanced SMS Excel Report: " + filePath);
+            System.out.println("✅ Enhanced SMS Excel Report: " + filePath);
             return filePath;
             
         } catch (Exception e) {
@@ -567,9 +575,6 @@ public class ReportGenerator {
     // ========== ENHANCED SMS REPORT METHOD ==========
     public static String generateSMSTestReport(List<Map<String, Object>> results, String deviceId, String deviceNumber) {
     	String dialingNumber = System.getProperty("aPartyNumber");
-        if (dialingNumber == null || dialingNumber.isEmpty()) {
-            dialingNumber = "unknown";
-        }
         String fileName = "SMS_Detailed_Report_" + dialingNumber + "_" + FILE_DATE_FORMAT.format(new Date()) + ".html";
         String filePath = REPORT_DIR + fileName;
         
@@ -581,7 +586,7 @@ public class ReportGenerator {
             writer.println(generateEnhancedSMSTable(results));
             writer.println("</div></body></html>");
             
-            System.out.println(" SMS Detailed Report: " + filePath);
+            System.out.println("✅ SMS Detailed Report: " + filePath);
             return filePath;
             
         } catch (Exception e) {
@@ -608,7 +613,7 @@ public class ReportGenerator {
             CellStyle headerStyle = createHeaderStyle(workbook);
             CellStyle dataStyle = createDataStyle(workbook);
             
-            //  UPDATED HEADERS to match your target format
+            // ✅ UPDATED HEADERS to match your target format
             String[] headers = {
             	"A Party Number", 
                 "Target Data (GB)", 
@@ -649,7 +654,7 @@ public class ReportGenerator {
                 row.createCell(col++).setCellValue(getStringValue(result.get("consumedData")));
                 row.createCell(col++).setCellValue(getBooleanValue(result.get("targetAchieved")) ? "YES" : "NO");
                 
-                //  APN Column (combine name and APN VALUE, not type)
+                // ✅ APN Column (combine name and APN VALUE, not type)
                 String apnName = getStringValue(result.get("apnName"));
                 String apnValue = getStringValue(result.get("apn")); 
                 String apnDisplay = apnName + " (" + apnValue + ")";
@@ -657,11 +662,11 @@ public class ReportGenerator {
                 
                 row.createCell(col++).setCellValue(getStringValue(result.get("networkType")));
                 
-                //  Balance columns
+                // ✅ Balance columns
                 row.createCell(col++).setCellValue(getStringValue(result.get("beforeBalance")));
                 row.createCell(col++).setCellValue(getStringValue(result.get("afterBalance")));
                 
-                //  Balance deduction
+                // ✅ Balance deduction
                 Object deduction = result.get("balanceDeduction");
                 if (deduction instanceof Double) {
                     row.createCell(col++).setCellValue("₹" + (Double) deduction);
@@ -687,7 +692,7 @@ public class ReportGenerator {
             }
             
             workbook.write(fos);
-            System.out.println(" Data Usage Excel Report: " + filePath);
+            System.out.println("✅ Data Usage Excel Report: " + filePath);
             return filePath;
             
         } catch (Exception e) {
@@ -714,7 +719,7 @@ public class ReportGenerator {
             writer.println(generateDataUsageTable(results));
             writer.println("</div></body></html>");
             
-            System.out.println(" Data Usage HTML Report: " + filePath);
+            System.out.println("✅ Data Usage HTML Report: " + filePath);
             return filePath;
             
         } catch (Exception e) {
@@ -727,9 +732,6 @@ public class ReportGenerator {
     
     public static String generateSIMAutoLatchExcelReport(List<Map<String, Object>> results) {
         String dialingNumber = System.getProperty("aPartyNumber");
-        if (dialingNumber == null || dialingNumber.isEmpty()) {
-            dialingNumber = "unknown";
-        }
         String fileName = "SIM_AutoLatch_Report_" + dialingNumber + "_" + FILE_DATE_FORMAT.format(new Date()) + ".xlsx";
         String filePath = REPORT_DIR + fileName;
         
@@ -742,7 +744,7 @@ public class ReportGenerator {
             CellStyle marginalStyle = createPartialStyle(workbook);
             CellStyle slowStyle = createFailedStyle(workbook);
             
-            //  CORRECTED: Added "Test Name" and "Device Type" columns
+            // ✅ CORRECTED: Added "Test Name" and "Device Type" columns
             String[] headers = {
                 "Test Name",           // NEW: Added test name
                 "Device ID", 
@@ -778,7 +780,7 @@ public class ReportGenerator {
                 Row row = sheet.createRow(rowNum++);
                 int col = 0;
                 
-                //  CORRECTED: Write data in order matching headers
+                // ✅ CORRECTED: Write data in order matching headers
                 row.createCell(col++).setCellValue(getStringValue(result.get("name")));
                 row.createCell(col++).setCellValue(getStringValue(result.get("deviceId")));
                 row.createCell(col++).setCellValue(getStringValue(result.get("deviceType")));
@@ -789,10 +791,18 @@ public class ReportGenerator {
                 row.createCell(col++).setCellValue(getIntValue(result.get("successfulAttempts")));
                 row.createCell(col++).setCellValue(getStringValue(result.get("initialNetworkState")));
                 row.createCell(col++).setCellValue(getStringValue(result.get("initialRAT")));
-                row.createCell(col++).setCellValue(getBooleanValue(result.get("initialIMSRegistered")) ? "" : "❌");
+//                row.createCell(col++).setCellValue(getBooleanValue(result.get("initialIMSRegistered")) ? "✅" : "❌");
+                String initialIMSDisplay = getBooleanValue(result.get("initialIMSRegistered")) ? 
+                	    "Registered (VoLTE/VoWiFi available)" : 
+                	    "Not Registered (Calls will fallback to 2G/3G)";
+                	row.createCell(col++).setCellValue(initialIMSDisplay);
                 row.createCell(col++).setCellValue(getStringValue(result.get("finalNetworkState")));
                 row.createCell(col++).setCellValue(getStringValue(result.get("finalRAT")));
-                row.createCell(col++).setCellValue(getBooleanValue(result.get("finalIMSRegistered")) ? "" : "❌");
+//                row.createCell(col++).setCellValue(getBooleanValue(result.get("finalIMSRegistered")) ? "✅" : "❌");
+                String finalIMSDisplay = getBooleanValue(result.get("finalIMSRegistered")) ? 
+                	    "Registered (VoLTE/VoWiFi available)" : 
+                	    "Not Registered (Calls will fallback to 2G/3G)";
+                	row.createCell(col++).setCellValue(finalIMSDisplay);
                 row.createCell(col++).setCellValue(getLongValue(result.get("autoLatchTimeMs")));
                 row.createCell(col++).setCellValue(getDoubleValue(result.get("autoLatchTimeSeconds")));
                 row.createCell(col++).setCellValue(getStringValue(result.get("testResult")));
@@ -823,7 +833,7 @@ public class ReportGenerator {
             }
             
             workbook.write(fos);
-            System.out.println(" SIM Auto-Latch Excel Report: " + filePath);
+            System.out.println("✅ SIM Auto-Latch Excel Report: " + filePath);
             return filePath;
             
         } catch (Exception e) {
@@ -834,9 +844,6 @@ public class ReportGenerator {
     
     public static String generateSIMAutoLatchHTMLReport(List<Map<String, Object>> results) {
     	String dialingNumber = System.getProperty("aPartyNumber");
-        if (dialingNumber == null || dialingNumber.isEmpty()) {
-            dialingNumber = "unknown";
-        }
         String fileName = "SIM_AutoLatch_Report_"+ dialingNumber + "_" + FILE_DATE_FORMAT.format(new Date()) + ".html";
         String filePath = REPORT_DIR + fileName;
         
@@ -848,7 +855,7 @@ public class ReportGenerator {
             writer.println(generateSIMAutoLatchTable(results));
             writer.println("</div></body></html>");
             
-            System.out.println(" SIM Auto-Latch HTML Report: " + filePath);
+            System.out.println("✅ SIM Auto-Latch HTML Report: " + filePath);
             return filePath;
             
         } catch (Exception e) {
@@ -915,8 +922,8 @@ public class ReportGenerator {
         summary.append("<div>\n");
         summary.append("<h4>Overall Results</h4>\n");
         summary.append("<p><strong>Total Tests:</strong> ").append(total).append("</p>\n");
-        summary.append("<p><strong> Success:</strong> ").append(success).append("</p>\n");
-        summary.append("<p><strong> Partial:</strong> ").append(partial).append("</p>\n");
+        summary.append("<p><strong>✅ Success:</strong> ").append(success).append("</p>\n");
+        summary.append("<p><strong>⚠️ Partial:</strong> ").append(partial).append("</p>\n");
         summary.append("<p><strong>❌ Failed:</strong> ").append(failed).append("</p>\n");
         summary.append("<p><strong>Success Rate:</strong> ")
             .append(String.format("%.1f%%", (success * 100.0 / total)))
@@ -927,7 +934,7 @@ public class ReportGenerator {
         summary.append("<div>\n");
         summary.append("<h4>Call Statistics</h4>\n");
         summary.append("<p><strong>📤 Outgoing:</strong> ").append(outgoing).append("</p>\n");
-        summary.append("<p><strong> Incoming:</strong> ").append(incoming).append("</p>\n");
+        summary.append("<p><strong>📥 Incoming:</strong> ").append(incoming).append("</p>\n");
         summary.append("<p><strong>🤖 Auto-Answer:</strong> ").append(autoAnswerTests).append("</p>\n");
         summary.append("<p><strong>👤 Manual:</strong> ").append(manualTests).append("</p>\n");
         summary.append("<p><strong>⏱️ Avg Ring Time:</strong> ")
@@ -973,7 +980,7 @@ public class ReportGenerator {
             
             // Direction with icon
             String direction = getStringValue(result.get("direction"));
-            String dirIcon = "INCOMING".equals(direction) ? "" : "📤";
+            String dirIcon = "INCOMING".equals(direction) ? "📥" : "📤";
             html.append("<td>").append(dirIcon).append(" ").append(direction).append("</td>\n");
             
             // From → To
@@ -992,7 +999,7 @@ public class ReportGenerator {
             
             // Auto Answer
             boolean autoAnswer = getBooleanValue(result.get("autoAnswerEnabled"));
-            String autoAnswerIcon = autoAnswer ? " YES" : "👤 NO";
+            String autoAnswerIcon = autoAnswer ? "✅ YES" : "👤 NO";
             html.append("<td>").append(autoAnswerIcon);
             
             String handling = getStringValue(result.get("callHandling"));
@@ -1072,8 +1079,8 @@ public class ReportGenerator {
                .append("</div>\n")
                .append("<div style='flex: 1;'>\n")
                .append("<h4>Test Results</h4>\n")
-               .append("<p><strong> Success:</strong> ").append(success).append("</p>\n")
-               .append("<p><strong> Partial Success:</strong> ").append(partial).append("</p>\n")
+               .append("<p><strong>✅ Success:</strong> ").append(success).append("</p>\n")
+               .append("<p><strong>⚠️ Partial Success:</strong> ").append(partial).append("</p>\n")
                .append("<p><strong>❌ Failed:</strong> ").append(failed).append("</p>\n")
                .append("<p><strong>🚨 Error:</strong> ").append(error).append("</p>\n")
                .append("<p><strong>Overall Success Rate:</strong> ")
@@ -1138,7 +1145,7 @@ public class ReportGenerator {
         html.append("<table>\n<thead>\n<tr>\n");
         html.append("<th>Test Name</th><th>Type</th><th>Direction</th><th>Recipient/Group</th>");
         html.append("<th>SMS Count</th><th>Successful</th><th>Failed</th><th>Sender Time</th>");
-        html.append("<th>Receiver Time/Status</th><th>Network</th>");  //  Updated column name
+        html.append("<th>Receiver Time/Status</th><th>Network</th>");  // ✅ Updated column name
         html.append("<th>Device</th><th>Final Status</th><th>Timestamp</th>\n");
         html.append("</tr>\n</thead>\n<tbody>\n");
         
@@ -1159,7 +1166,7 @@ public class ReportGenerator {
             // Direction
             String direction = getStringValue(result.get("direction"));
             String directionIcon = "↔️";
-            if ("INCOMING".equals(direction)) directionIcon = "";
+            if ("INCOMING".equals(direction)) directionIcon = "📥";
             else if ("OUTGOING".equals(direction)) directionIcon = "📤";
             html.append("<td>").append(directionIcon).append(" ").append(direction).append("</td>\n");
             
@@ -1183,7 +1190,7 @@ public class ReportGenerator {
             // Successful SMS
             html.append("<td>").append(successfulSMS).append("</td>\n");
             
-         //  NEW: Receiver Timestamp with status handling
+         // ✅ NEW: Receiver Timestamp with status handling
             String receiverTime = getStringValue(result.get("receiverTime"));
             String verificationStatus = getStringValue(result.get("verificationStatus"));
             String deliveryStatus = getStringValue(result.get("deliveryStatus"));
@@ -1192,7 +1199,7 @@ public class ReportGenerator {
             String receiverDisplay;
             if (receiverTime != null && !receiverTime.isEmpty() && !receiverTime.equals("N/A")) {
                 if (receiverTime.equals("DEVICE_UNAVAILABLE")) {
-                    receiverDisplay = "<span style='color: orange;'> DEVICE_UNAVAILABLE</span>";
+                    receiverDisplay = "<span style='color: orange;'>⚠️ DEVICE_UNAVAILABLE</span>";
                 } else {
                     receiverDisplay = receiverTime;
                 }
@@ -1221,8 +1228,8 @@ public class ReportGenerator {
             // Final Status
             String finalStatus = getStringValue(result.get("finalStatus"));
             String statusIcon = "❓";
-            if (finalStatus.contains("SUCCESS") && !finalStatus.contains("PARTIAL")) statusIcon = "";
-            else if (finalStatus.contains("PARTIAL")) statusIcon = "";
+            if (finalStatus.contains("SUCCESS") && !finalStatus.contains("PARTIAL")) statusIcon = "✅";
+            else if (finalStatus.contains("PARTIAL")) statusIcon = "⚠️";
             else if (finalStatus.contains("FAILED")) statusIcon = "❌";
             else if (finalStatus.contains("ERROR")) statusIcon = "🚨";
             html.append("<td><strong>").append(statusIcon).append(" ").append(finalStatus).append("</strong></td>\n");
@@ -1240,7 +1247,7 @@ public class ReportGenerator {
     private static String generateDataUsageTable(List<Map<String, Object>> results) {
         StringBuilder html = new StringBuilder();
         html.append("<table>\n<thead>\n<tr>\n");
-        html.append("<th>Scenario</th><th>A Party Number</th><th>Target (GB)</th><th>Duration (min)</th><th>Consumed</th>"); //  ADDED
+        html.append("<th>Scenario</th><th>A Party Number</th><th>Target (GB)</th><th>Duration (min)</th><th>Consumed</th>"); // ✅ ADDED
         html.append("<th>Target Achieved</th><th>Network</th><th>Final Status</th><th>Comments</th>\n");
         html.append("</tr>\n</thead>\n<tbody>\n");
         
@@ -1377,8 +1384,8 @@ public class ReportGenerator {
     // ========== STATUS HELPER METHODS ==========
     
     private static String getStatusIcon(String status) {
-        if (status.contains("SUCCESS") && !status.contains("PARTIAL")) return "";
-        if (status.contains("PARTIAL")) return "";
+        if (status.contains("SUCCESS") && !status.contains("PARTIAL")) return "✅";
+        if (status.contains("PARTIAL")) return "⚠️";
         if (status.contains("FAILED")) return "❌";
         return "❓";
     }
@@ -1524,17 +1531,17 @@ public class ReportGenerator {
         return cleaned.trim();
     }
     
- //  NEW: Helper method for verification status display
+ // ✅ NEW: Helper method for verification status display
     private static String getVerificationStatusDisplay(String status) {
         switch (status) {
             case "DEVICE_UNAVAILABLE":
-                return "<span style='color: orange;'> Device Unavailable</span>";
+                return "<span style='color: orange;'>⚠️ Device Unavailable</span>";
             case "NOT_RECEIVED":
                 return "<span style='color: red;'>❌ Not Received</span>";
             case "RECEIVED_VIA_NOTIFICATION":
-                return "<span style='color: green;'> Received (Notification)</span>";
+                return "<span style='color: green;'>✅ Received (Notification)</span>";
             case "RECEIVED_IN_CONVERSATION":
-                return "<span style='color: green;'> Received (Conversation)</span>";
+                return "<span style='color: green;'>✅ Received (Conversation)</span>";
             case "VERIFICATION_ERROR":
                 return "<span style='color: red;'>🚨 Verification Error</span>";
             case "UNVERIFIED":
@@ -1544,15 +1551,15 @@ public class ReportGenerator {
         }
     }
 
-    //  NEW: Helper method for delivery status display
+    // ✅ NEW: Helper method for delivery status display
     private static String getDeliveryStatusDisplay(String status) {
         switch (status) {
             case "SUCCESS":
-                return "<span style='color: green;'> Success</span>";
+                return "<span style='color: green;'>✅ Success</span>";
             case "FAILED_SLA":
-                return "<span style='color: orange;'> Failed SLA</span>";
+                return "<span style='color: orange;'>⚠️ Failed SLA</span>";
             case "DEVICE_UNAVAILABLE":
-                return "<span style='color: orange;'> Device Unavailable</span>";
+                return "<span style='color: orange;'>⚠️ Device Unavailable</span>";
             case "UNVERIFIED":
                 return "<span style='color: gray;'>❓ Unverified</span>";
             default:

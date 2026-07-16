@@ -11,6 +11,7 @@ com\telecom\pages\ImprovedDialerPage.class
 com\telecom\pages\SIMToolkitPage$1.class
 com\telecom\core\BasePage.class
 com\telecom\utils\ADBHelper.class
+com\telecom\utils\NetworkRAT.class
 com\telecom\verification\MessageVerifier.class
 com\telecom\pages\ImprovedDialerPage$ConferenceResult.class
 com\telecom\pages\ImprovedMessagingPage.class

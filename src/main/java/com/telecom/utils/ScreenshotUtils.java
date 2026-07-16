@@ -1,17 +1,25 @@
 package com.telecom.utils;
 
-import com.telecom.config.SIMToolkitConfig;
-import io.appium.java_client.AppiumDriver;
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 
-import java.io.File;
-import java.lang.reflect.Method;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.telecom.config.SIMToolkitConfig;
+
+import io.appium.java_client.AppiumDriver;
 
 @SuppressWarnings("unused")
 public class ScreenshotUtils {
@@ -83,7 +91,7 @@ public class ScreenshotUtils {
     }
 
     /**
-     *  Load existing screenshots from disk into memory
+     * ✅ Load existing screenshots from disk into memory
      * FIXED: Added null check for directory
      */
     private void loadExistingScreenshots() {
@@ -201,7 +209,7 @@ public class ScreenshotUtils {
         List<ScreenshotInfo> testScreenshots = new ArrayList<>();
         
         if (testStartTime == null || testEndTime == null) {
-            System.out.println(" Test start/end time not set. Showing all screenshots.");
+            System.out.println("⚠️ Test start/end time not set. Showing all screenshots.");
             // Return all if times not set
             synchronized (capturedScreenshots) {
                 for (int i = 0; i < capturedScreenshots.size(); i++) {
@@ -303,9 +311,6 @@ public class ScreenshotUtils {
 
             // Get the device number like other reports do
             String dialingNumber = System.getProperty("aPartyNumber");
-            if (dialingNumber == null || dialingNumber.isEmpty()) {
-                dialingNumber = "unknown";
-            }
 
             String timestamp = TIMESTAMP_FORMATTER.get().format(new Date());
             // FIX: Use proper file path construction
@@ -349,7 +354,7 @@ public class ScreenshotUtils {
                 .append("border-radius: 4px; margin-top: 10px; }")
                 .append("</style></head><body>");
 
-            html.append("<h1> Vi SIM Toolkit Screenshot Report - ").append(dialingNumber).append("</h1>");
+            html.append("<h1>📱 Vi SIM Toolkit Screenshot Report - ").append(dialingNumber).append("</h1>");
             
             // Test Information Section
             html.append("<div class='info-box'>")
@@ -396,7 +401,7 @@ public class ScreenshotUtils {
             
             if (testScreenshots.isEmpty()) {
                 html.append("<div class='no-screenshots'>")
-                    .append("<p> No screenshots found for the specified test period</p>")
+                    .append("<p>⚠️ No screenshots found for the specified test period</p>")
                     .append("<p>Test Period: ");
                 
                 if (testStartTime != null) {
@@ -440,7 +445,7 @@ public class ScreenshotUtils {
                 .append("</body></html>");
 
             FileUtils.writeStringToFile(new File(reportPath), html.toString(), "UTF-8");
-            System.out.println(" Screenshot report saved: " + reportPath);
+            System.out.println("✅ Screenshot report saved: " + reportPath);
             System.out.println("📊 Screenshots in report: " + testScreenshots.size());
 
         } catch (Exception e) {
@@ -509,7 +514,7 @@ public class ScreenshotUtils {
         
         System.out.println("   Total screenshots: " + size);
         if (size == 0) {
-            System.out.println("    No screenshots found!");
+            System.out.println("   ⚠️ No screenshots found!");
         } else {
             synchronized (capturedScreenshots) {
                 for (int i = 0; i < Math.min(size, 10); i++) {

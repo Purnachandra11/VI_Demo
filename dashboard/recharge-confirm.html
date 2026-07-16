@@ -480,7 +480,9 @@
   </div>
 
   <script>
-    // Get data from window variables
+    // ============================================================
+    // 1. GET DATA FROM WINDOW VARIABLES
+    // ============================================================
     const txnId = window.__TXN_ID__;
     const mobileNumber = window.__MOBILE_NUMBER__;
     const amount = window.__AMOUNT__;
@@ -489,8 +491,12 @@
     const viStatus = window.__VI_STATUS__;
     const srNo = window.__SR_NO__;
     const confirmApiUrl = window.__CONFIRM_API_URL__;
+    const wsUrl = window.__WS_URL__ || 'ws://localhost:5174/swift-ws';
+    const sessionId = window.__SESSION_ID__ || '';
 
-    // Display the data with proper formatting
+    // ============================================================
+    // 2. DISPLAY DATA
+    // ============================================================
     document.getElementById('srNoDisplay').textContent = srNo || '—';
     document.getElementById('mobileDisplay').textContent = mobileNumber || 'N/A';
     document.getElementById('statusDisplay').textContent = viStatus || '—';
@@ -498,7 +504,9 @@
     document.getElementById('amountDisplay').textContent = amount ? ('₹' + amount) : '—';
     document.getElementById('benefitDisplay').textContent = benefit || '—';
 
-    // Get DOM elements
+    // ============================================================
+    // 3. GET DOM ELEMENTS
+    // ============================================================
     const mainButtons = document.getElementById('mainButtons');
     const failureForm = document.getElementById('failureForm');
     const statusMsg = document.getElementById('statusMsg');
@@ -509,7 +517,41 @@
     const freeTestBook = document.getElementById('freeTestBook');
     const charCount = document.getElementById('charCount');
 
-    // Character counter for Free Test Book
+    // ============================================================
+    // 4. WEBSOCKET CONNECTION FOR REAL-TIME NOTIFICATION
+    // ============================================================
+    let ws = null;
+    let wsConnected = false;
+
+    if (sessionId) {
+      try {
+        console.log(`[Recharge] Connecting WebSocket with session: ${sessionId}`);
+        ws = new WebSocket(`${wsUrl}?sessionId=${sessionId}`);
+        
+        ws.onopen = function() {
+          console.log('[Recharge] WebSocket connected for confirmation');
+          wsConnected = true;
+        };
+        
+        ws.onerror = function(err) {
+          console.warn('[Recharge] WebSocket error:', err);
+          wsConnected = false;
+        };
+        
+        ws.onclose = function() {
+          console.log('[Recharge] WebSocket closed');
+          wsConnected = false;
+        };
+      } catch (e) {
+        console.warn('[Recharge] Could not establish WebSocket:', e);
+      }
+    } else {
+      console.warn('[Recharge] No session ID provided, WebSocket not available');
+    }
+
+    // ============================================================
+    // 5. CHARACTER COUNTER
+    // ============================================================
     freeTestBook.addEventListener('input', function() {
       const length = this.value.length;
       const maxLength = 1000;
@@ -522,9 +564,15 @@
       }
     });
 
-    // Success button handler
-    successBtn.addEventListener('click', async () => {
-      successBtn.disabled = true;
+    // ============================================================
+    // 6. SUCCESS BUTTON HANDLER (ENHANCED WITH WEBSOCKET)
+    // ============================================================
+    // Remove existing listeners and add enhanced one
+    const newSuccessBtn = successBtn.cloneNode(true);
+    successBtn.parentNode.replaceChild(newSuccessBtn, successBtn);
+
+    newSuccessBtn.addEventListener('click', async function() {
+      this.disabled = true;
       failedBtn.disabled = true;
       statusMsg.textContent = '⏳ Confirming recharge...';
       statusMsg.className = 'status info';
@@ -533,6 +581,7 @@
         console.log(`[Recharge] Sending confirmation to: ${confirmApiUrl}`);
         console.log(`[Recharge] TXN ID: ${txnId}, Mobile: ${mobileNumber}`);
 
+        // 1. Send via REST API
         const response = await fetch(confirmApiUrl, {
           method: 'POST',
           headers: {
@@ -548,14 +597,12 @@
 
         console.log(`[Recharge] Response status: ${response.status}`);
 
-        // Try to parse response
         let result;
         try {
           result = await response.json();
           console.log('[Recharge] Response data:', result);
         } catch (parseErr) {
           console.error('[Recharge] Failed to parse JSON:', parseErr);
-          // If response is not JSON, check if it's OK
           if (response.ok) {
             result = { success: true };
           } else {
@@ -564,19 +611,49 @@
         }
 
         if (response.ok && (result.success === true || result.success === 'true')) {
-          statusMsg.textContent = 'Recharge confirmed successfully! Continuing automation...';
+          // 2. Send via WebSocket for immediate notification
+          if (ws && wsConnected) {
+            try {
+              const wsMessage = {
+                type: 'recharge_confirmed',
+                msisdn: mobileNumber,
+                txnId: txnId,
+                confirmed: true
+              };
+              ws.send(JSON.stringify(wsMessage));
+              console.log(`[Recharge] Sent WebSocket confirmation for ${mobileNumber}`);
+            } catch (wsErr) {
+              console.warn('[Recharge] WebSocket send failed:', wsErr);
+            }
+          }
+
+          // 3. Write confirmation file for WDIO
+          try {
+            const response2 = await fetch('/api/swift/recharge-confirmed', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                msisdn: mobileNumber, 
+                txnId: txnId,
+                source: 'popup'
+              })
+            });
+            const result2 = await response2.json();
+            console.log(`[Recharge] Confirmation file written:`, result2);
+          } catch (fileErr) {
+            console.warn('[Recharge] File write failed:', fileErr);
+          }
+
+          statusMsg.textContent = '✅ Recharge confirmed successfully! Continuing automation...';
           statusMsg.className = 'status success';
           console.log(`[Recharge] Confirmed for ${mobileNumber}`);
 
           // Close the popup after a short delay
           setTimeout(() => {
-            window.close();
-            try {
-              window.location.href = '/sim-recharge.html';
-            } catch (_) {}
+            try { window.close(); } catch (_) {}
+            try { window.location.href = '/sim-recharge.html'; } catch (_) {}
           }, 1500);
         } else {
-          // Check if we got an error message
           const errorMsg = result?.message || result?.error || 'Confirmation failed';
           throw new Error(errorMsg);
         }
@@ -584,26 +661,32 @@
         console.error('[Recharge] Confirm error:', error);
         statusMsg.textContent = `❌ Error: ${error.message || 'Please try again.'}`;
         statusMsg.className = 'status error';
-        successBtn.disabled = false;
+        this.disabled = false;
         failedBtn.disabled = false;
       }
     });
 
-    // Failed button handler - show form
-    failedBtn.addEventListener('click', () => {
+    // ============================================================
+    // 7. FAILED BUTTON HANDLER
+    // ============================================================
+    const newFailBtn = failedBtn.cloneNode(true);
+    failedBtn.parentNode.replaceChild(newFailBtn, failedBtn);
+
+    newFailBtn.addEventListener('click', function() {
       mainButtons.style.display = 'none';
       failureForm.style.display = 'block';
       statusMsg.textContent = '';
       statusMsg.className = 'status';
     });
 
-    // Cancel form handler
-    cancelFormBtn.addEventListener('click', () => {
+    // ============================================================
+    // 8. CANCEL FORM HANDLER
+    // ============================================================
+    cancelFormBtn.addEventListener('click', function() {
       failureForm.style.display = 'none';
       mainButtons.style.display = 'flex';
       statusMsg.textContent = '';
       statusMsg.className = 'status';
-      // Reset form fields
       document.getElementById('reasonSelect').value = '';
       freeTestBook.value = '';
       charCount.textContent = '0 / 1000';
@@ -611,8 +694,10 @@
       document.getElementById('artifactsInput').value = '';
     });
 
-    // Submit failure handler
-    submitFailureBtn.addEventListener('click', async () => {
+    // ============================================================
+    // 9. SUBMIT FAILURE HANDLER
+    // ============================================================
+    submitFailureBtn.addEventListener('click', async function() {
       const reason = document.getElementById('reasonSelect').value;
       const freeTestBookText = freeTestBook.value.trim();
       const artifactsInput = document.getElementById('artifactsInput');
@@ -635,7 +720,7 @@
         return;
       }
 
-      submitFailureBtn.disabled = true;
+      this.disabled = true;
       cancelFormBtn.disabled = true;
       statusMsg.textContent = '⏳ Submitting failure details...';
       statusMsg.className = 'status info';
@@ -647,38 +732,37 @@
         formData.append('freeTestBook', freeTestBookText);
         formData.append('timestamp', new Date().toISOString());
 
-        // Append files
         for (let i = 0; i < artifactsInput.files.length; i++) {
           formData.append('artifacts', artifactsInput.files[i]);
         }
 
-        const response = await fetch(`/api/recharge/failure`, {
+        const response = await fetch('/api/recharge/failure', {
           method: 'POST',
           body: formData,
         });
 
         if (response.ok) {
-          statusMsg.textContent = 'Failure details submitted! Continuing automation...';
+          statusMsg.textContent = '✅ Failure details submitted! Continuing automation...';
           statusMsg.className = 'status success';
           setTimeout(() => {
-            window.close();
-            try {
-              window.location.href = '/sim-recharge.html';
-            } catch (_) {}
+            try { window.close(); } catch (_) {}
+            try { window.location.href = '/sim-recharge.html'; } catch (_) {}
           }, 1500);
         } else {
           throw new Error('Submission failed');
         }
       } catch (error) {
         console.error('Submit failure error:', error);
-        statusMsg.textContent = 'Error submitting failure details. Please try again.';
+        statusMsg.textContent = '❌ Error submitting failure details. Please try again.';
         statusMsg.className = 'status error';
-        submitFailureBtn.disabled = false;
+        this.disabled = false;
         cancelFormBtn.disabled = false;
       }
     });
 
-    // Log the data for debugging
+    // ============================================================
+    // 10. LOG DATA FOR DEBUGGING
+    // ============================================================
     console.log('Recharge confirmation data:', {
       txnId,
       mobileNumber,
@@ -687,7 +771,10 @@
       benefit,
       viStatus,
       srNo,
-      confirmApiUrl
+      confirmApiUrl,
+      wsUrl,
+      sessionId,
+      wsConnected
     });
   </script>
 </body>

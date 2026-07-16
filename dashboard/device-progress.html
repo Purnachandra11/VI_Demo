@@ -127,9 +127,35 @@
       justify-content: space-between;
       padding: 10px 30px; gap: 24px;
     }
-    .brandWrap { text-decoration: none; display: flex; flex-direction: column; }
-    .brandLogo { height: 30px; object-fit: contain; }
-    .logoTagline { font-size:11px; font-weight:500; color:var(--brown); margin-top:2px; letter-spacing:.2px; }
+    .brandWrap {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.logoContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.qdegreesLogo {
+  height: 30px;
+  width: auto;
+}
+
+.viLogo {
+  height: 40px;
+  width: auto;
+}
+
+.logoTagline {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--brown);
+  margin-top: 2px;
+  letter-spacing: .2px;
+}
 
     .navbar-nav {
       list-style: none; padding: 0; margin: 0;
@@ -230,11 +256,18 @@
     .stat-sub { font-size:11px; color:var(--muted); margin-top:2px; }
 
     /* ── CARD ── */
-    .card {
+    /* .card {
       background: var(--white); border: 0px solid var(--border);
-      border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); height: 609px;
+      border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); height: 609px; */
 
-    }
+    /* } */
+    .card {
+  background: var(--white); border: 0px solid var(--border);
+  border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
+}
+#leftCard { height: auto; min-height: 450px; }
+#rightCard { height: auto; min-height: 500px; }
+
     .card-title {
       font-size:14px; font-weight:600; color:var(--text);
       display:flex; align-items:center; gap:8px;
@@ -278,7 +311,9 @@
     hr.divider { border:none; border-top:1px solid var(--border); margin:22px 0; }
 
     /* ── TWO-COL GRID ── */
-    .step-grid { display:grid; grid-template-columns:1fr 1.1fr; gap:28px; align-items:start; }
+    /* .step-grid { display:grid; grid-template-columns:1fr 1.1fr; gap:28px; align-items:start; } */
+
+    .step-grid { display:grid; grid-template-columns:1fr; gap:28px; align-items:start; }
 
     /* ── PROGRESS BARS ── */
     .progress-block { margin-bottom: 20px; }
@@ -479,9 +514,12 @@
   <header class="mainHeader">
     <nav class="navbar">
       <a class="brandWrap" href="index.html">
-        <img src="https://qdegrees.com/img/logo.svg" alt="QDegrees Logo" class="brandLogo">
-        <span class="logoTagline">VI Sim Automation Platform</span>
-      </a>
+      <div class="logoContainer">
+          <img src="./vi-logo.svg" alt="VI Logo" class="viLogo">
+        <img src="https://qdegrees.com/img/logo.svg" alt="QDegrees Logo" class="brandLogo qdegreesLogo">   
+      </div>
+       <span class="logoTagline">VI Sim Automation Platform</span>
+     </a>
 
      <div class="header-status">
   <div class="header-item">
@@ -564,8 +602,8 @@
     <!-- Two-col layout -->
     <div class="step-grid" id="mainGrid" style="display:none;">
 
-      <!-- LEFT: progress + details -->
-      <div class="card" id="leftCard">
+  <!-- TOP: progress + details -->
+  <div class="card" id="leftCard">
         <div class="card-title" id="leftCardTitle">
           <span class="step-pill" id="testTypePill">—</span>
           Test Execution
@@ -630,9 +668,8 @@
         </div>
         <div class="detail-grid" id="liveDetailGrid" style="margin-top:10px;"></div>
       </div>
-
-      <!-- RIGHT: logs + reports -->
-      <div class="card" id="rightCard">
+ <!-- BOTTOM: logs + reports -->
+  <div class="card" id="rightCard" style="height: auto; min-height: 500px;">
         <div class="card-title">
           <span style="display:flex;align-items:center;gap:7px;">
             <span style="width:7px;height:7px;border-radius:50%;background:#4CAF50;animation:pulseDot 1.4s infinite;flex-shrink:0;"></span>

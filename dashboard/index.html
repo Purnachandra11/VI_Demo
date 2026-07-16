@@ -877,18 +877,12 @@
 <header class="mainHeader">
     <nav class="navbar">
     <a class="brandWrap" href="index.html">
-  <div class="logoContainer">
-    <img src="./vi-logo.svg" alt="VI Logo" class="viLogo">
-     <img
-      src="https://qdegrees.com/img/logo.svg"
-      alt="QDegrees Logo"
-      class="brandLogo qdegreesLogo"
-    >
-   
-    
-  </div>
-  <span class="logoTagline">VI Sim Automation Platform</span>
-</a>
+      <div class="logoContainer">
+          <img src="./vi-logo.svg" alt="VI Logo" class="viLogo">
+        <img src="https://qdegrees.com/img/logo.svg" alt="QDegrees Logo" class="brandLogo qdegreesLogo">   
+      </div>
+       <span class="logoTagline">VI Sim Automation Platform</span>
+     </a>
 
       <!-- Center: Title + Nav -->
       <div class="header-center">
@@ -906,8 +900,11 @@
     </a>
               </li>
               <li class="nav-item">
-                  <a href="sim-recharge.html" class="nav-link">SIM Recharge</a>
+                  <a href="sim-recharge.html" class="nav-link">MRP Recharge</a>
               </li>
+               <li>
+            <a href="segmentedoffers.html" class="nav-link">Segmented Offers</a>
+          </li>
         </ul>
       </div>
 
@@ -1412,6 +1409,7 @@ window.addEventListener('load', async () => {
         const r=await fetch(`${API_BASE}/device/connect-usb`,{method:'POST',headers:{'Content-Type':'application/json'}});
         const d=await r.json(); hideLoader();
         if (d.success && d.device) {
+          console.log({d})
           currentDeviceId=d.device.id; d.device.sim=d.device.phoneNumber||d.device.sim; d.device.isOffline=isDeviceOffline(d.device);
           updateDeviceStatus(true,d.device); await addDeviceToList(d.device); addLog(`USB: ${d.device.model}`,'success'); validateFilesAndUpdateButton();
         } else addLog(`Connection failed: ${d.message}`,'error');
@@ -1740,9 +1738,7 @@ async function reconnectDevice(deviceId) {
               <option value="sms">SMS Tests</option>
               <option value="data">Data Usage Tests</option>
               <option value="simToolkit">SIM Toolkit Test</option>
-              <option value="calling-sms">Calling + SMS</option>
-              <option value="calling-data">Calling + Data</option>
-              <option value="sms-data">SMS + Data</option>
+              <option value="latch">SIM Auto Latch</option>
               <option value="all">All Tests</option>
             </select>
           </div>
@@ -1801,7 +1797,14 @@ async function reconnectDevice(deviceId) {
       if(!pw) addLog('Allow popups to view live progress','warning'); else addLog('Opening live progress window...','info');
       addLog(`Starting ${testType} tests...`,'info');
       try {
-        await fetch(`${API_BASE}/test-command`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({deviceId:id,testType,phone:aPartyNumber,excelFiles:[uploadedFiles?.calling?.path],path:uploadedFiles?.calling?.path})});
+        let result = await fetch(`${API_BASE}/test-command`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({deviceId:id,testType,phone:aPartyNumber,excelFiles:[uploadedFiles?.calling?.path],path:uploadedFiles?.calling?.path})});
+        if(result.status == 200){
+          rb.disabled = false
+          sb.disabled = true 
+        }else{
+          rb.disabled = false
+          sb.disabled = true 
+        }
         addLog('Test execution started — see progress window','info'); loadTestReports();
       } catch(e){ addLog(e.message,'error'); if(rb) rb.disabled=false; if(sb) sb.disabled=true; if(pw&&!pw.closed) pw.close(); }
     }

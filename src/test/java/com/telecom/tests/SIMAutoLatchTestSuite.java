@@ -1,10 +1,14 @@
 package com.telecom.tests;
 
-import com.telecom.core.SIMAutoLatchTestExecutor;
-import com.telecom.utils.ADBHelper;
-import org.testng.annotations.*;
 import java.util.List;
 import java.util.Map;
+
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import com.telecom.core.SIMAutoLatchTestExecutor;
+import com.telecom.utils.ADBHelper;
 
 public class SIMAutoLatchTestSuite {
     
@@ -102,27 +106,27 @@ public class SIMAutoLatchTestSuite {
             // Display sample output format
             System.out.println("\n📋 EXPECTED OUTPUT FORMAT:");
             System.out.println("=".repeat(120));
-            System.out.println("Device ID\tParty Number\tTimeout(s)\tInitial Network\tFinal Network\tAuto-Latch Time(ms)\tAuto-Latch Time(s)\tTest Result\tTransitions\tIMS Registered\tisRoaming\tComments");
+//            System.out.println("Device ID\tParty Number\tTimeout(s)\tInitial Network\tFinal Network\tAuto-Latch Time(ms)\tAuto-Latch Time(s)\tTest Result\tTransitions\tIMS Registered\tisRoaming\tComments");
+            System.out.println("Device ID\tParty Number\tTimeout(s)\tInitial Network\tFinal Network\tAuto-Latch Time(ms)\tAuto-Latch Time(s)\tTest Result\tTransitions\tisRoaming\tComments");
             System.out.println("-".repeat(120));
             
             // Display first few results as example
             int count = Math.min(results.size(), 3);
             for (int i = 0; i < count; i++) {
                 Map<String, Object> result = results.get(i);
-                System.out.printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-                    result.getOrDefault("deviceId", ""),
-                    result.getOrDefault("partyNumber", ""),
-                    result.getOrDefault("timeoutSeconds", ""),
-                    result.getOrDefault("initialNetworkState", ""),
-                    result.getOrDefault("finalNetworkState", ""),
-                    result.getOrDefault("autoLatchTimeMs", ""),
-                    result.getOrDefault("autoLatchTimeSeconds", ""),
-                    result.getOrDefault("testResult", ""),
-                    result.getOrDefault("transitions", ""),
-                    result.getOrDefault("finalIMSRegistered", ""),
-                    "TRUE", // Placeholder for roaming status
-                    result.getOrDefault("comments", "")
-                );
+                System.out.printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+                	    result.getOrDefault("deviceId", ""),
+                	    result.getOrDefault("partyNumber", ""),
+                	    result.getOrDefault("timeoutSeconds", ""),
+                	    result.getOrDefault("initialNetworkState", ""),
+                	    result.getOrDefault("finalNetworkState", ""),
+                	    result.getOrDefault("autoLatchTimeMs", ""),
+                	    result.getOrDefault("autoLatchTimeSeconds", ""), 
+                	    result.getOrDefault("testResult", ""),
+                	    result.getOrDefault("transitions", ""),
+                	    "TRUE",
+                	    result.getOrDefault("comments", "")
+                	);
             }
             
             if (results.size() > 3) {

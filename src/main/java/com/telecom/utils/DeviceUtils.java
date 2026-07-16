@@ -1,16 +1,17 @@
 package com.telecom.utils;
 
-import com.telecom.config.SIMToolkitConfig;
-import io.appium.java_client.AppiumDriver;
-import io.appium.java_client.android.AndroidDriver;
+import java.time.Duration;
+import java.util.List;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import com.telecom.utils.ADBLauncher;
 
-import java.time.Duration;
-import java.util.List;
+import com.telecom.config.SIMToolkitConfig;
+
+import io.appium.java_client.AppiumDriver;
+import io.appium.java_client.android.AndroidDriver;
 
 @SuppressWarnings("unused")
 public class DeviceUtils {
@@ -34,7 +35,7 @@ public class DeviceUtils {
         if (ADBLauncher.launchSIMToolkit(deviceId)) {
             Thread.sleep(5000);
             if (isSIMToolkitVisible()) {
-                System.out.println("   SIM Toolkit launched successfully");
+                System.out.println("  ✅ SIM Toolkit launched successfully");
                 return true;
             }
         }
@@ -44,7 +45,7 @@ public class DeviceUtils {
         if (ADBLauncher.launchSIMToolkit()) {
             Thread.sleep(5000);
             if (isSIMToolkitVisible()) {
-                System.out.println("   SIM Toolkit launched successfully");
+                System.out.println("  ✅ SIM Toolkit launched successfully");
                 return true;
             }
         }
@@ -54,7 +55,7 @@ public class DeviceUtils {
         if (ADBLauncher.launchSIMToolkitViaActivity(deviceId)) {
             Thread.sleep(5000);
             if (isSIMToolkitVisible()) {
-                System.out.println("   SIM Toolkit launched successfully");
+                System.out.println("  ✅ SIM Toolkit launched successfully");
                 return true;
             }
         }
@@ -68,7 +69,7 @@ public class DeviceUtils {
             );
             Thread.sleep(5000);
             if (isSIMToolkitVisible()) {
-                System.out.println("   SIM Toolkit launched successfully");
+                System.out.println("  ✅ SIM Toolkit launched successfully");
                 return true;
             }
         } catch (Exception e) {
@@ -246,7 +247,7 @@ public class DeviceUtils {
                 Thread.sleep(1000);
             }
 
-            System.out.println("   App closed using BACK key");
+            System.out.println("  ✅ App closed using BACK key");
 
         } catch (Exception e) {
             System.err.println("Error closing app using BACK key: " + e.getMessage());

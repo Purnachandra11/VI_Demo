@@ -15,7 +15,7 @@ public class VPNManager {
      * @return true if VPN connection initiated successfully
      */
     public static boolean connectToFreeVPN(String deviceId) {
-        System.out.println(" Connecting to Free VPN on device: " + deviceId);
+        System.out.println("🔐 Connecting to Free VPN on device: " + deviceId);
         
         try {
             // Check if VPN app is installed
@@ -24,7 +24,7 @@ public class VPNManager {
             );
             
             if (checkInstalled.isEmpty()) {
-                System.out.println(" No VPN app found on device");
+                System.out.println("⚠️ No VPN app found on device");
                 System.out.println("💡 Continuing without VPN...");
                 return false;
             }
@@ -36,7 +36,7 @@ public class VPNManager {
             );
             
             ADBHelper.executeCommand(vpnIntent);
-            System.out.println(" VPN settings opened");
+            System.out.println("✅ VPN settings opened");
             
             Thread.sleep(3000);
             
@@ -67,7 +67,7 @@ public class VPNManager {
                               vpnStatus.contains("VPN established");
             
             if (connected) {
-                System.out.println(" VPN is active on device: " + deviceId);
+                System.out.println("✅ VPN is active on device: " + deviceId);
             } else {
                 System.out.println("❌ VPN is not active on device: " + deviceId);
             }
@@ -75,7 +75,7 @@ public class VPNManager {
             return connected;
             
         } catch (Exception e) {
-            System.out.println(" Could not check VPN status: " + e.getMessage());
+            System.out.println("⚠️ Could not check VPN status: " + e.getMessage());
             return false;
         }
     }
@@ -94,7 +94,7 @@ public class VPNManager {
                 "adb -s " + deviceId + " shell am force-stop com.android.vpndialogs"
             );
             
-            System.out.println(" VPN disconnected");
+            System.out.println("✅ VPN disconnected");
             return true;
             
         } catch (Exception e) {
@@ -142,7 +142,7 @@ public class VPNManager {
      * @return true if VPN setup successful
      */
     public static boolean enableVPN(String deviceId, Map<String, String> vpnConfig) {
-        System.out.println(" Enabling VPN with custom config...");
+        System.out.println("🔐 Enabling VPN with custom config...");
         
         try {
             String vpnName = vpnConfig.getOrDefault("name", "TestVPN");
@@ -158,7 +158,7 @@ public class VPNManager {
             
             // Note: Actual VPN setup requires VPN app or root access
             // This is a placeholder for custom VPN logic
-            System.out.println(" Custom VPN setup requires manual configuration");
+            System.out.println("⚠️ Custom VPN setup requires manual configuration");
             
             return false;
             
@@ -179,7 +179,7 @@ public class VPNManager {
         
         for (int i = 0; i < timeoutSeconds; i++) {
             if (isVPNConnected(deviceId)) {
-                System.out.println(" VPN connected after " + i + "s");
+                System.out.println("✅ VPN connected after " + i + "s");
                 return true;
             }
             
@@ -201,11 +201,11 @@ public class VPNManager {
      */
     public static void printVPNDiagnostics(String deviceId) {
         System.out.println("\n" + "=".repeat(80));
-        System.out.println(" VPN DIAGNOSTICS - Device: " + deviceId);
+        System.out.println("🔐 VPN DIAGNOSTICS - Device: " + deviceId);
         System.out.println("=".repeat(80));
         
         boolean connected = isVPNConnected(deviceId);
-        System.out.println("Connection Status: " + (connected ? " CONNECTED" : "❌ DISCONNECTED"));
+        System.out.println("Connection Status: " + (connected ? "✅ CONNECTED" : "❌ DISCONNECTED"));
         
         Map<String, String> details = getVPNDetails(deviceId);
         System.out.println("VPN Interface: " + details.getOrDefault("interface", "NONE"));

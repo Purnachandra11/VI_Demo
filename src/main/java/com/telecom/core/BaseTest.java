@@ -1,8 +1,9 @@
 package com.telecom.core;
 
-import io.appium.java_client.AppiumDriver;
 import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeSuite;
+
+import io.appium.java_client.AppiumDriver;
 
 public class BaseTest {
     

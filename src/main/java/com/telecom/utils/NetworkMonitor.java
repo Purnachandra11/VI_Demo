@@ -89,7 +89,7 @@ public class NetworkMonitor {
             Map<String, String> networkInfo = getNetworkInfo(deviceId);
             String networkType = networkInfo.get("networkType");
             
-            System.out.println(" Network Type: " + networkType);
+            System.out.println("✅ Network Type: " + networkType);
             return true;
             
         } catch (Exception e) {
@@ -107,12 +107,9 @@ public class NetworkMonitor {
             // Build the exact ADB command for Vodafone/IDEA APNs
             String command = "adb -s " + deviceId + " shell \"content query --uri content://telephony/carriers --projection name,apn,type,current --where \\\"current=1 AND type LIKE '%default%' AND (name LIKE '%Vodafone%' OR name LIKE '%IDEA%')\\\"\"";
             
-            System.out.println(" Executing APN query: " + command);
+            System.out.println("📱 Executing APN query: " + command);
             
-            String os = System.getProperty("os.name", "").toLowerCase();
-            Process process = os.contains("win")
-                    ? Runtime.getRuntime().exec(new String[]{"cmd.exe", "/c", command})
-                    : Runtime.getRuntime().exec(new String[]{"/bin/bash", "-c", command});
+            Process process = Runtime.getRuntime().exec(new String[]{"cmd", "/c", command});
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
             StringBuilder output = new StringBuilder();
@@ -147,11 +144,11 @@ public class NetworkMonitor {
                 apnInfo.put("current", current);
                 apnInfo.put("apnDetails", apnComment.toString());  // Add the combined APN details
                 
-                System.out.println(" APN Info Retrieved: " + apnComment.toString());
+                System.out.println("✅ APN Info Retrieved: " + apnComment.toString());
                 
             } else {
                 // Fallback to preferapn if no Vodafone/IDEA APNs found
-                System.out.println(" No Vodafone/IDEA APN found, trying preferapn as fallback...");
+                System.out.println("⚠️ No Vodafone/IDEA APN found, trying preferapn as fallback...");
                 return getAPNInfoFallback(deviceId);
             }
             
@@ -207,10 +204,10 @@ public class NetworkMonitor {
                 apnInfo.put("current", current);
                 apnInfo.put("apnDetails", apnComment.toString());
                 
-                System.out.println(" APN Info (Fallback): " + apnComment.toString());
+                System.out.println("✅ APN Info (Fallback): " + apnComment.toString());
             } else {
                 apnInfo.put("apnDetails", "APN: NOT_FOUND");
-                System.out.println(" No APN configuration found");
+                System.out.println("⚠️ No APN configuration found");
             }
             
         } catch (Exception e) {

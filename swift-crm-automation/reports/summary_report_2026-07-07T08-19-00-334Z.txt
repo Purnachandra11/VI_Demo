@@ -1,6 +1,0 @@
-
-                        UAT TEST EXECUTION SUMMARY                              
-
-   OVERALL RESULTS: Total Test Cases: 1          Passed: 0          Failed: 1
- 
-

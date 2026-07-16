@@ -1,0 +1,4 @@
+{
+  "using": "css selector",
+  "value": "div:contains(\"Non-Daily Data packs\"), label:contains(\"Non-Daily Data packs\"), span:contains(\"Non-Daily Data packs\")"
+}

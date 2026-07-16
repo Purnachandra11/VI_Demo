@@ -1,13 +1,17 @@
 package com.telecom.tests;
 
+import java.util.List;
+import java.util.Map;
+
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
 import com.telecom.config.ConfigReader;
 import com.telecom.core.DataUsageTestExecutor;
 import com.telecom.driver.DriverManager;
-import io.appium.java_client.android.AndroidDriver;
-import org.testng.annotations.*;
 
-import java.util.List;
-import java.util.Map;
+import io.appium.java_client.android.AndroidDriver;
 
 public class DataUsageTest {
     private AndroidDriver driver;
@@ -31,7 +35,7 @@ public class DataUsageTest {
         String androidVersion = com.telecom.utils.ADBHelper.getAndroidVersion(deviceId);
         driver = DriverManager.initializeDriver(deviceId, androidVersion.split("\\.")[0]);
         
-        System.out.println(" Data Usage Test Environment Ready");
+        System.out.println("✅ Data Usage Test Environment Ready");
     }
     
     @Test
@@ -45,7 +49,7 @@ public class DataUsageTest {
             DataUsageTestExecutor executor = new DataUsageTestExecutor(driver, deviceId);
             List<Map<String, Object>> results = executor.executeDataUsageTests(excelPath);
             
-            System.out.println("\n Data Usage Tests Completed");
+            System.out.println("\n✅ Data Usage Tests Completed");
             System.out.println("   Total Tests: " + results.size());
             
         } catch (Exception e) {

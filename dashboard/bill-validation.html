@@ -65,9 +65,35 @@
       padding: 10px 30px;
       gap: 24px;
     }
-    .brandWrap { text-decoration: none; display: flex; flex-direction: column; }
-    .brandLogo { height: 30px; object-fit: contain; }
-    .logoTagline { font-size: 11px; font-weight: 500; color: var(--brown); margin-top: 2px; letter-spacing: .2px; }
+    .brandWrap {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.logoContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.qdegreesLogo {
+  height: 30px;
+  width: auto;
+}
+
+.viLogo {
+  height: 40px;
+  width: auto;
+}
+
+.logoTagline {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--brown);
+  margin-top: 2px;
+  letter-spacing: .2px;
+}
 
     .navbar-nav {
       list-style: none;
@@ -546,15 +572,19 @@
   <header class="mainHeader">
     <nav class="navbar">
       <a class="brandWrap" href="index.html">
-        <img src="https://qdegrees.com/img/logo.svg" alt="QDegrees Logo" class="brandLogo">
-        <span class="logoTagline">VI Sim Automation Platform</span>
-         <!-- <span class="logoTagline">Mobile SIM Automation</span> -->
-      </a>
+      <div class="logoContainer">
+          <img src="./vi-logo.svg" alt="VI Logo" class="viLogo">
+        <img src="https://qdegrees.com/img/logo.svg" alt="QDegrees Logo" class="brandLogo qdegreesLogo">   
+      </div>
+       <span class="logoTagline">VI Sim Automation Platform</span>
+     </a>
+     
 
       <ul class="navbar-nav">
         <li><a href="index.html" class="nav-link">Home</a></li>
         <li><a href="bill-validation.html" class="nav-link active">Bill Validation</a></li>
-        <li><a href="sim-recharge.html" class="nav-link">SIM Recharge</a></li>
+        <li class="nav-item"><a href="sim-recharge.html" class="nav-link">MRP Recharge</a></li>
+        <li><a href="segmentedoffers.html" class="nav-link">Segmented Offers</a></li>
       </ul>
 
       <div class="nav-right">

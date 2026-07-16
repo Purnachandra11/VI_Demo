@@ -2,10 +2,11 @@ package com.telecom.utils;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.net.URL;
 import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -14,10 +15,9 @@ public class USSDService {
     private static final int CONNECT_TIMEOUT = 150000; // 150 seconds
     private static final int READ_TIMEOUT = 150000;    // 150 seconds
     private static final String API_URL = "http://localhost:5175/getBalance";
-    //   private static final String API_URL = "http://13.233.121.125:5175/getBalance";
     
     /**
-     *  CHECK BALANCE AND VALIDITY - Enhanced Version
+     * ✅ CHECK BALANCE AND VALIDITY - Enhanced Version
      */  
     public static Map<String, Object> checkBalanceAndValidity(String deviceId, String ussdCode) {
         Map<String, Object> result = new HashMap<>();
@@ -95,7 +95,7 @@ public class USSDService {
                         result.put("validity", null);
                     }
                     
-                    System.out.println("    USSD API Success");
+                    System.out.println("   ✅ USSD API Success");
                     
                 } else {
                     // API returned status != 1
@@ -148,7 +148,7 @@ public class USSDService {
     }
     
     /**
-     *  CHECK BALANCE ONLY - Quick check without full details
+     * ✅ CHECK BALANCE ONLY - Quick check without full details
      */
     public static Double getQuickBalance(String deviceId) {
         try {
@@ -166,13 +166,13 @@ public class USSDService {
                 }
             }
         } catch (Exception e) {
-            System.out.println(" Quick balance check failed: " + e.getMessage());
+            System.out.println("⚠️ Quick balance check failed: " + e.getMessage());
         }
         return null;
     }
     
     /**
-     *  VERIFY PHONE NUMBER MATCH
+     * ✅ VERIFY PHONE NUMBER MATCH
      */
     public static boolean verifyPhoneNumber(String deviceId, String expectedNumber) {
         try {
@@ -187,10 +187,10 @@ public class USSDService {
                     
                     boolean match = normalizedExpected.equals(normalizedActual);
                     
-                    System.out.println(" Phone Number Verification:");
+                    System.out.println("📱 Phone Number Verification:");
                     System.out.println("   Expected: " + expectedNumber + " → " + normalizedExpected);
                     System.out.println("   Actual: " + actualNumber + " → " + normalizedActual);
-                    System.out.println("   Match: " + (match ? "" : "❌"));
+                    System.out.println("   Match: " + (match ? "✅" : "❌"));
                     
                     return match;
                 }
@@ -204,7 +204,7 @@ public class USSDService {
     }
     
     /**
-     *  NORMALIZE PHONE NUMBER - Handle different formats
+     * ✅ NORMALIZE PHONE NUMBER - Handle different formats
      */
     private static String normalizePhoneNumber(String phoneNumber) {
         if (phoneNumber == null) return "";
@@ -228,7 +228,7 @@ public class USSDService {
     }
     
     /**
-     *  TEST CONNECTION - Verify API is reachable
+     * ✅ TEST CONNECTION - Verify API is reachable
      */
     public static boolean testAPIConnection() {
         try {
@@ -245,7 +245,7 @@ public class USSDService {
             conn.disconnect();
             
             boolean reachable = (responseCode > 0);
-            System.out.println(reachable ? " API is reachable" : "❌ API is not reachable");
+            System.out.println(reachable ? "✅ API is reachable" : "❌ API is not reachable");
             
             return reachable;
             

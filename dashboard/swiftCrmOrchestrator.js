@@ -163,12 +163,12 @@ class SwiftCrmOrchestrator {
       };
     });
 
-    this.log(
-      `Resolved ${this.matchedRows.length} row(s) to execute ` +
-      `(IN-Yes: ${this.matchedRows.filter(r => r.inFlag?.toLowerCase() === 'yes').length}, ` +
-      `SWIFT-Yes: ${this.matchedRows.filter(r => r.swift?.toLowerCase() === 'yes').length})`,
-      "success"
-    );
+    // this.log(
+    //   `Resolved ${this.matchedRows.length} row(s) to execute ` +
+    //   `(IN-Yes: ${this.matchedRows.filter(r => r.inFlag?.toLowerCase() === 'yes').length}, ` +
+    //   `SWIFT-Yes: ${this.matchedRows.filter(r => r.swift?.toLowerCase() === 'yes').length})`,
+    //   "success"
+    // );
     this.progress(10, "Excel Loaded", "Validating");
     return true;
   }
@@ -307,11 +307,11 @@ async sendPreTestFailureEmail(msisdn, rowData, failureReason) {
       0, // validCount
       1, // invalidCount
       'VI Automation Team',
-      { subject: `⚠️ PreTest Failed: ${msisdn} - SIM Not Clean` }
+      { subject: `PreTest Failed: ${msisdn} - SIM Not Clean` }
     );
 
-    this.log(`📧 PreTest failure email sent for ${msisdn}: ${result.success ? 'Success' : 'Failed'}`, 
-             result.success ? 'success' : 'error');
+    this.log(`PreTest failure email sent for ${msisdn}: ${result.success ? 'Success' : 'Failed'}`, result.success ? 'success' : 'error');
+    // console.log({result,rowData}); 
     
     return result;
   } catch (error) {
@@ -323,7 +323,7 @@ async sendPreTestFailureEmail(msisdn, rowData, failureReason) {
   // In swiftCrmOrchestrator.js, add a method to check for recharge confirmation
 
 async waitForRechargeConfirmation(msisdn, timeoutMs = 300000) {
-  console.log(`[Orchestrator] ⏳ Waiting for recharge confirmation for ${msisdn}...`);
+  console.log(`[Orchestrator] Waiting for recharge confirmation for ${msisdn}...`);
   
   const confirmFile = path.join(this.commDir, 'recharge_confirmed.json');
   const skipFile = path.join(this.commDir, 'recharge_skipped.json');
@@ -498,8 +498,8 @@ sleep(ms) {
 
       this.progress(95, "Generating Report", "Finalizing…");
       try {
-        this.collectScreenshots();
-        await this.generateFinalReport();
+        // this.collectScreenshots();
+        // await this.generateFinalReport();
       } catch (reportError) {
         this.log(`Report generation failed: ${reportError.message}`, "warning");
       }
@@ -508,9 +508,9 @@ sleep(ms) {
       this.broadcast({
         type: "complete",
         success: true,
-        message: "UAT completed successfully",
-        reportPath: this.reportPath,
-        screenshots: this.screenshots,
+        // message: "UAT completed successfully",
+        // reportPath: this.reportPath,
+        // screenshots: this.screenshots,
       });
     } catch (error) {
       this.stopPolling();
@@ -552,7 +552,7 @@ sleep(ms) {
 
       child.on("close", (code) => {
         this.currentWdioProcess = null;
-        this.collectScreenshots();
+        // this.collectScreenshots();
         this.log(
           `WDIO batch exited (code ${code})`,
           code <= 1 ? "info" : "warning"
@@ -714,28 +714,24 @@ sleep(ms) {
         }
       }
 
-  // ══════════════════════════════════════════════════════════════════════
-  // STDOUT PROCESSING
-  // ══════════════════════════════════════════════════════════════════════
+    processOutput(output, isError = false) {
+  output.split('\n').filter(l => l.trim()).forEach(line => {
+    const t = isError ? 'error' : 'info';
 
-  processOutput(output, isError = false) {
-    output.split('\n').filter(l => l.trim()).forEach(line => {
-      const t = isError ? 'error' : 'info';
-
-      // Structured per-row events from the spec
-      const rowEventMatch = line.match(/\[ROW_EVENT\]\s+(\{.*\})/);
-      if (rowEventMatch) {
-        try {
-          const ev = JSON.parse(rowEventMatch[1]);
-          this.handleRowEvent(ev);
-          if (ev.event === 'row_data') {
-            this.log(` Received row_data event for ${ev.msisdn}: MRP ${ev.mrp}`, 'success');
-          }
-        } catch (_) {
-          this.log(line, t);
+    // Structured per-row events from the spec
+    const rowEventMatch = line.match(/\[ROW_EVENT\]\s+(\{.*\})/);
+    if (rowEventMatch) {
+      try {
+        const ev = JSON.parse(rowEventMatch[1]);
+        this.handleRowEvent(ev);
+        if (ev.event === 'row_data') {
+          this.log(` Received row_data event for ${ev.msisdn}: MRP ${ev.mrp}`, 'success');
         }
-        return;
+      } catch (parseErr) {
+        this.log(line, t);
       }
+      return;
+    }
 
       // Agent tab navigation
       if (line.includes("navigate_tab") || line.includes("Agent tab clicked")) {
@@ -779,62 +775,6 @@ sleep(ms) {
       }
     });
   }
-
-  // handleRowEvent(ev) {
-  //   const { event, rowIndex, msisdn, error } = ev;
-  //   switch (event) {
-  //     case "row_start":
-  //       this.broadcastRowStatus(rowIndex, "running", { msisdn });
-  //       this.log(`▶ Row started: ${msisdn}`, "info");
-  //       break;
-
-  //     case "row_data":
-  //       const existing = this.rowStatuses.find((r) => r.rowIndex === rowIndex);
-  //       if (existing) {
-  //         if (!existing.offerData) existing.offerData = [];
-  //         existing.offerData.push({
-  //           transactionId: ev.transactionId,
-  //           activationDateTime: ev.activationDateTime,
-  //           validity: ev.validity,
-  //           mrp: ev.mrp,
-  //           activationMode: ev.activationMode,
-  //           currentCoreBalance: ev.currentCoreBalance,
-  //           etopupTransactionId: ev.etopupTransactionId,
-  //           retailerMsisdn: ev.retailerMsisdn,
-  //           name: ev.name,
-  //           category: ev.category,
-  //           benefits: ev.benefits,
-  //           detailValidity: ev.detailValidity,
-  //         });
-  //         this.log(`📊 Scraped offer data for ${msisdn}: MRP ${ev.mrp}`, "info");
-  //       }
-  //       break;
-
-  //     case "row_waiting_confirm":
-  //       this.broadcastRowStatus(rowIndex, "waiting_recharge_confirm", {
-  //         msisdn,
-  //         message: "Waiting for recharge confirmation from Smart Connect Application…",
-  //       });
-  //       break;
-
-  //     case "row_navigate_tab":
-  //       this.log(`🔄 Navigating to agent tab for row: ${msisdn}`, "info");
-  //       break;
-
-  //     case "row_completed":
-  //       this.broadcastRowStatus(rowIndex, "completed", { msisdn });
-  //       this.log(`✅ Row completed: ${msisdn}`, "success");
-  //       break;
-
-  //     case "row_failed":
-  //       this.broadcastRowStatus(rowIndex, "failed", { msisdn, error });
-  //       this.log(`❌ Row failed: ${msisdn} — ${error || "unknown error"}`, "error");
-  //       break;
-
-  //     default:
-  //       break;
-  //   }
-  // }
 
   // ══════════════════════════════════════════════════════════════════════
   // SCREENSHOTS + REPORTS
@@ -889,14 +829,17 @@ handleRowEvent(ev) {
 
     case "row_failed":
       this.broadcastRowStatus(rowIndex, "failed", { msisdn, error });
-      this.log(`❌ Row failed: ${msisdn} — ${error || "unknown error"}`, "error");
+      
+      // FIX: Ensure error message is correctly passed
+      const errorMessage = error || "unknown error";
+      this.log(`❌ Row failed: ${msisdn} — ${errorMessage}`, "error");
       
       // NEW: Check if this is a PreTest failure and send email
-      if (error && error.includes('PreTest')) {
+      if (errorMessage && errorMessage.includes('PreTest')) {
         const rowData = this.matchedRows.find(r => r.msisdn === msisdn);
         if (rowData) {
           // Send PreTest failure email asynchronously
-          this.sendPreTestFailureEmail(msisdn, rowData, error).catch(err => {
+          this.sendPreTestFailureEmail(msisdn, rowData, errorMessage).catch(err => {
             this.log(`⚠️ Background email send failed: ${err.message}`, 'warning');
           });
         }
@@ -908,273 +851,54 @@ handleRowEvent(ev) {
   }
 }
 
-  collectScreenshots() {
-    try {
-      const dir = path.join(this.swiftDir, "screenshots");
-      if (!fs.existsSync(dir)) return;
-      const files = fs
-        .readdirSync(dir)
-        .filter((f) => f.endsWith(".png"))
-        .map((f) => ({ name: f, mtime: fs.statSync(path.join(dir, f)).mtime }))
-        .sort((a, b) => b.mtime - a.mtime);
-      this.screenshots = files.map((f) => ({
-        name: f.name,
-        url: `/screenshots/${f.name}`,
-      }));
-      this.log(`Collected ${this.screenshots.length} screenshot(s)`, "success");
-      this.broadcast({ type: "screenshots", screenshots: this.screenshots });
-    } catch (e) {
-      this.log(`Screenshot collect failed: ${e.message}`, "warning");
-    }
-  }
+  // async generateFinalReport() {
+  //   try {
+  //     const reportsDir = path.join(this.swiftDir, "reports");
+  //     fs.mkdirSync(reportsDir, { recursive: true });
 
-  async generateFinalReport() {
-    try {
-      const reportsDir = path.join(this.swiftDir, "reports");
-      fs.mkdirSync(reportsDir, { recursive: true });
+  //     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  //     const reportPath = path.join(
+  //       reportsDir,
+  //       `UAT_Recharge_Report_${timestamp}.xlsx`
+  //     );
 
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const reportPath = path.join(
-        reportsDir,
-        `UAT_Recharge_Report_${timestamp}.xlsx`
-      );
+  //     const inputRows = (this.testData?.allRows || []).map((row) => ({
+  //       MSISDN: String(row["MSISDN"] || row.msisdn || "").trim(),
+  //       CIRCLE: String(row["CIRCLE"] || row.circle || "").trim(),
+  //       "Recharge MRP": String(row["Recharge MRP"] || row.rechargeMRP || "").trim(),
+  //       Recharge: String(row["Recharge"] || row.recharge || "").trim(),
+  //       SWIFT: String(row["SWIFT"] || row.swift || "").trim(),
+  //       IN: String(row["IN"] || row.inFlag || "").trim(),
+  //       "Vi App": String(row["Vi App"] || row.viApp || "").trim(),
+  //     }));
 
-      const inputRows = (this.testData?.allRows || []).map((row) => ({
-        MSISDN: String(row["MSISDN"] || row.msisdn || "").trim(),
-        CIRCLE: String(row["CIRCLE"] || row.circle || "").trim(),
-        "Recharge MRP": String(row["Recharge MRP"] || row.rechargeMRP || "").trim(),
-        Recharge: String(row["Recharge"] || row.recharge || "").trim(),
-        SWIFT: String(row["SWIFT"] || row.swift || "").trim(),
-        IN: String(row["IN"] || row.inFlag || "").trim(),
-        "Vi App": String(row["Vi App"] || row.viApp || "").trim(),
-      }));
+  //     const resultsRows = (this.rowStatuses || []).map((row, index) => ({
+  //       "Sr. No.": index + 1,
+  //       MSISDN: row.msisdn || "",
+  //       Circle: row.circle || "",
+  //       "Recharge MRP": row.rechargeMRP || "",
+  //       Recharge: row.recharge || "",
+  //       "IN Status": row.inFlag?.toLowerCase() === "yes" ? "Pass" : "Skip",
+  //       "SWIFT Status": row.swift?.toLowerCase() === "yes" ? "Pass" : "Skip",
+  //       "Vi App Status": row.viApp?.toLowerCase() === "yes" ? "Pass" : "Skip",
+  //       "Overall Status": row.status || "pending",
+  //       "Screenshots": (this.screenshots || []).filter((s) => s.name.includes(row.msisdn || "")).length,
+  //     }));
 
-      const resultsRows = (this.rowStatuses || []).map((row, index) => ({
-        "Sr. No.": index + 1,
-        MSISDN: row.msisdn || "",
-        Circle: row.circle || "",
-        "Recharge MRP": row.rechargeMRP || "",
-        Recharge: row.recharge || "",
-        "IN Status": row.inFlag?.toLowerCase() === "yes" ? "Pass" : "Skip",
-        "SWIFT Status": row.swift?.toLowerCase() === "yes" ? "Pass" : "Skip",
-        "Vi App Status": row.viApp?.toLowerCase() === "yes" ? "Pass" : "Skip",
-        "Overall Status": row.status || "pending",
-        "Screenshots": (this.screenshots || []).filter((s) => s.name.includes(row.msisdn || "")).length,
-      }));
+  //     const wb = xlsx.utils.book_new();
+  //     xlsx.utils.book_append_sheet(wb, xlsx.utils.json_to_sheet(inputRows), "Input Data");
+  //     xlsx.utils.book_append_sheet(wb, xlsx.utils.json_to_sheet(resultsRows), "UAT Results");
+  //     xlsx.writeFile(wb, reportPath);
 
-      const wb = xlsx.utils.book_new();
-      xlsx.utils.book_append_sheet(wb, xlsx.utils.json_to_sheet(inputRows), "Input Data");
-      xlsx.utils.book_append_sheet(wb, xlsx.utils.json_to_sheet(resultsRows), "UAT Results");
-      xlsx.writeFile(wb, reportPath);
-
-      this.reportPath = reportPath;
-      SwiftCrmOrchestrator.setLatestReportPath(reportPath);
-      this.log(`Final report → ${path.basename(reportPath)}`, "success");
-      return reportPath;
-    } catch (e) {
-      this.log(`Final report generation failed: ${e.message}`, "error");
-      throw e;
-    }
-  }
-//UAT_Recharge_Report_
-//   async generateFinalReport() {
-//     try {
-//       const reportsDir = path.join(this.swiftDir, "reports");
-//       if (!fs.existsSync(reportsDir)) {
-//         fs.mkdirSync(reportsDir, { recursive: true });
-//       }
-
-//       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-//       const reportPath = path.join(
-//         reportsDir,
-//         `UAT_Recharge_Report_${timestamp}.xlsx`
-//       );
-
-//       // Get input rows
-//       const inputRows = (this.testData.allRows || []).map((row) => ({
-//         MSISDN: String(row["MSISDN"] || row.msisdn || "").trim(),
-//         CIRCLE: String(row["CIRCLE"] || row.circle || "").trim(),
-//         "Recharge MRP": String(row["Recharge MRP"] || row.rechargeMRP || "").trim(),
-//         Recharge: String(row["Recharge"] || row.recharge || "").trim(),
-//         SWIFT: String(row["SWIFT"] || row.swift || "").trim(),
-//         IN: String(row["IN"] || row.inFlag || "").trim(),
-//         "Vi App": String(row["Vi App"] || row.viApp || "").trim(),
-//       }));
-
-//       // Get plan data
-//       const planMap = new Map();
-//       this.planData.forEach(p => {
-//         planMap.set(String(p.newMRP), {
-//           benefit: p.benefit,
-//           rechargeNotification: p.rechargeNotification,
-//         });
-//       });
-
-//       // Get UAT results
-//       const uatResults = [];
-//       this.rowStatuses.forEach((r) => {
-//         const plan = planMap.get(String(r.rechargeMRP));
-//         if (r.offerData && r.offerData.length > 0) {
-//           r.offerData.forEach((offer, idx) => {
-//             uatResults.push({
-//               "Sr. No.": uatResults.length + 1,
-//               "Transaction Id": offer.transactionId || `TXN-${Date.now()}-${idx}`,
-//               "Activation Date & Time": offer.activationDateTime || new Date().toLocaleString(),
-//               "Validity": offer.validity || "30 days",
-//               "MRP": offer.mrp || r.rechargeMRP || "N/A",
-//               "Activation Mode": offer.activationMode || "eTOPUP",
-//               "Current Core Balance": offer.currentCoreBalance || "0.00",
-//               "eTOP UP Transaction Id": offer.etopupTransactionId || `ET-${Date.now()}-${idx}`,
-//               "Retailer MSISDN": offer.retailerMsisdn || r.msisdn || "",
-//               "Name": offer.name || "",
-//               "Category": offer.category || "Recharge",
-//               "Benefits": offer.benefits || plan?.benefit || "N/A",
-//               "Detail Validity": offer.detailValidity || "30 days from activation",
-//               "MSISDN": r.msisdn,
-//               "Circle": r.circle || "N/A",
-//               "Plan Name": plan?.benefit || "N/A",
-//               "Recharge Notification": plan?.rechargeNotification || "N/A",
-//               "IN Status": r.inFlag?.toLowerCase() === 'yes' ? 'Pass' : 'Skip',
-//               "SWIFT Status": r.swift?.toLowerCase() === 'yes' ? 'Pass' : 'Skip',
-//               "Vi App Status": r.viApp?.toLowerCase() === 'yes' ? 'Pass' : 'Skip',
-//               "Screenshots": this.screenshots.filter(s => s.name.includes(r.msisdn)).length
-//             });
-//           });
-//         }
-//       });
-
-//       // Create workbook
-//       const wb = xlsx.utils.book_new();
-      
-//       // Sheet 1: Input Data
-//       xlsx.utils.book_append_sheet(wb, xlsx.utils.json_to_sheet(inputRows), "Input Data");
-      
-//       // Sheet 2: UAT Results
-//       xlsx.utils.book_append_sheet(wb, xlsx.utils.json_to_sheet(uatResults), "UAT Results");
-      
-//       // Sheet 3: Screenshots
-//       const screenshotData = this.screenshots.map((s, i) => ({
-//         "Sr. No.": i + 1,
-//         "File": s.name,
-//         "URL": s.url,
-//       }));
-//       xlsx.utils.book_append_sheet(wb, xlsx.utils.json_to_sheet(screenshotData), "Screenshots");
-      
-//       // Sheet 4: Summary
-//       const summaryData = [{
-//         "Total Excel Rows": inputRows.length,
-//         "Matched & Executed Rows": this.matchedRows.length,
-//         "Screenshots": this.screenshots.length,
-//         "Generated": new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
-//       }];
-//       xlsx.utils.book_append_sheet(wb, xlsx.utils.json_to_sheet(summaryData), "Summary");
-
-//       xlsx.writeFile(wb, reportPath);
-//       this.reportPath = reportPath;
-//       SwiftCrmOrchestrator.setLatestReportPath(reportPath);
-      
-//       this.log(`Final report → ${path.basename(reportPath)}`, "success");
-//       this.log(`  - ${inputRows.length} input rows`, "info");
-//       this.log(`  - ${uatResults.length} UAT results`, "info");
-//       this.log(`  - ${this.screenshots.length} screenshots`, "info");
-
-//       // Also generate HTML report
-//       try {
-//         const htmlPath = reportPath.replace('.xlsx', '.html');
-//         const htmlContent = this.generateHTMLReport(inputRows, uatResults, this.screenshots);
-//         fs.writeFileSync(htmlPath, htmlContent, 'utf8');
-//         this.log(`HTML report → ${path.basename(htmlPath)}`, "success");
-//       } catch (htmlErr) {
-//         this.log(`HTML report generation failed: ${htmlErr.message}`, "warning");
-//       }
-
-//       return reportPath;
-//     } catch (e) {
-//       this.log(`Final report generation failed: ${e.message}`, "error");
-//       throw e;
-//     }
-//   }
-
-//   generateHTMLReport(inputRows, uatResults, screenshots) {
-//     const timestamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
-    
-//     let html = `
-// <!DOCTYPE html>
-// <html>
-// <head>
-//   <meta charset="UTF-8">
-//   <title>UAT Recharge Report</title>
-//   <style>
-//     * { margin: 0; padding: 0; box-sizing: border-box; }
-//     body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; padding: 20px; }
-//     .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-//     h1 { color: #f38328; border-bottom: 3px solid #f38328; padding-bottom: 10px; margin-bottom: 20px; }
-//     h2 { color: #333; margin: 20px 0 10px 0; padding: 8px 0; border-bottom: 2px solid #eee; }
-//     table { width: 100%; border-collapse: collapse; margin: 10px 0 20px 0; font-size: 13px; }
-//     th { background: #f38328; color: white; padding: 10px 12px; text-align: left; font-weight: 600; }
-//     td { padding: 8px 12px; border-bottom: 1px solid #eee; }
-//     tr:nth-child(even) { background: #f9f9f9; }
-//     .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
-//     .badge-pass { background: #e8f5e9; color: #2e7d32; }
-//     .badge-fail { background: #fdecea; color: #c0392b; }
-//     .badge-skip { background: #f5f5f5; color: #888; }
-//     .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 15px 0 25px 0; }
-//     .summary-item { background: #f8f5f0; padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid #f38328; }
-//     .summary-item .number { font-size: 28px; font-weight: 700; color: #f38328; }
-//     .summary-item .label { font-size: 12px; color: #888; margin-top: 4px; }
-//     .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #888; }
-//   </style>
-// </head>
-// <body>
-// <div class="container">
-//   <h1>📊 UAT Recharge Automation Report</h1>
-//   <p style="color: #888; margin-bottom: 20px;">Generated: ${timestamp}</p>
-
-//   <div class="summary-grid">
-//     <div class="summary-item"><div class="number">${inputRows.length}</div><div class="label">Total Test Cases</div></div>
-//     <div class="summary-item"><div class="number">${uatResults.length}</div><div class="label">Executed</div></div>
-//     <div class="summary-item"><div class="number">${uatResults.filter(r => r["IN Status"] === 'Pass' || r["SWIFT Status"] === 'Failed').length}</div><div class="label">Passed</div></div>
-//     <div class="summary-item"><div class="number">${screenshots.length}</div><div class="label">Screenshots</div></div>
-//   </div>
-
-//   <h2>📱 UAT Execution Results</h2>
-//   <table>
-//     <thead><tr><th>#</th><th>MSISDN</th><th>MRP</th><th>Plan Name</th><th>IN Status</th><th>SWIFT Status</th><th>Vi App</th></tr></thead>
-//     <tbody>`;
-
-//     uatResults.forEach((r, idx) => {
-//       const inStatus = r["IN Status"] || 'Skip';
-//       const swiftStatus = r["SWIFT Status"] || 'Skip';
-//       const inBadge = inStatus === 'Pass' ? 'badge-pass' : (inStatus === 'Fail' ? 'badge-fail' : 'badge-skip');
-//       const swiftBadge = swiftStatus === 'Pass' ? 'badge-pass' : (swiftStatus === 'Fail' ? 'badge-fail' : 'badge-skip');
-      
-//       html += `
-//         <tr>
-//           <td>${idx + 1}</td>
-//           <td><strong>${r["MSISDN"] || r.msisdn}</strong></td>
-//           <td>₹${r["MRP"] || r.mrp}</td>
-//           <td>${r["Plan Name"] || r.planName || 'N/A'}</td>
-//           <td><span class="badge ${inBadge}">${inStatus}</span></td>
-//           <td><span class="badge ${swiftBadge}">${swiftStatus}</span></td>
-//           <td>${r["Vi App Status"] || 'Skip'}</td>
-//         </tr>
-//       `;
-//     });
-
-//     html += `
-//     </tbody>
-//   </table>
-
-//   <div class="footer">
-//     <p>Report generated by VI Sim Automation Platform</p>
-//     <p>© 2026 QDegrees Services Pvt. Ltd.</p>
-//   </div>
-// </div>
-// </body>
-// </html>`;
-
-//     return html;
-//   }
+  //     this.reportPath = reportPath;
+  //     SwiftCrmOrchestrator.setLatestReportPath(reportPath);
+  //     this.log(`Final report → ${path.basename(reportPath)}`, "success");
+  //     return reportPath;
+  //   } catch (e) {
+  //     this.log(`Final report generation failed: ${e.message}`, "error");
+  //     throw e;
+  //   }
+  // }
 
   // ══════════════════════════════════════════════════════════════════════
   // STATIC ROUTE REGISTRATION

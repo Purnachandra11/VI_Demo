@@ -22,7 +22,7 @@
         <selenium.version>4.15.0</selenium.version>
         
         <!-- Default Configuration Properties -->
-        <udid>LFMVIBEMW8HUR4XK</udid>
+        <udid>ZA222V9QNF</udid>
         <platformVersion>13</platformVersion>
         <platformName>Android</platformName>
         <deviceName>Googledevice</deviceName>
@@ -151,7 +151,7 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <udid>LFMVIBEMW8HUR4XK</udid>
+                <udid>ZA222V9QNF</udid>
                 <platformVersion>13</platformVersion>
                 <platformName>Android</platformName>
                 <deviceName>Googledevice</deviceName>

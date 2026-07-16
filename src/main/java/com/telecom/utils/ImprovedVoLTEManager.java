@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- *  IMPROVED VOLTE MANAGER
+ * ✅ IMPROVED VOLTE MANAGER
  * - Enable/Disable VoLTE properly
  * - Accurate detection
  * - Proper IMS registration
@@ -12,13 +12,13 @@ import java.util.Map;
 public class ImprovedVoLTEManager {
     
     /**
-     *  ENABLE VOLTE ON DEVICE
+     * ✅ ENABLE VOLTE ON DEVICE
      */
     public static boolean enableVoLTE(String deviceId) {
         System.out.println("\n" + "=".repeat(80));
         System.out.println("📶 ENABLING VOLTE");
         System.out.println("=".repeat(80));
-        System.out.println(" Device: " + deviceId);
+        System.out.println("📱 Device: " + deviceId);
         
         try {
             // Method 1: Enable VoLTE via settings database
@@ -53,9 +53,9 @@ public class ImprovedVoLTEManager {
             boolean enabled = isVoLTEEnabled(deviceId);
             
             if (enabled) {
-                System.out.println(" VOLTE ENABLED SUCCESSFULLY");
+                System.out.println("✅ VOLTE ENABLED SUCCESSFULLY");
             } else {
-                System.out.println(" VoLTE enabled but not yet registered");
+                System.out.println("⚠️ VoLTE enabled but not yet registered");
                 System.out.println("💡 IMS may take 10-30 seconds to register");
             }
             
@@ -70,13 +70,13 @@ public class ImprovedVoLTEManager {
     }
     
     /**
-     *  DISABLE VOLTE ON DEVICE
+     * ✅ DISABLE VOLTE ON DEVICE
      */
     public static boolean disableVoLTE(String deviceId) {
         System.out.println("\n" + "=".repeat(80));
         System.out.println("📴 DISABLING VOLTE");
         System.out.println("=".repeat(80));
-        System.out.println(" Device: " + deviceId);
+        System.out.println("📱 Device: " + deviceId);
         
         try {
             // Method 1: Disable VoLTE via settings database
@@ -111,9 +111,9 @@ public class ImprovedVoLTEManager {
             boolean enabled = isVoLTEEnabled(deviceId);
             
             if (!enabled) {
-                System.out.println(" VOLTE DISABLED SUCCESSFULLY");
+                System.out.println("✅ VOLTE DISABLED SUCCESSFULLY");
             } else {
-                System.out.println(" VoLTE still showing as enabled");
+                System.out.println("⚠️ VoLTE still showing as enabled");
                 System.out.println("💡 IMS may take time to deregister");
             }
             
@@ -128,7 +128,7 @@ public class ImprovedVoLTEManager {
     }
     
     /**
-     *  CHECK IF VOLTE IS ENABLED
+     * ✅ CHECK IF VOLTE IS ENABLED
      */
     public static boolean isVoLTEEnabled(String deviceId) {
         try {
@@ -157,7 +157,7 @@ public class ImprovedVoLTEManager {
     }
     
     /**
-     *  GET DETAILED VOLTE STATUS
+     * ✅ GET DETAILED VOLTE STATUS
      */
     public static Map<String, String> getDetailedVoLTEStatus(String deviceId) {
         Map<String, String> status = new HashMap<>();
@@ -190,13 +190,13 @@ public class ImprovedVoLTEManager {
             status.put("callCapability", imsConnected ? "VOLTE_READY" : "LEGACY_VOICE");
             
             if (imsConnected) {
-                System.out.println(" VoLTE: ACTIVE (IMS registered)");
+                System.out.println("✅ VoLTE: ACTIVE (IMS registered)");
             } else {
                 System.out.println("❌ VoLTE: INACTIVE");
             }
             
         } catch (Exception e) {
-            System.out.println(" Error checking VoLTE: " + e.getMessage());
+            System.out.println("⚠️ Error checking VoLTE: " + e.getMessage());
             status.put("volteEnabled", "false");
             status.put("volteStatus", "UNKNOWN");
         }
@@ -205,7 +205,7 @@ public class ImprovedVoLTEManager {
     }
     
     /**
-     *  WAIT FOR IMS REGISTRATION
+     * ✅ WAIT FOR IMS REGISTRATION
      */
     public static boolean waitForIMSRegistration(String deviceId, int timeoutSeconds) {
         System.out.println("⏳ Waiting for IMS registration (max " + timeoutSeconds + "s)...");
@@ -213,7 +213,7 @@ public class ImprovedVoLTEManager {
         for (int i = 0; i < timeoutSeconds; i++) {
             try {
                 if (isVoLTEEnabled(deviceId)) {
-                    System.out.println(" IMS registered after " + i + " seconds");
+                    System.out.println("✅ IMS registered after " + i + " seconds");
                     return true;
                 }
                 Thread.sleep(1000);
@@ -227,7 +227,7 @@ public class ImprovedVoLTEManager {
     }
     
     /**
-     *  GET VOLTE STATUS FOR BOTH PARTIES
+     * ✅ GET VOLTE STATUS FOR BOTH PARTIES
      */
     public static Map<String, Map<String, String>> getVoLTEStatusBothParties(
             String aPartyDeviceId, String bPartyDeviceId) {
@@ -238,16 +238,16 @@ public class ImprovedVoLTEManager {
         System.out.println("📊 CHECKING VOLTE STATUS - BOTH PARTIES");
         System.out.println("=".repeat(80));
         
-        System.out.println("\n A-Party: " + aPartyDeviceId);
+        System.out.println("\n📱 A-Party: " + aPartyDeviceId);
         Map<String, String> aPartyStatus = getDetailedVoLTEStatus(aPartyDeviceId);
         bothStatuses.put("aParty", aPartyStatus);
         
         if (bPartyDeviceId != null && !bPartyDeviceId.isEmpty()) {
-            System.out.println("\n B-Party: " + bPartyDeviceId);
+            System.out.println("\n📱 B-Party: " + bPartyDeviceId);
             Map<String, String> bPartyStatus = getDetailedVoLTEStatus(bPartyDeviceId);
             bothStatuses.put("bParty", bPartyStatus);
         } else {
-            System.out.println("\n B-Party device ID not available");
+            System.out.println("\n⚠️ B-Party device ID not available");
         }
         
         System.out.println("=".repeat(80) + "\n");
@@ -256,7 +256,7 @@ public class ImprovedVoLTEManager {
     }
     
     /**
-     *  PRINT VOLTE DIAGNOSTICS
+     * ✅ PRINT VOLTE DIAGNOSTICS
      */
     public static void printVoLTEDiagnostics(String deviceId) {
         System.out.println("\n" + "=".repeat(80));

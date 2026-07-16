@@ -1,16 +1,17 @@
 package com.telecom.pages;
 
-import io.appium.java_client.android.AndroidDriver;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
 import com.telecom.utils.ProgressReporter;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
+import io.appium.java_client.android.AndroidDriver;
 
 /**
  * Working Video Call Dialer using Correct Android Intent
@@ -31,13 +32,13 @@ public class WorkingVideoCallDialer {
         System.out.println("\n" + "=".repeat(80));
         System.out.println("📹 INITIATING VIDEO CALL (00:01 Detection Method)");
         System.out.println("=".repeat(80));
-        System.out.println(" Number: " + phoneNumber);
+        System.out.println("📱 Number: " + phoneNumber);
         System.out.println("🎯 Target: " + targetDurationSeconds + "s | ⏰ Ring timeout: 30s");
-        System.out.println(" Max Attempts: " + maxAttempts);
+        System.out.println("🔄 Max Attempts: " + maxAttempts);
         
         try {
             for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-                System.out.println("\n Attempt " + attempt + "/" + maxAttempts);
+                System.out.println("\n🔄 Attempt " + attempt + "/" + maxAttempts);
                 result.setAttemptNumber(attempt);
                 
                 // Dial the video call
@@ -49,7 +50,7 @@ public class WorkingVideoCallDialer {
                     continue;
                 }
                 
-                System.out.println(" Video call dialed, waiting for 00:01...");
+                System.out.println("✅ Video call dialed, waiting for 00:01...");
                 
                 // Wait for connection (00:01 appears)
                 VideoConnectionResult connection = waitForVideoCallConnection(targetDurationSeconds);
@@ -84,7 +85,7 @@ public class WorkingVideoCallDialer {
                     }
                     
                     if (attempt < maxAttempts) {
-                        System.out.println(" Retrying in 5 seconds...");
+                        System.out.println("🔄 Retrying in 5 seconds...");
                         Thread.sleep(5000);
                     }
                 }
@@ -102,14 +103,14 @@ public class WorkingVideoCallDialer {
     }
     
     /**
-     *  CORRECT VIDEO CALL INTENT
+     * ✅ CORRECT VIDEO CALL INTENT
      * This is the WORKING method from your ADB command
      */
     private boolean dialVideoCallCorrectIntent(String phoneNumber) {
         try {
             System.out.println("📹 Dialing video call with CORRECT intent...");
             
-            //  This is the WORKING format:
+            // ✅ This is the WORKING format:
             // am start -a android.intent.action.CALL -d tel:8696904544 
             // --ei android.telecom.extra.START_CALL_WITH_VIDEO_STATE 3
             
@@ -122,7 +123,7 @@ public class WorkingVideoCallDialer {
             params.put("command", videoCallCommand);
             Object result = driver.executeScript("mobile: shell", params);
             
-            System.out.println(" Video call intent executed");
+            System.out.println("✅ Video call intent executed");
             System.out.println("   Command: " + videoCallCommand);
             if (result != null) {
                 System.out.println("   Result: " + result.toString());
@@ -139,10 +140,10 @@ public class WorkingVideoCallDialer {
                                    pageSource.contains("Dialing");
             
             if (callInitiated) {
-                System.out.println(" Video call UI detected - call initiated");
+                System.out.println("✅ Video call UI detected - call initiated");
                 return true;
             } else {
-                System.out.println(" No video call UI detected - checking alternative indicators");
+                System.out.println("⚠️ No video call UI detected - checking alternative indicators");
                 
                 // Sometimes the call starts without obvious UI changes
                 // Check for any call-related UI
@@ -152,7 +153,7 @@ public class WorkingVideoCallDialer {
                                    pageSource.contains("Speaker");
                 
                 if (hasCallUI) {
-                    System.out.println(" Call UI detected - proceeding");
+                    System.out.println("✅ Call UI detected - proceeding");
                     return true;
                 }
             }
@@ -167,7 +168,7 @@ public class WorkingVideoCallDialer {
     }
     
     /**
-     *  ENHANCED ULTRA: Wait for video call connection - MULTIPLE TIMER DETECTION METHODS
+     * ✅ ENHANCED ULTRA: Wait for video call connection - MULTIPLE TIMER DETECTION METHODS
      */
     private VideoConnectionResult waitForVideoCallConnection(int targetDurationSeconds) {
         System.out.println("⏳ ULTRA ENHANCED: Waiting for video call connection...");
@@ -193,7 +194,7 @@ public class WorkingVideoCallDialer {
                 boolean timerDetected = false;
                 String timer = getCallTimerEnhanced(pageSource);
                 if (timer != null) {
-                    System.out.println(" TIMER DETECTED: " + timer);
+                    System.out.println("✅ TIMER DETECTED: " + timer);
                     timerDetected = true;
                 }
                 
@@ -320,12 +321,12 @@ public class WorkingVideoCallDialer {
                 actualDuration = sec;
                 
             } catch (Exception e) {
-                System.out.println(" Duration tracking interrupted: " + e.getMessage());
+                System.out.println("⚠️ Duration tracking interrupted: " + e.getMessage());
                 break;
             }
         }
         
-        System.out.println(" Target duration reached: " + actualDuration + "s");
+        System.out.println("✅ Target duration reached: " + actualDuration + "s");
         
         result.setConnected(connected);
         result.setActualDuration(actualDuration);
@@ -394,7 +395,7 @@ public class WorkingVideoCallDialer {
     }
 
     /**
-     *  Detect immediate call failure (before connection)
+     * ✅ Detect immediate call failure (before connection)
      */
     private boolean detectVideoCallFailureImmediate(String pageSource) {
         return pageSource.contains("Call failed") || 
@@ -441,7 +442,7 @@ public class WorkingVideoCallDialer {
     }
     
     /**
-     *  End video call
+     * ✅ End video call
      */
     private void endVideoCall() throws Exception {
         System.out.println("📹 Ending video call...");
@@ -460,7 +461,7 @@ public class WorkingVideoCallDialer {
                     WebElement endButton = driver.findElement(locator);
                     if (endButton.isDisplayed()) {
                         endButton.click();
-                        System.out.println(" Video call ended via button");
+                        System.out.println("✅ Video call ended via button");
                         Thread.sleep(2000);
                         return;
                     }
@@ -470,14 +471,14 @@ public class WorkingVideoCallDialer {
             }
             
             // Fallback: Use ENDCALL keyevent
-            System.out.println(" Button not found, using ENDCALL keyevent");
+            System.out.println("⚠️ Button not found, using ENDCALL keyevent");
             Map<String, Object> params = new HashMap<>();
             params.put("command", "input keyevent KEYCODE_ENDCALL");
             driver.executeScript("mobile: shell", params);
-            System.out.println(" Video call ended via keyevent");
+            System.out.println("✅ Video call ended via keyevent");
             
         } catch (Exception e) {
-            System.out.println(" End call had issues: " + e.getMessage());
+            System.out.println("⚠️ End call had issues: " + e.getMessage());
         }
         
         Thread.sleep(2000);

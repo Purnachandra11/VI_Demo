@@ -1,14 +1,19 @@
 package com.telecom.tests;
 
+import java.util.List;
+import java.util.Map;
+
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
 import com.telecom.config.ConfigReader;
 import com.telecom.core.CompleteCallingTestExecutor;
 import com.telecom.core.CompleteSMSTestExecutor;
 import com.telecom.driver.DriverManager;
 import com.telecom.utils.ADBHelper;
+
 import io.appium.java_client.android.AndroidDriver;
-import org.testng.annotations.*;
-import java.util.List;
-import java.util.Map;
 
 
 public class CallingTest {
@@ -39,19 +44,19 @@ public class CallingTest {
             platformVersion = ADBHelper.getAndroidVersion(aPartyDeviceId).split("\\.")[0];
         }
         
-        System.out.println(" Configuration:");
+        System.out.println("📱 Configuration:");
         System.out.println("   A-Party Device: " + aPartyDeviceId);
         System.out.println("   Android Version: " + platformVersion);
         
-        //  CRITICAL FIX: Initialize DeviceManager BEFORE anything else
-        System.out.println("\n Initializing DeviceManager...");
+        // ✅ CRITICAL FIX: Initialize DeviceManager BEFORE anything else
+        System.out.println("\n🔧 Initializing DeviceManager...");
         com.telecom.utils.DeviceManager.initializeDevices();
         
         // Verify initialization
         com.telecom.utils.DeviceManager.printDeviceStatus();
         
         // Start Appium
-        System.out.println("\n Starting services...");
+        System.out.println("\n🔧 Starting services...");
         DriverManager.startAppiumService();
         
         // Initialize driver
@@ -61,7 +66,7 @@ public class CallingTest {
         // Initialize executor
         callingExecutor = new CompleteCallingTestExecutor(driver, aPartyDeviceId);
         
-        System.out.println(" Setup completed successfully\n");
+        System.out.println("✅ Setup completed successfully\n");
     }
     
     @Test(description = "Execute all calling tests from Excel")
@@ -86,7 +91,7 @@ public class CallingTest {
                 .filter(r -> "SUCCESS".equals(r.get("finalStatus")))
                 .count();
             
-            System.out.println(" Passed: " + passed);
+            System.out.println("✅ Passed: " + passed);
             System.out.println("❌ Failed: " + (results.size() - passed));
             
             if (results.size() > 0) {
@@ -127,10 +132,10 @@ public class CallingTest {
         try {
             if (driver != null) {
                 DriverManager.quitDriver();
-                System.out.println(" Driver quit successfully");
+                System.out.println("✅ Driver quit successfully");
             }
         } catch (Exception e) {
-            System.out.println(" Driver quit had issues: " + e.getMessage());
+            System.out.println("⚠️ Driver quit had issues: " + e.getMessage());
         }
         
         System.out.println("=".repeat(100));
@@ -162,12 +167,12 @@ class UpdatedSMSTest {
         
         String androidVersion = ADBHelper.getAndroidVersion(deviceId).split("\\.")[0];
         
-        System.out.println(" Configuration:");
+        System.out.println("📱 Configuration:");
         System.out.println("   Device: " + deviceId);
         System.out.println("   Android: " + androidVersion);
         
         // Start services
-        System.out.println("\n Starting services...");
+        System.out.println("\n🔧 Starting services...");
         DriverManager.startAppiumService();
         
         // Initialize messaging driver
@@ -177,13 +182,13 @@ class UpdatedSMSTest {
         // Initialize executor
         smsExecutor = new CompleteSMSTestExecutor(driver, deviceId);
         
-        System.out.println(" Setup completed successfully\n");
+        System.out.println("✅ Setup completed successfully\n");
     }
     
     @Test(description = "Execute all SMS tests from Excel")
     public void testAllSMSScenarios() {
         System.out.println("\n" + "=".repeat(100));
-        System.out.println(" EXECUTING ALL SMS TESTS");
+        System.out.println("📱 EXECUTING ALL SMS TESTS");
         System.out.println("=".repeat(100));
         
         try {
@@ -203,7 +208,7 @@ class UpdatedSMSTest {
                            "PARTIAL_SUCCESS".equals(r.get("finalStatus")))
                 .count();
             
-            System.out.println(" Passed: " + passed);
+            System.out.println("✅ Passed: " + passed);
             System.out.println("❌ Failed: " + (results.size() - passed));
             
             // SMS delivery statistics
@@ -253,10 +258,10 @@ class UpdatedSMSTest {
         try {
             if (driver != null) {
                 driver.quit();
-                System.out.println(" Driver quit successfully");
+                System.out.println("✅ Driver quit successfully");
             }
         } catch (Exception e) {
-            System.out.println(" Driver quit had issues: " + e.getMessage());
+            System.out.println("⚠️ Driver quit had issues: " + e.getMessage());
         }
         
         System.out.println("=".repeat(100));

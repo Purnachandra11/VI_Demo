@@ -1,0 +1,2 @@
+element click intercepted: WebDriverError: element click intercepted: Element is not clickable at point (54, 1055)
+  (Session info: chrome=149.0.7827.155) when running "element/f.4D8B846B958A1A61C2A6871F2C2E1D17.d.FCC7DD7BFB02C2EA66F1641334E21C67.e.1338/click" with method "POST"

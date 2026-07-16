@@ -1,9 +1,13 @@
 package com.telecom.utils;
 
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import java.io.FileOutputStream;
 import java.util.Random;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class TestDataGenerator {
     
@@ -45,7 +49,7 @@ public class TestDataGenerator {
             }
             
             workbook.write(fos);
-            System.out.println(" Sample Excel file generated: " + filePath);
+            System.out.println("✅ Sample Excel file generated: " + filePath);
             
         } catch (Exception e) {
             System.out.println("❌ Failed to generate sample Excel file: " + e.getMessage());

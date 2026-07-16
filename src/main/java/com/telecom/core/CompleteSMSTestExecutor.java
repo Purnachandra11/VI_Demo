@@ -1,17 +1,23 @@
 package com.telecom.core;
 
-import com.telecom.config.ConfigReader;
-import com.telecom.pages.MessagingPage;
-import com.telecom.utils.*;
-import io.appium.java_client.android.AndroidDriver;
-import io.appium.java_client.android.nativekey.AndroidKey;
-import io.appium.java_client.android.nativekey.KeyEvent;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
-import java.text.SimpleDateFormat;
-import java.util.*;
+import com.telecom.pages.MessagingPage;
+import com.telecom.utils.ADBHelper;
+import com.telecom.utils.EnhancedExcelReader;
+import com.telecom.utils.ProgressReporter;
+import com.telecom.utils.ReportGenerator;
+import com.telecom.utils.USSDService;
+
+import io.appium.java_client.android.AndroidDriver;
 
 /**
  * COMPLETE SMS & VOICE MESSAGE TEST EXECUTOR
@@ -62,12 +68,12 @@ public class CompleteSMSTestExecutor {
     }
     
     /**
-     * MAIN EXECUTION METHOD - Read Excel and Execute All Tests
+     * ✅ MAIN EXECUTION METHOD - Read Excel and Execute All Tests
      */
     public List<Map<String, Object>> executeAllSMSTests(String excelFilePath) {
         System.out.println("\n📊 LOADING TEST DATA FROM EXCEL...");
         
-        // Clear cache at start
+        // ✅ Clear cache at start
         if (lastPostCallUSSDCache == null) {
             lastPostCallUSSDCache = new HashMap<>();
         }
@@ -79,7 +85,7 @@ public class CompleteSMSTestExecutor {
         if (testCases.isEmpty()) {
             System.out.println("❌ No SMS test cases found in Excel");
             
-         // NEW: Report no tests
+         // ✅ NEW: Report no tests
             ProgressReporter.reportTestComplete(
                 primaryDeviceId,
                 "sms",
@@ -90,9 +96,9 @@ public class CompleteSMSTestExecutor {
             return allResults;
         }
         
-        System.out.println("Loaded " + testCases.size() + " SMS test cases\n");
+        System.out.println("✅ Loaded " + testCases.size() + " SMS test cases\n");
         
-     // NEW: Initialize progress reporter for SMS test suite
+     // ✅ NEW: Initialize progress reporter for SMS test suite
         ProgressReporter.initializeTestSuite(primaryDeviceId, testCases.size());
         
         // Build device mapping
@@ -105,7 +111,7 @@ public class CompleteSMSTestExecutor {
             System.out.println("🧪 TEST " + testNumber + " / " + testCases.size());
             System.out.println("=".repeat(100));
             
-         // NEW: Report test start
+         // ✅ NEW: Report test start
             String testName = (String) testCase.getOrDefault("name", "Unknown Test");
             ProgressReporter.reportSMSProgress(
                 primaryDeviceId,
@@ -118,7 +124,7 @@ public class CompleteSMSTestExecutor {
             Map<String, Object> result = executeSingleTest(testCase);
             allResults.add(result);
             
-         // NEW: Report test completion
+         // ✅ NEW: Report test completion
             String status = (String) result.getOrDefault("finalStatus", "UNKNOWN");
             boolean success = "SUCCESS".equals(status);
             ProgressReporter.reportTestComplete(
@@ -144,7 +150,7 @@ public class CompleteSMSTestExecutor {
         // Generate reports
         generateReports();
         
-     // NEW: Report final completion
+     // ✅ NEW: Report final completion
         ProgressReporter.reportTestComplete(
             primaryDeviceId,
             "sms",
@@ -156,10 +162,10 @@ public class CompleteSMSTestExecutor {
     }
     
     /**
-     * BUILD DEVICE MAPPING from A/B/C Party info
+     * ✅ BUILD DEVICE MAPPING from A/B/C Party info
      */
     private void buildDeviceMapping(List<Map<String, Object>> testCases) {
-        System.out.println(" Building Device Mapping...");
+        System.out.println("🔧 Building Device Mapping...");
         
         // Get from DeviceManager
         String aPartyDevice = System.getProperty("aPartyDevice");
@@ -169,19 +175,22 @@ public class CompleteSMSTestExecutor {
         
         if (aPartyNumber != null && aPartyDevice != null) {
             numberToDeviceMap.put(cleanNumber(aPartyNumber), aPartyDevice);
-            System.out.println("    A-Party: " + aPartyNumber + " -> " + aPartyDevice);
+            System.out.println("   📱 A-Party: " + aPartyNumber + " -> " + aPartyDevice);
         }
         
         if (bPartyNumber != null && bPartyDevice != null) {
             numberToDeviceMap.put(cleanNumber(bPartyNumber), bPartyDevice);
-            System.out.println("    B-Party: " + bPartyNumber + " -> " + bPartyDevice);
+            System.out.println("   📱 B-Party: " + bPartyNumber + " -> " + bPartyDevice);
         }
         
-        System.out.println("Device mapping complete: " + numberToDeviceMap.size() + " devices\n");
+        System.out.println("✅ Device mapping complete: " + numberToDeviceMap.size() + " devices\n");
     }
     
     /**
-     * EXECUTE SINGLE TEST - Main Test Logic with Enhanced Error Handling
+     * ✅ EXECUTE SINGLE TEST - Main Test Logic with Enhanced Error Handling
+     */
+    /**
+     * ✅ EXECUTE SINGLE TEST - Main Test Logic with Enhanced Error Handling
      */
     private Map<String, Object> executeSingleTest(Map<String, Object> testCase) {
         Map<String, Object> result = new HashMap<>();
@@ -206,7 +215,7 @@ public class CompleteSMSTestExecutor {
             System.out.println("📋 Test: " + testCase.get("name"));
             System.out.println("   Type: " + testType + " | Message: " + messageType + " | Direction: " + direction);
             
-            // NEW: Report test configuration
+            // ✅ NEW: Report test configuration
             ProgressReporter.reportSMSProgress(
                 primaryDeviceId,
                 aPartyNumber,
@@ -234,7 +243,7 @@ public class CompleteSMSTestExecutor {
             
             System.out.println("   📤 Sender: " + senderNumber + " (" + senderDevice + ")");
             if (receiverNumber != null) {
-                System.out.println("    Receiver: " + receiverNumber + " (" + receiverDevice + ")");
+                System.out.println("   📥 Receiver: " + receiverNumber + " (" + receiverDevice + ")");
             }
             
          // STEP 2: Validate device connectivity - ENHANCED
@@ -243,9 +252,9 @@ public class CompleteSMSTestExecutor {
             );
 
             if (!validation.isValid) {
-                System.out.println("\n SKIPPING TEST: " + validation.reason);
+                System.out.println("\n⚠️ SKIPPING TEST: " + validation.reason);
                 
-                // NEW: Report test skip
+                // ✅ NEW: Report test skip
                 ProgressReporter.reportSMSProgress(
                     primaryDeviceId,
                     senderNumber,
@@ -270,7 +279,7 @@ public class CompleteSMSTestExecutor {
             Map<String, Object> beforeUSSD_Sender = null;
             Map<String, Object> beforeUSSD_Receiver = null;
             
-            // CHECK SENDER BALANCE (bPartyNumber for incoming)
+            // ✅ CHECK SENDER BALANCE (bPartyNumber for incoming)
             if (senderDevice != null) {
                 System.out.println("   💰 Checking sender balance (" + senderNumber + ")...");
                 
@@ -293,7 +302,7 @@ public class CompleteSMSTestExecutor {
                         30.0
                     );
                     
-                    System.out.println("   Sender Before Balance: ₹" + beforeUSSD_Sender.get("balance"));
+                    System.out.println("   ✅ Sender Before Balance: ₹" + beforeUSSD_Sender.get("balance"));
                     
                     // Store sender balance in result with proper naming
                     if ("INCOMING".equals(direction)) {
@@ -331,7 +340,7 @@ public class CompleteSMSTestExecutor {
                     lastPostCallUSSDCache.remove(senderDevice);
                     return result;
                 } else {
-                    System.out.println("    Sender USSD check failed (continuing)");
+                    System.out.println("   ⚠️ Sender USSD check failed (continuing)");
                     if ("INCOMING".equals(direction)) {
                         result.put("bPartyBeforeBalance", "N/A");
                     } else {
@@ -348,7 +357,7 @@ public class CompleteSMSTestExecutor {
                 }
             }
             
-            // CHECK RECEIVER BALANCE (aPartyNumber for incoming) - Only if device is available
+            // ✅ CHECK RECEIVER BALANCE (aPartyNumber for incoming) - Only if device is available
             if (receiverDevice != null && ADBHelper.isDeviceConnected(receiverDevice)) {
                 System.out.println("   💰 Checking receiver balance (" + receiverNumber + ")...");
                 
@@ -371,7 +380,7 @@ public class CompleteSMSTestExecutor {
                         40.0
                     );
                     
-                    System.out.println("   Receiver Before Balance: ₹" + beforeUSSD_Receiver.get("balance"));
+                    System.out.println("   ✅ Receiver Before Balance: ₹" + beforeUSSD_Receiver.get("balance"));
                     
                     // Store receiver balance in result with proper naming
                     if ("INCOMING".equals(direction)) {
@@ -384,7 +393,7 @@ public class CompleteSMSTestExecutor {
                         result.put("receiverMSISDN", beforeUSSD_Receiver.get("phoneNumber"));
                     }
                 } else {
-                    System.out.println("    Receiver USSD check failed (non-critical)");
+                    System.out.println("   ⚠️ Receiver USSD check failed (non-critical)");
                     if ("INCOMING".equals(direction)) {
                         result.put("beforeBalance", "N/A");
                     } else {
@@ -393,7 +402,7 @@ public class CompleteSMSTestExecutor {
                 }
             }
             
-            // Report message sending start
+            // ✅ NEW: Report message sending start
             ProgressReporter.reportSMSProgress(
                 primaryDeviceId,
                 senderNumber,
@@ -435,7 +444,7 @@ public class CompleteSMSTestExecutor {
                 throw new Exception("Unknown message type: " + messageType);
             }
             
-            // NEW: Report message sending result
+            // ✅ NEW: Report message sending result
             if (sendSuccess) {
                 ProgressReporter.reportSMSProgress(
                     primaryDeviceId,
@@ -456,7 +465,7 @@ public class CompleteSMSTestExecutor {
             
          // STEP 5: Receiver verification (if individual)
             if (sendSuccess && isIndividual) {
-                System.out.println("\n VERIFYING MESSAGE RECEIPT ON RECEIVER...");
+                System.out.println("\n📥 VERIFYING MESSAGE RECEIPT ON RECEIVER...");
                 
                 // Determine actual receiver device based on direction
                 String actualReceiverDevice = null;
@@ -480,7 +489,7 @@ public class CompleteSMSTestExecutor {
                         70.0
                     );
                     
-                 // UPDATED: Get verification result map
+                 // ✅ UPDATED: Get verification result map
                     Map<String, Object> verificationResult = verifyMessageReceived(
                         actualReceiverDevice, 
                         senderNumber, 
@@ -490,16 +499,16 @@ public class CompleteSMSTestExecutor {
                         recipient
                     );
 
-                    // EXTRACT DATA FROM VERIFICATION RESULT
+                    // ✅ EXTRACT DATA FROM VERIFICATION RESULT
                     Long receiverTimestampObj = (Long) verificationResult.get("receiverTimestamp");
                     receiverTimestamp = receiverTimestampObj != null ? receiverTimestampObj : 0L;
                     String verificationStatus = (String) verificationResult.getOrDefault("verificationStatus", "UNVERIFIED");
                     
-                    // STORE VERIFICATION DETAILS
+                    // ✅ STORE VERIFICATION DETAILS
                     result.put("receiverTimestamp", receiverTimestamp);
                     result.put("verificationStatus", verificationStatus);
                     
-                    // STORE FORMATTED TIMESTAMP (if available)
+                    // ✅ STORE FORMATTED TIMESTAMP (if available)
                     if (receiverTimestamp > 0) {
                         result.put("receiverTime", TIMESTAMP_FORMAT.format(new Date(receiverTimestamp)));
                         result.put("receiverTimeFormatted", TIMESTAMP_FORMAT.format(new Date(receiverTimestamp)));
@@ -508,7 +517,7 @@ public class CompleteSMSTestExecutor {
                         result.put("receiverTimeFormatted", "N/A");
                     }
                     
-                    // CALCULATE DELIVERY TIME (if timestamp available)
+                    // ✅ CALCULATE DELIVERY TIME (if timestamp available)
                     if (receiverTimestamp > 0 && senderTimestamp > 0) {
                         long deliveryTime = receiverTimestamp - senderTimestamp;
                         result.put("deliveryTimeMs", deliveryTime);
@@ -529,7 +538,7 @@ public class CompleteSMSTestExecutor {
                                 80.0
                             );
                         } else {
-                            System.out.println("   Delivery within SLA");
+                            System.out.println("   ✅ Delivery within SLA");
                             result.put("deliveryStatus", "SUCCESS");
                             
                             ProgressReporter.reportSMSProgress(
@@ -541,10 +550,10 @@ public class CompleteSMSTestExecutor {
                             );
                         }
                     } else {
-                        System.out.println("    Could not verify receipt time");
+                        System.out.println("   ⚠️ Could not verify receipt time");
                         result.put("deliveryStatus", verificationStatus); // Use verification status
                         
-                        // REPORT SPECIFIC STATUS
+                        // ✅ REPORT SPECIFIC STATUS
                         if ("DEVICE_UNAVAILABLE".equals(verificationStatus)) {
                             ProgressReporter.reportSMSProgress(
                                 primaryDeviceId,
@@ -572,8 +581,8 @@ public class CompleteSMSTestExecutor {
                         }
                     }
                 } else {
-                    // HANDLE DEVICE UNAVAILABLE CASE
-                    System.out.println("    Receiver device not available for verification");
+                    // ✅ HANDLE DEVICE UNAVAILABLE CASE
+                    System.out.println("   ⚠️ Receiver device not available for verification");
                     String unavailableStatus = "DEVICE_UNAVAILABLE";
                     result.put("deliveryStatus", unavailableStatus);
                     result.put("verificationStatus", unavailableStatus);
@@ -598,7 +607,7 @@ public class CompleteSMSTestExecutor {
             Map<String, Object> afterUSSD_Sender = null;
             Map<String, Object> afterUSSD_Receiver = null;
             
-            // CHECK SENDER AFTER BALANCE
+            // ✅ CHECK SENDER AFTER BALANCE
             if (senderDevice != null && sendSuccess) {
                 System.out.println("   💰 Checking sender after balance (" + senderNumber + ")...");
                 System.out.println("   ⏳ Waiting 5s for balance update...");
@@ -635,9 +644,9 @@ public class CompleteSMSTestExecutor {
                         result.put("afterValidity", afterUSSD_Sender.get("validity"));
                     }
                     
-                    System.out.println("   Sender After Balance: ₹" + afterUSSD_Sender.get("balance"));
+                    System.out.println("   ✅ Sender After Balance: ₹" + afterUSSD_Sender.get("balance"));
                     
-                    // CACHE THIS RESULT FOR NEXT TEST
+                    // ✅ CACHE THIS RESULT FOR NEXT TEST
                     cachePostCallUSSDForNextTest(senderDevice, afterUSSD_Sender);
                     
                     // Calculate sender balance deduction
@@ -658,7 +667,7 @@ public class CompleteSMSTestExecutor {
                                 }
                             }
                         } catch (Exception e) {
-                            System.out.println("    Could not calculate sender balance deduction: " + e.getMessage());
+                            System.out.println("   ⚠️ Could not calculate sender balance deduction: " + e.getMessage());
                         }
                     }
                     
@@ -670,7 +679,7 @@ public class CompleteSMSTestExecutor {
                         95.0
                     );
                 } else {
-                    System.out.println("    Sender after-balance USSD check failed");
+                    System.out.println("   ⚠️ Sender after-balance USSD check failed");
                     lastPostCallUSSDCache.remove(senderDevice);
                     
                     ProgressReporter.reportSMSProgress(
@@ -683,7 +692,7 @@ public class CompleteSMSTestExecutor {
                 }
             }
             
-            // CHECK RECEIVER AFTER BALANCE - Only if device is available
+            // ✅ CHECK RECEIVER AFTER BALANCE - Only if device is available
             if (receiverDevice != null && ADBHelper.isDeviceConnected(receiverDevice)) {
                 System.out.println("   💰 Checking receiver after balance (" + receiverNumber + ")...");
                 
@@ -709,7 +718,7 @@ public class CompleteSMSTestExecutor {
                         result.put("receiverAfterValidity", afterUSSD_Receiver.get("validity"));
                     }
                     
-                    System.out.println("   Receiver After Balance: ₹" + afterUSSD_Receiver.get("balance"));
+                    System.out.println("   ✅ Receiver After Balance: ₹" + afterUSSD_Receiver.get("balance"));
                     
                     // Calculate receiver balance deduction (if any)
                     if (beforeUSSD_Receiver != null && (Boolean) beforeUSSD_Receiver.getOrDefault("success", false)) {
@@ -729,7 +738,7 @@ public class CompleteSMSTestExecutor {
                                 }
                             }
                         } catch (Exception e) {
-                            System.out.println("    Could not calculate receiver balance deduction: " + e.getMessage());
+                            System.out.println("   ⚠️ Could not calculate receiver balance deduction: " + e.getMessage());
                         }
                     }
                     
@@ -741,7 +750,7 @@ public class CompleteSMSTestExecutor {
                         100.0
                     );
                 } else {
-                    System.out.println("    Receiver after-balance USSD check failed");
+                    System.out.println("   ⚠️ Receiver after-balance USSD check failed");
                 }
             }
             
@@ -771,7 +780,7 @@ public class CompleteSMSTestExecutor {
                 comments.append("Message sent successfully");
             }
             
-            // ADD BALANCE INFORMATION TO COMMENTS
+            // ✅ ADD BALANCE INFORMATION TO COMMENTS
             comments.append(" | ");
             
             if ("INCOMING".equals(direction)) {
@@ -832,7 +841,7 @@ public class CompleteSMSTestExecutor {
             
             result.put("comments", comments.toString());
             
-            // NEW: Report final test status
+            // ✅ NEW: Report final test status
             ProgressReporter.reportSMSProgress(
                 primaryDeviceId,
                 senderNumber,
@@ -845,7 +854,7 @@ public class CompleteSMSTestExecutor {
             System.out.println("❌ Test execution failed: " + e.getMessage());
             e.printStackTrace();
             
-            // NEW: Report test error
+            // ✅ NEW: Report test error
             ProgressReporter.reportSMSProgress(
                 primaryDeviceId,
                 "",
@@ -870,7 +879,7 @@ public class CompleteSMSTestExecutor {
 
     
 //    /**
-//     * ENHANCED DEVICE VALIDATION - Returns detailed result
+//     * ✅ ENHANCED DEVICE VALIDATION - Returns detailed result
 //     */
 //    private DeviceValidationResult validateDeviceConnectivityEnhanced(
 //            String senderDevice, String receiverDevice, boolean isIndividual, String senderNumber) {
@@ -890,22 +899,22 @@ public class CompleteSMSTestExecutor {
 //            return new DeviceValidationResult(false, reason);
 //        }
 //        
-//        System.out.println("   Sender device connected: " + senderDevice);
+//        System.out.println("   ✅ Sender device connected: " + senderDevice);
 //        
 //        // Check receiver device (if individual)
 //        if (isIndividual && receiverDevice != null) {
 //            if (!ADBHelper.isDeviceConnected(receiverDevice)) {
-//                System.out.println("    Receiver device not connected: " + receiverDevice);
+//                System.out.println("   ⚠️ Receiver device not connected: " + receiverDevice);
 //                System.out.println("   ℹ️ Will skip delivery verification");
 //            } else {
-//                System.out.println("   Receiver device connected: " + receiverDevice);
+//                System.out.println("   ✅ Receiver device connected: " + receiverDevice);
 //            }
 //        }
 //        
 //        return new DeviceValidationResult(true, "All required devices connected");
 //    }
     /**
-     * ENHANCED DEVICE VALIDATION - Returns detailed result
+     * ✅ ENHANCED DEVICE VALIDATION - Returns detailed result
      * FIXED: For INCOMING tests, both sender AND receiver (A-Party) MUST be connected
      */
     private DeviceValidationResult validateDeviceConnectivityEnhanced(
@@ -920,7 +929,7 @@ public class CompleteSMSTestExecutor {
         if ("OUTGOING".equals(direction)) {
             System.out.println("   📤 OUTGOING TEST VALIDATION");
             
-            // Validate SENDER device (A-Party device)
+            // ✅ Validate SENDER device (A-Party device)
             if (senderDevice == null) {
                 String reason = "Sender device not mapped for number: " + senderNumber;
                 System.out.println("   ❌ " + reason);
@@ -934,15 +943,15 @@ public class CompleteSMSTestExecutor {
                 return new DeviceValidationResult(false, reason);
             }
             
-            System.out.println("   Sender device connected: " + senderDevice);
+            System.out.println("   ✅ Sender device connected: " + senderDevice);
             
-            // Validate RECEIVER device (optional for outgoing)
+            // ✅ Validate RECEIVER device (optional for outgoing)
             if (isIndividual && receiverDevice != null) {
                 if (!ADBHelper.isDeviceConnected(receiverDevice)) {
-                    System.out.println("    Receiver device not connected: " + receiverDevice);
+                    System.out.println("   ⚠️ Receiver device not connected: " + receiverDevice);
                     System.out.println("   ℹ️ For outgoing tests, receiver may be external - continuing");
                 } else {
-                    System.out.println("   Receiver device connected: " + receiverDevice);
+                    System.out.println("   ✅ Receiver device connected: " + receiverDevice);
                 }
             }
             
@@ -951,9 +960,9 @@ public class CompleteSMSTestExecutor {
         
         // SCENARIO B: INCOMING TEST
         else if ("INCOMING".equals(direction)) {
-            System.out.println("    INCOMING TEST VALIDATION");
+            System.out.println("   📥 INCOMING TEST VALIDATION");
             
-            // Validate SENDER device (B-Party/Recipient device)
+            // ✅ Validate SENDER device (B-Party/Recipient device)
             if (senderDevice == null) {
                 String reason = "Sender (B-Party/Recipient) device not mapped for number: " + senderNumber;
                 System.out.println("   ❌ " + reason);
@@ -967,7 +976,7 @@ public class CompleteSMSTestExecutor {
                 return new DeviceValidationResult(false, reason);
             }
             
-            System.out.println("   Sender (B-Party) device connected: " + senderDevice);
+            System.out.println("   ✅ Sender (B-Party) device connected: " + senderDevice);
             
             // For INCOMING tests, A-Party is the RECEIVER and MUST be available
             if (receiverDevice == null) {
@@ -984,7 +993,7 @@ public class CompleteSMSTestExecutor {
                 return new DeviceValidationResult(false, reason);
             }
             
-            System.out.println("   Receiver (A-Party) device connected: " + receiverDevice);
+            System.out.println("   ✅ Receiver (A-Party) device connected: " + receiverDevice);
             
             return new DeviceValidationResult(true, "Incoming test validation passed");
         }
@@ -996,7 +1005,7 @@ public class CompleteSMSTestExecutor {
     }
     
     /**
-     * PERFORM USSD CHECK WITH RETRY AND ERROR HANDLING
+     * ✅ PERFORM USSD CHECK WITH RETRY AND ERROR HANDLING
      */
     private Map<String, Object> performUSSDCheckWithRetry(
             String deviceId, String ussdCode, String checkType, String expectedNumber) {
@@ -1018,9 +1027,9 @@ public class CompleteSMSTestExecutor {
             attempt++;
             
             try {
-                System.out.println("    Attempt " + attempt + "/" + MAX_USSD_RETRIES);
+                System.out.println("   🔄 Attempt " + attempt + "/" + MAX_USSD_RETRIES);
                 
-             // NEW: Report retry attempt
+             // ✅ NEW: Report retry attempt
                 ProgressReporter.reportSMSProgress(
                     primaryDeviceId,
                     expectedNumber,
@@ -1033,7 +1042,7 @@ public class CompleteSMSTestExecutor {
                 if (!ADBHelper.isDeviceConnected(deviceId)) {
                     System.out.println("   ❌ Device disconnected: " + deviceId);
                     
-                 // NEW: Report device disconnected
+                 // ✅ NEW: Report device disconnected
                     ProgressReporter.reportSMSProgress(
                         primaryDeviceId,
                         expectedNumber,
@@ -1051,12 +1060,12 @@ public class CompleteSMSTestExecutor {
                 // Execute USSD API
                 ussdResult = USSDService.checkBalanceAndValidity(deviceId, ussdCode);
                 
-                // CRITICAL FIX: Reset driver after USSD to recover instrumentation
-                System.out.println("    Resetting driver after USSD operation...");
+                // ✅ CRITICAL FIX: Reset driver after USSD to recover instrumentation
+                System.out.println("   🔄 Resetting driver after USSD operation...");
                 try {
                     resetDriverAfterUSSD(deviceId);
                 } catch (Exception resetEx) {
-                    System.out.println("    Driver reset error (continuing): " + resetEx.getMessage());
+                    System.out.println("   ⚠️ Driver reset error (continuing): " + resetEx.getMessage());
                 }
                 
                 // Check result
@@ -1083,9 +1092,9 @@ public class CompleteSMSTestExecutor {
                         ussdResult.put("phoneNumber", phoneNumber);
                     }
                     
-                    System.out.println("   USSD SUCCESS");
+                    System.out.println("   ✅ USSD SUCCESS");
                     
-                 // NEW: Report USSD success
+                 // ✅ NEW: Report USSD success
                     ProgressReporter.reportSMSProgress(
                         primaryDeviceId,
                         expectedNumber,
@@ -1106,7 +1115,7 @@ public class CompleteSMSTestExecutor {
                 
                 // FAILURE - Check error details
                 System.out.println("   ❌ USSD API returned error");
-             // NEW: Report USSD failure
+             // ✅ NEW: Report USSD failure
                 ProgressReporter.reportSMSProgress(
                     primaryDeviceId,
                     expectedNumber,
@@ -1128,7 +1137,7 @@ public class CompleteSMSTestExecutor {
             } catch (Exception e) {
                 System.out.println("   ❌ USSD attempt failed: " + e.getMessage());
                 
-                // NEW: Report USSD exception
+                // ✅ NEW: Report USSD exception
                 ProgressReporter.reportSMSProgress(
                     primaryDeviceId,
                     expectedNumber,
@@ -1155,9 +1164,9 @@ public class CompleteSMSTestExecutor {
         }
         
         // All retries exhausted
-        System.out.println("    USSD check failed after " + MAX_USSD_RETRIES + " attempts");
+        System.out.println("   ⚠️ USSD check failed after " + MAX_USSD_RETRIES + " attempts");
         
-        // NEW: Report USSD final failure
+        // ✅ NEW: Report USSD final failure
         ProgressReporter.reportSMSProgress(
             primaryDeviceId,
             expectedNumber,
@@ -1180,11 +1189,11 @@ public class CompleteSMSTestExecutor {
     }
 
     /**
-     * NEW: Reset Driver After USSD Operation
+     * ✅ NEW: Reset Driver After USSD Operation
      */
     private void resetDriverAfterUSSD(String deviceId) {
         try {
-            System.out.println("    Resetting Appium session after USSD...");
+            System.out.println("   🔧 Resetting Appium session after USSD...");
             
             // Step 1: Force stop messaging app via ADB (always works)
             try {
@@ -1192,10 +1201,10 @@ public class CompleteSMSTestExecutor {
                                "com.google.android.apps.messaging"};
                 Process process = Runtime.getRuntime().exec(cmd);
                 process.waitFor();
-                System.out.println("   Messaging app force stopped");
+                System.out.println("   ✅ Messaging app force stopped");
                 Thread.sleep(2000);
             } catch (Exception e) {
-                System.out.println("    Force stop failed: " + e.getMessage());
+                System.out.println("   ⚠️ Force stop failed: " + e.getMessage());
             }
             
             // Step 2: Terminate via driver (if still alive)
@@ -1211,13 +1220,13 @@ public class CompleteSMSTestExecutor {
             try {
                 driver.getPageSource();
             } catch (Exception e) {
-                System.out.println("    Driver is unresponsive, recreating session...");
+                System.out.println("   ⚠️ Driver is unresponsive, recreating session...");
                 driverDead = true;
             }
             
             // Step 4: If driver is dead, recreate entire session
             if (driverDead) {
-                System.out.println("    Recreating Appium session...");
+                System.out.println("   🔄 Recreating Appium session...");
                 String platformVersion = ADBHelper.getAndroidVersion(deviceId).split("\\.")[0];
                 
                 // Quit old driver
@@ -1235,13 +1244,13 @@ public class CompleteSMSTestExecutor {
                 );
                 this.messagingPage = new MessagingPage(driver);
                 
-                System.out.println("   New Appium session created");
+                System.out.println("   ✅ New Appium session created");
             } else {
                 // Driver is alive, just restart the app
-                System.out.println("    Restarting messaging app...");
+                System.out.println("   🔄 Restarting messaging app...");
                 driver.activateApp("com.google.android.apps.messaging");
                 Thread.sleep(3000);
-                System.out.println("   Messaging app restarted");
+                System.out.println("   ✅ Messaging app restarted");
             }
             
         } catch (Exception e) {
@@ -1251,7 +1260,7 @@ public class CompleteSMSTestExecutor {
     }
     
     /**
-     * NEW: Cache POST-CALL USSD result for next test
+     * ✅ NEW: Cache POST-CALL USSD result for next test
      */
     private void cachePostCallUSSDForNextTest(String deviceId, Map<String, Object> postCallUSSD) {
         if (postCallUSSD != null && (Boolean) postCallUSSD.getOrDefault("success", false)) {
@@ -1269,7 +1278,7 @@ public class CompleteSMSTestExecutor {
     }
 
     /**
-     * NEW: Get PRE-CALL USSD (reuse POST-CALL from previous test if available)
+     * ✅ NEW: Get PRE-CALL USSD (reuse POST-CALL from previous test if available)
      */
     private Map<String, Object> getOrPerformPreCallUSSD(String deviceId, String phoneNumber) {
         try {
@@ -1288,13 +1297,13 @@ public class CompleteSMSTestExecutor {
                     String cleanCached = cleanNumber(cachedNumber);
                     
                     if (cleanExpected.equals(cleanCached)) {
-                        System.out.println("      Phone number verified: " + cleanCached);
+                        System.out.println("      ✅ Phone number verified: " + cleanCached);
                         
                         // Mark this as cached and return
                         cachedUSSD.put("cachedFromPreviousTest", true);
                         return cachedUSSD;
                     } else {
-                        System.out.println("       Phone number mismatch - performing fresh check");
+                        System.out.println("      ⚠️ Phone number mismatch - performing fresh check");
                         System.out.println("         Expected: " + cleanExpected);
                         System.out.println("         Cached: " + cleanCached);
                     }
@@ -1318,11 +1327,11 @@ public class CompleteSMSTestExecutor {
                     String cleanDetected = cleanNumber(detectedNumber);
                     
                     if (!cleanExpected.equals(cleanDetected)) {
-                        System.out.println("    WARNING: Phone number mismatch!");
+                        System.out.println("   ⚠️ WARNING: Phone number mismatch!");
                         System.out.println("      Expected: " + cleanExpected);
                         System.out.println("      Detected: " + cleanDetected);
                     } else {
-                        System.out.println("   Phone number verified: " + cleanDetected);
+                        System.out.println("   ✅ Phone number verified: " + cleanDetected);
                     }
                 }
             }
@@ -1339,7 +1348,7 @@ public class CompleteSMSTestExecutor {
     }
     
     /**
-     * PARSE BALANCE - Handle different formats
+     * ✅ PARSE BALANCE - Handle different formats
      */
     private Double parseBalance(Object balanceObj) {
         if (balanceObj == null) return null;
@@ -1356,13 +1365,13 @@ public class CompleteSMSTestExecutor {
             return Double.parseDouble(balanceStr);
             
         } catch (Exception e) {
-            System.out.println("    Could not parse balance: " + balanceObj);
+            System.out.println("   ⚠️ Could not parse balance: " + balanceObj);
             return null;
         }
     }
     
     /**
-     * EXECUTE TEXT MESSAGE
+     * ✅ EXECUTE TEXT MESSAGE
      */
     private Map<String, Object> executeTextMessage(String senderDevice, String senderNumber,
             String receiverNumber, String groupName, String message, 
@@ -1379,7 +1388,7 @@ public class CompleteSMSTestExecutor {
         boolean success;
         
         if (isIndividual) {
-            System.out.println("    Individual SMS to: " + receiverNumber);
+            System.out.println("   📱 Individual SMS to: " + receiverNumber);
             success = messagingPage.sendIndividualSMS(receiverNumber, message);
         } else {
             System.out.println("   👥 Group SMS to: " + groupName);
@@ -1393,7 +1402,7 @@ public class CompleteSMSTestExecutor {
         result.put("senderTime", TIMESTAMP_FORMAT.format(new Date(senderTimestamp)));
         
         if (success) {
-            System.out.println("   Text message sent at: " + result.get("senderTime"));
+            System.out.println("   ✅ Text message sent at: " + result.get("senderTime"));
         } else {
             System.out.println("   ❌ Text message failed");
         }
@@ -1402,7 +1411,7 @@ public class CompleteSMSTestExecutor {
     }
     
     /**
-     * EXECUTE VOICE MESSAGE
+     * ✅ EXECUTE VOICE MESSAGE
      */
     private Map<String, Object> executeVoiceMessage(String senderDevice, String senderNumber,
             String receiverNumber, String groupName, boolean isIndividual, boolean isGroup) throws Exception {
@@ -1418,7 +1427,7 @@ public class CompleteSMSTestExecutor {
         boolean success;
         
         if (isIndividual) {
-            System.out.println("    Individual voice message to: " + receiverNumber);
+            System.out.println("   📱 Individual voice message to: " + receiverNumber);
             success = messagingPage.sendIndividualVoiceMessage(receiverNumber);
         } else {
             System.out.println("   👥 Group voice message to: " + groupName);
@@ -1432,7 +1441,7 @@ public class CompleteSMSTestExecutor {
         result.put("senderTime", TIMESTAMP_FORMAT.format(new Date(senderTimestamp)));
         
         if (success) {
-            System.out.println("   Voice message sent at: " + result.get("senderTime"));
+            System.out.println("   ✅ Voice message sent at: " + result.get("senderTime"));
         } else {
             System.out.println("   ❌ Voice message failed");
         }
@@ -1441,17 +1450,21 @@ public class CompleteSMSTestExecutor {
     }
     
     /**
-     * VERIFY MESSAGE RECEIVED (T2)
+     * ✅ VERIFY MESSAGE RECEIVED (T2)
+     */
+    /**
+     * ✅ ENHANCED MESSAGE RECEIPT VERIFICATION
+     * Returns: Map containing receiver timestamp and status
      */
     private Map<String, Object> verifyMessageReceived(String receiverDevice, String senderNumber, 
                                        String messageType, String direction, 
                                        String aPartyNumber, String recipientNumber) {
-        System.out.println("\n ENHANCED MESSAGE RECEIPT VERIFICATION");
+        System.out.println("\n📥 ENHANCED MESSAGE RECEIPT VERIFICATION");
         System.out.println("   Direction: " + direction);
         System.out.println("   From: " + senderNumber + " | Type: " + messageType);
         
         Map<String, Object> verificationResult = new HashMap<>();
-        long receiverTimestamp = 0; // DECLARE HERE ONCE
+        long receiverTimestamp = 0; // ✅ DECLARE HERE ONCE
         String verificationStatus = "UNVERIFIED";
         String actualReceiverDevice = receiverDevice;
         
@@ -1462,9 +1475,9 @@ public class CompleteSMSTestExecutor {
                 String aPartyDevice = numberToDeviceMap.get(cleanNumber(aPartyNumber));
                 if (aPartyDevice != null && ADBHelper.isDeviceConnected(aPartyDevice)) {
                     actualReceiverDevice = aPartyDevice;
-                    System.out.println("    INCOMING: Receiver is aParty device: " + aPartyDevice);
+                    System.out.println("   📱 INCOMING: Receiver is aParty device: " + aPartyDevice);
                 } else {
-                    System.out.println("    INCOMING: aParty device not available");
+                    System.out.println("   ⚠️ INCOMING: aParty device not available");
                     verificationStatus = "DEVICE_UNAVAILABLE";
                     verificationResult.put("receiverTimestamp", 0L);
                     verificationResult.put("verificationStatus", verificationStatus);
@@ -1474,7 +1487,7 @@ public class CompleteSMSTestExecutor {
             
             // 2. Check if receiver device is available
             if (actualReceiverDevice == null) {
-                System.out.println("    No receiver device available for verification");
+                System.out.println("   ⚠️ No receiver device available for verification");
                 verificationStatus = "DEVICE_UNAVAILABLE";
                 verificationResult.put("receiverTimestamp", 0L);
                 verificationResult.put("verificationStatus", verificationStatus);
@@ -1482,7 +1495,7 @@ public class CompleteSMSTestExecutor {
             }
             
             if (!ADBHelper.isDeviceConnected(actualReceiverDevice)) {
-                System.out.println("    Receiver device not connected: " + actualReceiverDevice);
+                System.out.println("   ⚠️ Receiver device not connected: " + actualReceiverDevice);
                 verificationStatus = "DEVICE_UNAVAILABLE";
                 verificationResult.put("receiverTimestamp", 0L);
                 verificationResult.put("verificationStatus", verificationStatus);
@@ -1495,7 +1508,7 @@ public class CompleteSMSTestExecutor {
             }
             
             // 4. Clear notifications and open messaging app fresh
-            System.out.println("    Preparing receiver device...");
+            System.out.println("   🔧 Preparing receiver device...");
             clearNotifications(actualReceiverDevice);
             Thread.sleep(2000);
             
@@ -1522,19 +1535,19 @@ public class CompleteSMSTestExecutor {
                 
                 // Wait for new message notification
                 long startTime = System.currentTimeMillis();
-                // FIXED: Just assign value, don't redeclare
+                // ✅ FIXED: Just assign value, don't redeclare
                 receiverTimestamp = waitForNewMessageNotification(actualReceiverDevice, numberToLookFor, startTime);
                 
                 if (receiverTimestamp > 0) {
                     verificationStatus = "RECEIVED_VIA_NOTIFICATION";
-                    System.out.println("   Message received via notification at: " + 
+                    System.out.println("   ✅ Message received via notification at: " + 
                         TIMESTAMP_FORMAT.format(new Date(receiverTimestamp)));
                 } else {
                     verificationStatus = "NOT_RECEIVED";
                 }
             } else {
                 // 8. Conversation exists, check for latest message
-                System.out.println("    Checking for new messages in conversation...");
+                System.out.println("   🔄 Checking for new messages in conversation...");
                 
                 // Get the timestamp of the last message before waiting
                 Long lastMessageTimestamp = getLastMessageTimestampInConversation();
@@ -1546,7 +1559,7 @@ public class CompleteSMSTestExecutor {
                 
                 if (receiverTimestamp > 0) {
                     verificationStatus = "RECEIVED_IN_CONVERSATION";
-                    System.out.println("   Message received in conversation at: " + 
+                    System.out.println("   ✅ Message received in conversation at: " + 
                         TIMESTAMP_FORMAT.format(new Date(receiverTimestamp)));
                 } else {
                     verificationStatus = "NOT_RECEIVED";
@@ -1557,7 +1570,7 @@ public class CompleteSMSTestExecutor {
                 System.out.println("   📅 Receiver Timestamp: " + 
                     TIMESTAMP_FORMAT.format(new Date(receiverTimestamp)));
             } else {
-                System.out.println("    Message not received within expected time");
+                System.out.println("   ⚠️ Message not received within expected time");
             }
             
             verificationResult.put("receiverTimestamp", receiverTimestamp);
@@ -1579,7 +1592,7 @@ public class CompleteSMSTestExecutor {
     }
 
     /**
-     * CLEAR NOTIFICATIONS on device
+     * ✅ CLEAR NOTIFICATIONS on device
      */
     private void clearNotifications(String deviceId) {
         try {
@@ -1588,12 +1601,12 @@ public class CompleteSMSTestExecutor {
             process.waitFor();
             System.out.println("   🔭 Cleared notifications");
         } catch (Exception e) {
-            System.out.println("    Could not clear notifications: " + e.getMessage());
+            System.out.println("   ⚠️ Could not clear notifications: " + e.getMessage());
         }
     }
 
     /**
-     * OPEN MESSAGING APP FRESH - Ensure clean state
+     * ✅ OPEN MESSAGING APP FRESH - Ensure clean state
      */
     private void openMessagingAppFresh(String deviceId) throws Exception {
         try {
@@ -1608,14 +1621,14 @@ public class CompleteSMSTestExecutor {
             // Ensure we're on main screen
             ensureMessagingMainScreen();
             
-            System.out.println("   Messaging app opened fresh");
+            System.out.println("   ✅ Messaging app opened fresh");
         } catch (Exception e) {
-            System.out.println("    Error opening fresh app: " + e.getMessage());
+            System.out.println("   ⚠️ Error opening fresh app: " + e.getMessage());
             throw e;
         }
     }
     /**
-     * NEW: Close messaging app completely MODIFIED: Enhanced app closure
+     * ✅ NEW: Close messaging app completely MODIFIED: Enhanced app closure
      */
     private void closeMessagingAppCompletely(String deviceId) {
         try {
@@ -1625,9 +1638,9 @@ public class CompleteSMSTestExecutor {
             try {
                 driver.terminateApp("com.google.android.apps.messaging");
                 Thread.sleep(1000);
-                System.out.println("   App terminated via driver");
+                System.out.println("   ✅ App terminated via driver");
             } catch (Exception e) {
-                System.out.println("    Driver terminate failed (expected after USSD)");
+                System.out.println("   ⚠️ Driver terminate failed (expected after USSD)");
             }
 
             // Method 2: Force stop via ADB (always works)
@@ -1637,21 +1650,21 @@ public class CompleteSMSTestExecutor {
                 Process process = Runtime.getRuntime().exec(cmd);
                 int exitCode = process.waitFor();
                 if (exitCode == 0) {
-                    System.out.println("   Messaging app force stopped via ADB");
+                    System.out.println("   ✅ Messaging app force stopped via ADB");
                 }
             } catch (Exception e) {
-                System.out.println("    ADB force stop failed: " + e.getMessage());
+                System.out.println("   ⚠️ ADB force stop failed: " + e.getMessage());
             }
             
             Thread.sleep(2000);
 
         } catch (Exception e) {
-            System.out.println("    Close app error: " + e.getMessage());
+            System.out.println("   ⚠️ Close app error: " + e.getMessage());
         }
     }
 
     /**
-     * MODIFIED: Use ADB for navigation instead of Appium
+     * ✅ MODIFIED: Use ADB for navigation instead of Appium
      */
     private void ensureMessagingMainScreen() {
         try {
@@ -1662,11 +1675,11 @@ public class CompleteSMSTestExecutor {
                         By.id("com.google.android.apps.messaging:id/start_chat_fab")
                     );
                     if (startChatFab.isDisplayed()) {
-                        System.out.println("   On messaging main screen");
+                        System.out.println("   ✅ On messaging main screen");
                         return;
                     }
                 } catch (Exception e) {
-                    // FIX: Use ADB instead of driver.pressKey()
+                    // ✅ FIX: Use ADB instead of driver.pressKey()
                     System.out.println("   🔙 Pressing BACK via ADB (attempt " + (attempt + 1) + ")");
                     try {
                         String[] cmd = {"adb", "-s", primaryDeviceId, "shell", 
@@ -1675,18 +1688,18 @@ public class CompleteSMSTestExecutor {
                         process.waitFor();
                         Thread.sleep(1000);
                     } catch (Exception adbEx) {
-                        System.out.println("    ADB BACK failed: " + adbEx.getMessage());
+                        System.out.println("   ⚠️ ADB BACK failed: " + adbEx.getMessage());
                     }
                 }
             }
         } catch (Exception e) {
-            System.out.println("    Main screen check: " + e.getMessage());
+            System.out.println("   ⚠️ Main screen check: " + e.getMessage());
         }
     }
 
     
     /**
-     * FIND AND OPEN SENDER CONVERSATION
+     * ✅ FIND AND OPEN SENDER CONVERSATION
      */
     private boolean findAndOpenSenderConversation(String cleanSender) {
         try {
@@ -1728,13 +1741,13 @@ public class CompleteSMSTestExecutor {
             return false;
             
         } catch (Exception e) {
-            System.out.println("    Error finding conversation: " + e.getMessage());
+            System.out.println("   ⚠️ Error finding conversation: " + e.getMessage());
             return false;
         }
     }
 
     /**
-     * GET LAST MESSAGE TIMESTAMP IN CONVERSATION
+     * ✅ GET LAST MESSAGE TIMESTAMP IN CONVERSATION
      */
     private Long getLastMessageTimestampInConversation() {
         try {
@@ -1774,13 +1787,13 @@ public class CompleteSMSTestExecutor {
             return null;
             
         } catch (Exception e) {
-            System.out.println("    Could not get last message timestamp: " + e.getMessage());
+            System.out.println("   ⚠️ Could not get last message timestamp: " + e.getMessage());
             return null;
         }
     }
 
     /**
-     * WAIT FOR NEW MESSAGE IN CONVERSATION
+     * ✅ WAIT FOR NEW MESSAGE IN CONVERSATION
      */
     private long waitForNewMessageInConversation(String senderNumber, String messageType, Long lastMessageTimestamp) throws InterruptedException {
         long startTime = System.currentTimeMillis();
@@ -1863,17 +1876,17 @@ public class CompleteSMSTestExecutor {
                 Thread.sleep(MESSAGE_POLL_INTERVAL);
                 
             } catch (Exception e) {
-                System.out.println("    Poll error: " + e.getMessage());
+                System.out.println("   ⚠️ Poll error: " + e.getMessage());
                 Thread.sleep(MESSAGE_POLL_INTERVAL);
             }
         }
         
-        System.out.println("    Timeout waiting for message in conversation");
+        System.out.println("   ⚠️ Timeout waiting for message in conversation");
         return 0;
     }
 
     /**
-     * WAIT FOR NEW MESSAGE NOTIFICATION (when no existing conversation)
+     * ✅ WAIT FOR NEW MESSAGE NOTIFICATION (when no existing conversation)
      */
     private long waitForNewMessageNotification(String deviceId, String senderNumber, long startTime) throws InterruptedException {
         long maxWaitTime = startTime + MAX_DELIVERY_TIME_MS;
@@ -1921,17 +1934,17 @@ public class CompleteSMSTestExecutor {
                 Thread.sleep(MESSAGE_POLL_INTERVAL);
                 
             } catch (Exception e) {
-                System.out.println("    Notification poll error: " + e.getMessage());
+                System.out.println("   ⚠️ Notification poll error: " + e.getMessage());
                 Thread.sleep(MESSAGE_POLL_INTERVAL);
             }
         }
         
-        System.out.println("    Timeout waiting for notification");
+        System.out.println("   ⚠️ Timeout waiting for notification");
         return 0;
     }
 
     /**
-     * COUNT MESSAGES IN CURRENT CONVERSATION
+     * ✅ COUNT MESSAGES IN CURRENT CONVERSATION
      */
     private int countMessagesInConversation() {
         try {
@@ -1953,7 +1966,7 @@ public class CompleteSMSTestExecutor {
     }
 
     /**
-     * GET NOTIFICATIONS from device
+     * ✅ GET NOTIFICATIONS from device
      */
     private String getNotifications(String deviceId) {
         try {
@@ -1974,13 +1987,13 @@ public class CompleteSMSTestExecutor {
             return output.toString();
             
         } catch (Exception e) {
-            System.out.println("    Could not get notifications: " + e.getMessage());
+            System.out.println("   ⚠️ Could not get notifications: " + e.getMessage());
             return "";
         }
     }
 
     /**
-     * TAP NOTIFICATION
+     * ✅ TAP NOTIFICATION
      */
     private void tapNotification(String deviceId) {
         try {
@@ -1991,12 +2004,12 @@ public class CompleteSMSTestExecutor {
             tapProcess.waitFor();
             
         } catch (Exception e) {
-            System.out.println("    Could not tap notification: " + e.getMessage());
+            System.out.println("   ⚠️ Could not tap notification: " + e.getMessage());
         }
     }
 
     /**
-     * CLEAN NUMBER METHOD
+     * ✅ CLEAN NUMBER METHOD
      */
     private String cleanNumber(String number) {
         if (number == null) return "";
@@ -2013,14 +2026,14 @@ public class CompleteSMSTestExecutor {
     }
 
     /**
-     * SWITCH TO DEVICE (if needed)
+     * ✅ SWITCH TO DEVICE (if needed)
      */
     private void switchToDevice(String deviceId) throws Exception {
         if (deviceId == null || deviceId.equals(primaryDeviceId)) {
             return; // Already on correct device
         }
         
-        System.out.println("    Switching to device: " + deviceId);
+        System.out.println("   🔄 Switching to device: " + deviceId);
         
         // Quit current driver
         if (driver != null) {
@@ -2038,11 +2051,11 @@ public class CompleteSMSTestExecutor {
         );
         this.messagingPage = new MessagingPage(driver);
         
-        System.out.println("   Switched to device: " + deviceId);
+        System.out.println("   ✅ Switched to device: " + deviceId);
     }
     
     /**
-     * OPEN MESSAGING APP
+     * ✅ OPEN MESSAGING APP
      */
     private void openMessagingApp(String deviceId) throws Exception {
         try {
@@ -2057,7 +2070,7 @@ public class CompleteSMSTestExecutor {
     }
     
     /**
-     * GENERATE REPORTS
+     * ✅ GENERATE REPORTS
      */
     private void generateReports() {
         System.out.println("\n📊 GENERATING REPORTS...");
@@ -2065,22 +2078,22 @@ public class CompleteSMSTestExecutor {
         try {
             // Generate Excel report
             String excelReport = ReportGenerator.generateSMSExcelReport(allResults);
-            System.out.println("   Excel Report: " + excelReport);
+            System.out.println("   ✅ Excel Report: " + excelReport);
             
             // Generate HTML report
             String aPartyNumber = System.getProperty("aPartyNumber", "Unknown");
             String htmlReport = ReportGenerator.generateSMSTestReport(
                 allResults, primaryDeviceId, aPartyNumber
             );
-            System.out.println("   HTML Report: " + htmlReport);
+            System.out.println("   ✅ HTML Report: " + htmlReport);
             
         } catch (Exception e) {
-            System.out.println("    Report generation error: " + e.getMessage());
+            System.out.println("   ⚠️ Report generation error: " + e.getMessage());
         }
     }
     
     /**
-     * CLEANUP
+     * ✅ CLEANUP
      */
     public void cleanup() {
         System.out.println("\n🧹 Cleaning up SMS Test Executor...");
@@ -2093,7 +2106,7 @@ public class CompleteSMSTestExecutor {
             // Ignore
         }
         
-        System.out.println("Cleanup complete");
+        System.out.println("✅ Cleanup complete");
     }
 
 }

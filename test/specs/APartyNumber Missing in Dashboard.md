@@ -91,7 +91,7 @@ Party Number: N/A
  
  Validity: N/A 
  
- Device ID: LFMVIBEMW8HUR4XK if N/A - no need to list in Multi-Device Testing section - show messsage in the logs -  Party Number: N/A is not detected please check and connect again
+ Device ID: ZA222V9QNF if N/A - no need to list in Multi-Device Testing section - show messsage in the logs -  Party Number: N/A is not detected please check and connect again
 
 **Assistant**
 
@@ -119,7 +119,7 @@ Party Number: N/A
  
  Validity: N/A 
  
- Device ID: LFMVIBEMW8HUR4XK if N/A - case need to list, before listing as user manually enter the party number - show the pop-up with clean message, if the user enters the number clicks on connect button - it will listed in the devices, and if cancel it no need to list the device - remove the connection list as well, this case remove the Balance: N/A 
+ Device ID: ZA222V9QNF if N/A - case need to list, before listing as user manually enter the party number - show the pop-up with clean message, if the user enters the number clicks on connect button - it will listed in the devices, and if cancel it no need to list the device - remove the connection list as well, this case remove the Balance: N/A 
  
  Validity: N/A
 

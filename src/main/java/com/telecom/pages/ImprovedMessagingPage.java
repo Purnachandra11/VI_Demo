@@ -1,8 +1,12 @@
 package com.telecom.pages;
 
-import io.appium.java_client.android.AndroidDriver;
-import io.appium.java_client.android.nativekey.AndroidKey;
-import io.appium.java_client.android.nativekey.KeyEvent;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Actions;
@@ -10,15 +14,17 @@ import org.openqa.selenium.interactions.PointerInput;
 import org.openqa.selenium.interactions.Sequence;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+
 import com.telecom.config.ElementConfig;
+import com.telecom.utils.ProgressReporter;
 import com.telecom.verification.MessageVerifier;
 
-import java.time.Duration;
-import java.util.*;
-import com.telecom.utils.ProgressReporter;
+import io.appium.java_client.android.AndroidDriver;
+import io.appium.java_client.android.nativekey.AndroidKey;
+import io.appium.java_client.android.nativekey.KeyEvent;
 
 /**
- *  FIXED MESSAGING PAGE - Robust Voice Button Handling
+ * ✅ FIXED MESSAGING PAGE - Robust Voice Button Handling
  */
 public class ImprovedMessagingPage {
     private AndroidDriver driver;
@@ -39,15 +45,14 @@ public class ImprovedMessagingPage {
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(30));
         this.shortWait = new WebDriverWait(driver, Duration.ofSeconds(10));
         this.messageVerifier = new MessageVerifier(driver); 
-        
     }
     
     /**
-     *  INDIVIDUAL SMS (Text Message)
+     * ✅ INDIVIDUAL SMS (Text Message)
      */
     public boolean sendIndividualSMS(String phoneNumber, String message) {
         try {
-            System.out.println(" Starting Individual SMS to: " + phoneNumber);
+            System.out.println("📱 Starting Individual SMS to: " + phoneNumber);
             reportProgress(phoneNumber, "STARTED", "Starting SMS send", 0);
             
             openMessagingApp();
@@ -71,7 +76,7 @@ public class ImprovedMessagingPage {
                 reportProgress(phoneNumber, "FAILED", "SMS verification failed", 0);
             }
             
-            System.out.println(" Individual SMS sent status: " + sent);
+            System.out.println("✅ Individual SMS sent status: " + sent);
             return sent;
             
         } catch (Exception e) {
@@ -83,86 +88,42 @@ public class ImprovedMessagingPage {
     }
     
     /**
-     *  INDIVIDUAL VOICE MESSAGE - Updated with unified verification
-  */
-    // Add this method to ImprovedMessagingPage class
-public boolean sendIndividualSMSWithTimestamp(String phoneNumber, String message) {
-    try {
-        System.out.println(" Starting Individual SMS to: " + phoneNumber);
-        messageVerifier.setRecipientNumber(phoneNumber);
-        
-        long startTime = System.currentTimeMillis();
-        
-        openMessagingApp();
-        ensureMainScreen();
-        startNewConversation();
-        enterPhoneNumber(phoneNumber);
-        enterMessage(message);
-        sendMessage();
-        
-        // Wait for message to be saved
-        Thread.sleep(2000);
-        
-        // Verify with timestamp
-        MessageVerifier.SentSmsInfo sentInfo = messageVerifier.verifyMessageSentWithTimestamp(message);
-        
-        long endTime = System.currentTimeMillis();
-        
-        if (sentInfo != null) {
-            System.out.println("✅ SMS VERIFIED!");
-            System.out.println("   Sent at: " + sentInfo.getFormattedDate());
-            System.out.println("   Total time: " + (endTime - startTime) + " ms");
-            return true;
-        } else {
-            System.out.println("❌ SMS verification failed");
-            return false;
-        }
-        
-    } catch (Exception e) {
-        System.out.println("❌ SMS failed: " + e.getMessage());
-        return false;
-    }
-}
-
-// Update sendIndividualVoiceMessageFixed method
-public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
-    try {
-        System.out.println("🎤 Starting Individual Voice Message to: " + phoneNumber);
-        reportProgress(phoneNumber, "STARTED", "Starting voice message", 0);
-        
-        // Set recipient number for verification
-        messageVerifier.setRecipientNumber(phoneNumber);
-        
-        VoiceMessageHandler voiceHandler = new VoiceMessageHandler(driver);
-        Map<String, Object> result = voiceHandler.sendVoiceMessageWithDetails(phoneNumber);
-        boolean voiceSent = (boolean) result.get("success");
-        
-        if (voiceSent) {
-            // Get detailed verification with timestamp
-            MessageVerifier.SentSmsInfo sentInfo = messageVerifier.getLatestSentMessage();
+     * ✅ INDIVIDUAL VOICE MESSAGE - Updated with unified verification
+     */
+    public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
+        try {
+            System.out.println("🎤 Starting Individual Voice Message to: " + phoneNumber);
+            reportProgress(phoneNumber, "STARTED", "Starting voice message", 0);
             
-            if (sentInfo != null) {
-                reportProgress(phoneNumber, "COMPLETED", 
-                    "Voice message sent at: " + sentInfo.getFormattedDate(), 100);
-                System.out.println(" Voice message sent at: " + sentInfo.getFormattedDate());
-                return true;
+            VoiceMessageHandler voiceHandler = new VoiceMessageHandler(driver);
+            boolean voiceSent = voiceHandler.sendVoiceMessage(phoneNumber);
+            
+            if (voiceSent) {
+                // Use unified verification for voice message too
+            	boolean verified = messageVerifier.verifyMessageSent();
+                
+                if (verified) {
+                    reportProgress(phoneNumber, "COMPLETED", "Voice message sent and verified", 100);
+                } else {
+                    reportProgress(phoneNumber, "VERIFICATION_FAILED", "Voice message verification failed", 50);
+                }
+                
+                System.out.println("✅ Voice message verification: " + verified);
+                return verified;
             } else {
-                reportProgress(phoneNumber, "VERIFICATION_FAILED", "Voice message verification failed", 50);
+                reportProgress(phoneNumber, "FAILED", "Voice recording failed", 0);
                 return false;
             }
-        } else {
-            reportProgress(phoneNumber, "FAILED", "Voice recording failed", 0);
+            
+        } catch (Exception e) {
+            System.out.println("❌ Voice message failed: " + e.getMessage());
+            reportProgress(phoneNumber, "ERROR", "Exception: " + e.getMessage(), 0);
             return false;
         }
-        
-    } catch (Exception e) {
-        System.out.println("❌ Voice message failed: " + e.getMessage());
-        reportProgress(phoneNumber, "ERROR", "Exception: " + e.getMessage(), 0);
-        return false;
     }
-}
+    
     /**
-     *  GROUP SMS (Text Message) - Updated with unified verification
+     * ✅ GROUP SMS (Text Message) - Updated with unified verification
      */
     public Map<String, Object> sendGroupSMS(String groupName, String message) {
         Map<String, Object> result = new HashMap<>();
@@ -204,7 +165,7 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
             result.put("participantCount", participantCount);
             result.put("messageSent", sent);
             
-            System.out.println(" Group SMS completed - Participants: " + participantCount + ", Sent: " + sent);
+            System.out.println("✅ Group SMS completed - Participants: " + participantCount + ", Sent: " + sent);
             
         } catch (Exception e) {
             System.out.println("❌ Group SMS failed: " + e.getMessage());
@@ -219,7 +180,7 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
     
     
     /**
-     *  GROUP VOICE MESSAGE
+     * ✅ GROUP VOICE MESSAGE
      */
     public Map<String, Object> sendGroupVoiceMessage(String groupName) {
         Map<String, Object> result = new HashMap<>();
@@ -284,7 +245,7 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
             result.put("participantCount", participantCount);
             result.put("messageSent", sent);
             
-            System.out.println(" Group Voice Message completed - Participants: " + participantCount + ", Sent: " + sent);
+            System.out.println("✅ Group Voice Message completed - Participants: " + participantCount + ", Sent: " + sent);
             
         } catch (Exception e) {
             System.out.println("❌ Group Voice Message failed: " + e.getMessage());
@@ -300,24 +261,24 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
     // ==================== CORE METHODS ====================
     
     private void openMessagingApp() throws Exception {
-        System.out.println("   Opening Google Messages...");
+        System.out.println("  📱 Opening Google Messages...");
         
         try {
             driver.activateApp("com.google.android.apps.messaging");
-            System.out.println("   Messaging app activated");
+            System.out.println("  ✅ Messaging app activated");
         } catch (Exception e) {
             Map<String, Object> params = new HashMap<>();
             params.put("command", "am start -n com.google.android.apps.messaging/com.google.android.apps.messaging.ui.ConversationListActivity");
             driver.executeScript("mobile: shell", params);
-            System.out.println("   Messaging app opened via shell command");
+            System.out.println("  ✅ Messaging app opened via shell command");
         }
         
         Thread.sleep(5000);
-        System.out.println("   Messaging app ready");
+        System.out.println("  ✅ Messaging app ready");
     }
     
     /**
-     *  ENSURE MAIN SCREEN - Optimized version when already on main screen
+     * ✅ ENSURE MAIN SCREEN - Optimized version when already on main screen
      */
     private void ensureMainScreen() {
         try {
@@ -329,7 +290,7 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
                     By.id("com.google.android.apps.messaging:id/start_chat_fab")
                 ));
                 if (startChatFab.isDisplayed()) {
-                    System.out.println("   User is on main screen");
+                    System.out.println("  ✅ User is on main screen");
                     return;
                 }
             } catch (Exception e) {
@@ -338,10 +299,10 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
             }
             
             // ❌ NO BACK NAVIGATION - user is NOT on main screen!
-            System.out.println("   Proceeding with messaging (assuming user is on main screen)");
+            System.out.println("  ✅ Proceeding with messaging (assuming user is on main screen)");
             
         } catch (Exception e) {
-            System.out.println("   Main screen check error: " + e.getMessage());
+            System.out.println("  ⚠️ Main screen check error: " + e.getMessage());
         }
     }
     
@@ -353,7 +314,7 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
         );
         startChatButton.click();
         Thread.sleep(3000);
-        System.out.println("   New conversation started");
+        System.out.println("  ✅ New conversation started");
     }
     
     private void enterPhoneNumber(String phoneNumber) throws Exception {
@@ -367,14 +328,14 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
                 driver.pressKey(new KeyEvent(key));
                 Thread.sleep(300);
             } catch (Exception e) {
-                System.out.println("   Failed to press digit: " + digit);
+                System.out.println("  ⚠️ Failed to press digit: " + digit);
                 throw e;
             }
         }
         
         driver.pressKey(new KeyEvent(AndroidKey.ENTER));
         Thread.sleep(3000);
-        System.out.println("   Phone number entered");
+        System.out.println("  ✅ Phone number entered");
     }
     
     private void enterMessage(String message) throws Exception {
@@ -392,7 +353,7 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
         // Send keys
         messageInput.sendKeys(message);
         Thread.sleep(2000);
-        System.out.println("   Message entered");
+        System.out.println("  ✅ Message entered");
     }
     
     private void sendMessage() throws Exception {
@@ -403,11 +364,11 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
         );
         sendButton.click();
         Thread.sleep(3000);
-        System.out.println("   Message sent");
+        System.out.println("  ✅ Message sent");
     }
     
     /**
-     *  ROBUST AUDIO BUTTON HOLD - MULTIPLE STRATEGIES
+     * ✅ ROBUST AUDIO BUTTON HOLD - MULTIPLE STRATEGIES
      */
     private boolean holdAudioButtonRobust(int milliseconds) {
         try {
@@ -433,11 +394,11 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
                        .release()
                        .perform();
                 
-                System.out.println("   Audio button held using W3C Actions");
+                System.out.println("  ✅ Audio button held using W3C Actions");
                 return verifyRecordingStarted();
                 
             } catch (Exception e1) {
-                System.out.println("   W3C Actions failed: " + e1.getMessage());
+                System.out.println("  ⚠️ W3C Actions failed: " + e1.getMessage());
             }
             
             // Strategy 2: PointerInput with coordinates
@@ -463,11 +424,11 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
                 
                 driver.perform(Collections.singletonList(holdSequence));
                 
-                System.out.println("   Audio button held using PointerInput");
+                System.out.println("  ✅ Audio button held using PointerInput");
                 return verifyRecordingStarted();
                 
             } catch (Exception e2) {
-                System.out.println("   PointerInput failed: " + e2.getMessage());
+                System.out.println("  ⚠️ PointerInput failed: " + e2.getMessage());
             }
             
             // Strategy 3: Mobile shell command
@@ -482,7 +443,7 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
                     String.valueOf(milliseconds)
                 }).waitFor();
                 
-                System.out.println("   Audio button held using ADB shell");
+                System.out.println("  ✅ Audio button held using ADB shell");
                 return verifyRecordingStarted();
                 
             } catch (Exception e3) {
@@ -499,7 +460,7 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
     }
     
     /**
-     *  FIND AUDIO BUTTON WITH RETRY
+     * ✅ FIND AUDIO BUTTON WITH RETRY
      */
     private WebElement findAudioButtonWithRetry() {
         List<By> locators = Arrays.asList(
@@ -513,7 +474,7 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
             try {
                 WebElement element = wait.until(ExpectedConditions.presenceOfElementLocated(locator));
                 if (element != null && element.isDisplayed() && element.isEnabled()) {
-                    System.out.println("   Found audio button using: " + locator);
+                    System.out.println("  ✅ Found audio button using: " + locator);
                     return element;
                 }
             } catch (Exception e) {
@@ -525,7 +486,7 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
     }
     
     /**
-     *  VERIFY RECORDING STARTED
+     * ✅ VERIFY RECORDING STARTED
      */
     private boolean verifyRecordingStarted() {
         try {
@@ -542,7 +503,7 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
                 return true;
             }
             
-            System.out.println("   Recording not verified, assuming success");
+            System.out.println("  ⚠️ Recording not verified, assuming success");
             return true; // Assume success if we reached here
             
         } catch (Exception e) {
@@ -551,7 +512,7 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
     }
     
     /**
-     *  ROBUST SEND VOICE MESSAGE - MULTIPLE STRATEGIES
+     * ✅ ROBUST SEND VOICE MESSAGE - MULTIPLE STRATEGIES
      */
     private boolean sendVoiceMessageRobust() {
         try {
@@ -571,7 +532,7 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
                 try {
                     WebElement sendButton = wait.until(ExpectedConditions.elementToBeClickable(locator));
                     if (sendButton.isDisplayed() && sendButton.isEnabled()) {
-                        System.out.println("   Found send button using: " + locator);
+                        System.out.println("  ✅ Found send button using: " + locator);
                         sendButton.click();
                         Thread.sleep(3000);
                         return true;
@@ -588,7 +549,7 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
                 Thread.sleep(3000);
                 return true;
             } catch (Exception e) {
-                System.out.println("   ENTER key failed");
+                System.out.println("  ⚠️ ENTER key failed");
             }
             
             // Strategy 3: Tap at known send button coordinates (right side)
@@ -649,7 +610,7 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
             if (!visibleGroups.isEmpty()) {
                 visibleGroups.get(0).click();
                 Thread.sleep(1500);
-                System.out.println("   Group found immediately");
+                System.out.println("  ✅ Group found immediately");
                 return true;
             }
             return false;
@@ -683,7 +644,7 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
                     return findAndClickGroupInSearchResults(groupName);
                 }
             } catch (Exception e) {
-                System.out.println("   Search button not found, trying direct scroll...");
+                System.out.println("  ⚠️ Search button not found, trying direct scroll...");
             }
             
             return findGroupByScrolling(groupName);
@@ -702,7 +663,7 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
             if (!groupElements.isEmpty()) {
                 groupElements.get(0).click();
                 Thread.sleep(3000);
-                System.out.println("   Group found and opened via search: " + groupName);
+                System.out.println("  ✅ Group found and opened via search: " + groupName);
                 return true;
             }
             
@@ -727,7 +688,7 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
                     if (conversationName.contains(groupName)) {
                         conversation.click();
                         Thread.sleep(3000);
-                        System.out.println("   Group found by scrolling");
+                        System.out.println("  ✅ Group found by scrolling");
                         return true;
                     }
                 } catch (Exception e) {
@@ -801,5 +762,4 @@ public boolean sendIndividualVoiceMessageFixed(String phoneNumber) {
             }
         }
     }
-    
 }

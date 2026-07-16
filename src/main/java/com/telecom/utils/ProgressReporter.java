@@ -1,12 +1,14 @@
 package com.telecom.utils;
 
-import org.apache.hc.client5.http.fluent.Request;
-import org.apache.hc.core5.http.ContentType;
-import com.google.gson.Gson;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.hc.client5.http.fluent.Request;
+import org.apache.hc.core5.http.ContentType;
+
+import com.google.gson.Gson;
 
 /**
  * ProgressReporter - Sends real-time progress updates to Node.js server
@@ -14,7 +16,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ProgressReporter {
     private static final String PROGRESS_ENDPOINT = "http://localhost:5174/api/progress/update";
-    // private static final String PROGRESS_ENDPOINT = "http://13.233.121.125:5174/api/progress/update";
     private static final Gson gson = new Gson();
     
     // Track completion status per device and test type
