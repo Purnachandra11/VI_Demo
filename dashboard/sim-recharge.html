@@ -3363,6 +3363,7 @@
                 <span class="test-info-label" style="color:#b71c1c;">Actual Circle</span>
                 <span class="test-info-value mrp" style="color:#b71c1c;">${t.actualCircle || "—"}</span>
             </div>
+            
         </div>
         <div class="test-info-item"><span class="test-info-label">Recharge MRP</span><span class="test-info-value mrp">₹${t.rechargeMRP || "—"}</span></div>
         <div class="test-info-item"><span class="test-info-label">Benefit</span><span class="test-info-value benefit">${t.benefit || "—"}</span></div>
@@ -3379,6 +3380,7 @@
         <div class="overall-status ${t.overallStatus}">${overall.icon}<span>${overall.text}</span></div>
         <span class="test-timestamp">${t.completedAt || t.startedAt || "Waiting to start"}</span>
     </div>`;
+    
       }
 
       function colStatusConfig(status) {

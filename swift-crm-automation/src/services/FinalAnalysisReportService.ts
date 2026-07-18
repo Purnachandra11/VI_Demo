@@ -1,6 +1,8 @@
 import {
   AnalysisReportData,
   ExcelReportService,
+  ViAppResult,
+  PreTestResult,
 } from './ExcelReportService';
 import * as xlsx from 'xlsx';
 import * as fs from 'fs';
@@ -64,6 +66,11 @@ export interface FinalAnalysisContext {
   swiftRan?: boolean;
   masterPlanBenefit?: string;
   masterRechargeNotification?: string;
+  // ─── NEW: PreTest and VI App data ──────────────────────────────────────
+  preTestResult?: PreTestResult;
+  viAppResult?: ViAppResult;
+  preTestStatus?: 'Pass' | 'Fail' | 'Skip';
+  viAppStatus?: 'Pass' | 'Fail' | 'Skip' | 'Error';
 }
 
 interface ActualPlan {
@@ -100,7 +107,10 @@ export function parsePlanBenefit(planBenefit: string): ParsedPlan {
   const validityPart = parts[1] || '';
 
   let validityDays = 0;
-  const validityMatch = (validityPart || cleaned).match(/(\d+)\s*D/i);
+  let validityMatch = validityPart.match(/(\d+)\s*D/i);
+  if (!validityMatch) {
+    validityMatch = cleaned.match(/(\d+)\s*D/i);
+  }
   if (validityMatch) {
     validityDays = parseInt(validityMatch[1], 10);
   }
@@ -132,10 +142,12 @@ export function parsePlanBenefit(planBenefit: string): ParsedPlan {
 
 function parseIndianDate(dateStr: string): Date | null {
   if (!dateStr) return null;
+
+  const cleaned = dateStr.replace(/\s*\|\s*/g, ' ').trim();
   
-  const match = dateStr.match(/(\d{1,2})\s+([A-Za-z]{3})\s+'(\d{2})(?:\s+(\d{1,2})\.(\d{2})\s?(AM|PM))?/i);
+  const match = cleaned.match(/(\d{1,2})\s+([A-Za-z]{3})\s+'(\d{2})(?:\s+(\d{1,2})\.(\d{2})\s?(AM|PM))?/i);
   if (!match) {
-    const altMatch = dateStr.match(/(\d{1,2})\s+([A-Za-z]{3})\s+'(\d{2})/);
+    const altMatch = cleaned.match(/(\d{1,2})\s+([A-Za-z]{3})\s+'(\d{2})/);
     if (!altMatch) return null;
     const altDay = parseInt(altMatch[1], 10);
     const altMonth = MONTHS[altMatch[2].toLowerCase()];
@@ -299,10 +311,9 @@ function compareDataQuotas(expected: ParsedPlan, actual: ActualPlan, inDA?: any)
 
   if (inDA && expectedData) {
     const daVal = parseFloat(inDA.daValue);
-    if (expectedData.perDay && daVal < 1024) return false;
-    if (expectedData.value >= 1.5 && daVal < 1000) return false;
-    if (expectedData.perDay && daVal >= 1024) return true;
-    if (expectedData.value >= 1.5 && daVal >= 1000) return true;
+    const unit = (inDA.unit || '').toLowerCase();
+    const valueInGB = unit === 'mb' ? daVal / 1024 : daVal;
+    if (Math.abs(valueInGB - expectedData.value) <= 0.01) return true;
   }
 
   return !expectedData;
@@ -320,10 +331,7 @@ function compareSmsQuotas(expected: ParsedPlan, actual: ActualPlan, inDA?: any):
 
   if (inDA && expectedSms) {
     const daVal = parseFloat(inDA.daValue);
-    if (expectedSms.perDay && daVal >= 250 && daVal <= 350) return false;
-    if (expectedSms.value === 100 && daVal >= 250) return false;
-    if (expectedSms.perDay && daVal === expectedSms.value) return true;
-    if (expectedSms.value === 100 && daVal === 100) return true;
+    if (daVal === expectedSms.value) return true;
   }
 
   return !expectedSms;
@@ -339,9 +347,6 @@ function hasHeroInIN(inResults: FinalAnalysisContext['inResults']): boolean {
 
 // ─── Dynamic IN Validations ──────────────────────────────────────────────
 
-/**
- * Dynamically extracts expected quota values from the plan benefit string
- */
 function extractExpectedQuotasFromPlan(benefitPart: string): {
   dataQuotaMB: number | null;
   smsQuota: number | null;
@@ -352,7 +357,6 @@ function extractExpectedQuotasFromPlan(benefitPart: string): {
   const smsInfo = extractSmsFromText(benefitPart);
   const hasUnlimitedVoice = /UL|Unlimited/i.test(benefitPart);
   
-  // Extract validity days
   let validityDays = 0;
   const validityMatch = benefitPart.match(/(\d+)\s*D/i);
   if (validityMatch) {
@@ -367,9 +371,6 @@ function extractExpectedQuotasFromPlan(benefitPart: string): {
   };
 }
 
-/**
- * Dynamically validate IN Dedicated Accounts against plan benefit
- */
 function validateINDedicatedAccountsDynamic(
   dedicatedAccounts: any[],
   expectedPlan: ParsedPlan,
@@ -379,7 +380,6 @@ function validateINDedicatedAccountsDynamic(
   const today = new Date(testDate);
   today.setHours(0, 0, 0, 0);
 
-  // Extract expected quotas from plan
   const expected = extractExpectedQuotasFromPlan(expectedPlan.benefitPart);
   
   if (!dedicatedAccounts || dedicatedAccounts.length === 0) {
@@ -387,7 +387,6 @@ function validateINDedicatedAccountsDynamic(
     return { pass: false, failures };
   }
 
-  // Find data DA - dynamic pattern matching
   const dataDA = dedicatedAccounts.find((da) => {
     const name = (da.daName || '').toLowerCase();
     return name.includes('data') || 
@@ -396,7 +395,6 @@ function validateINDedicatedAccountsDynamic(
            (name.includes('unlimited') && name.includes('data'));
   });
 
-  // Find SMS DA - dynamic pattern matching
   const smsDA = dedicatedAccounts.find((da) => {
     const name = (da.daName || '').toLowerCase();
     return name.includes('sms') || 
@@ -404,7 +402,6 @@ function validateINDedicatedAccountsDynamic(
            name.includes('messages');
   });
 
-  // Validate Data DA
   if (expected.dataQuotaMB !== null && expected.dataQuotaMB > 0) {
     if (!dataDA) {
       failures.push(`Data dedicated account not found (expected ${expected.dataQuotaMB} MB)`);
@@ -421,12 +418,11 @@ function validateINDedicatedAccountsDynamic(
         }
       }
 
-      // Check Expiry Date
       if (expected.validityDays > 0 && dataDA.expiryDate) {
         const expiryDate = parseIndianDate(dataDA.expiryDate);
         if (expiryDate) {
           const expectedExpiry = new Date(today);
-          expectedExpiry.setDate(expectedExpiry.getDate() + expected.validityDays);
+          expectedExpiry.setDate(expectedExpiry.getDate() + expected.validityDays - 1);
           const diffDays = daysBetween(today, expiryDate);
           if (Math.abs(diffDays - expected.validityDays) > 1) {
             failures.push(
@@ -438,7 +434,6 @@ function validateINDedicatedAccountsDynamic(
     }
   }
 
-  // Validate SMS DA
   if (expected.smsQuota !== null && expected.smsQuota > 0) {
     if (!smsDA) {
       failures.push(`SMS dedicated account not found (expected ${expected.smsQuota} SMS)`);
@@ -452,12 +447,11 @@ function validateINDedicatedAccountsDynamic(
         );
       }
 
-      // Check Expiry Date
       if (expected.validityDays > 0 && smsDA.expiryDate) {
         const expiryDate = parseIndianDate(smsDA.expiryDate);
         if (expiryDate) {
           const expectedExpiry = new Date(today);
-          expectedExpiry.setDate(expectedExpiry.getDate() + expected.validityDays);
+          expectedExpiry.setDate(expectedExpiry.getDate() + expected.validityDays - 1);
           const diffDays = daysBetween(today, expiryDate);
           if (Math.abs(diffDays - expected.validityDays) > 1) {
             failures.push(
@@ -475,9 +469,6 @@ function validateINDedicatedAccountsDynamic(
   };
 }
 
-/**
- * Dynamically validate IN Offers against plan benefit
- */
 function validateINOffersDynamic(
   offers: any[],
   expectedPlan: ParsedPlan,
@@ -494,7 +485,6 @@ function validateINOffersDynamic(
 
   const expected = extractExpectedQuotasFromPlan(expectedPlan.benefitPart);
 
-  // Find Voice Offers - dynamic pattern matching
   const voiceOffers = offers.filter((o) => {
     const name = (o.offerName || '').toLowerCase();
     return name.includes('voice') || 
@@ -502,7 +492,6 @@ function validateINOffersDynamic(
            (name.includes('unlimited') && name.includes('call'));
   });
 
-  // Find Data Offer - dynamic pattern matching
   const dataOffer = offers.find((o) => {
     const name = (o.offerName || '').toLowerCase();
     return name.includes('data') || 
@@ -511,7 +500,6 @@ function validateINOffersDynamic(
            (name.includes('unlimited') && name.includes('data'));
   });
 
-  // Find SMS Offer - dynamic pattern matching
   const smsOffer = offers.find((o) => {
     const name = (o.offerName || '').toLowerCase();
     return name.includes('sms') || 
@@ -519,13 +507,11 @@ function validateINOffersDynamic(
            name.includes('messages');
   });
 
-  // Validate Voice Offers
   if (expected.hasUnlimitedVoice) {
     if (voiceOffers.length === 0) {
       failures.push('Voice offers not found (expected Unlimited Calls)');
     } else {
       voiceOffers.forEach((voiceOffer, index) => {
-        // Check start date is today
         if (voiceOffer.startDateTime) {
           const startDate = parseIndianDate(voiceOffer.startDateTime);
           if (startDate) {
@@ -539,16 +525,15 @@ function validateINOffersDynamic(
           }
         }
 
-        // Check end date is today + validity days
         if (expected.validityDays > 0 && voiceOffer.endDateTime) {
           const endDate = parseIndianDate(voiceOffer.endDateTime);
           if (endDate) {
             const expectedEnd = new Date(today);
-            expectedEnd.setDate(expectedEnd.getDate() + expected.validityDays);
+            expectedEnd.setDate(expectedEnd.getDate() + expected.validityDays - 1);
             const diffDays = daysBetween(today, endDate);
             if (Math.abs(diffDays - expected.validityDays) > 1) {
               failures.push(
-                `Voice offer ${index + 1} (${voiceOffer.offerName}) end date is ${voiceOffer.endDateTime}, expected ${expectedEnd.toLocaleDateString()} (${expected.validityDays} days from today)`
+                `Voice offer ${index + 1} (${voiceOffer.offerName}) end date is ${voiceOffer.endDateTime}, expected ${expectedEnd.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' })} (${expected.validityDays} days from today)`
               );
             }
           }
@@ -557,12 +542,10 @@ function validateINOffersDynamic(
     }
   }
 
-  // Validate Data Offer
   if (expected.dataQuotaMB !== null && expected.dataQuotaMB > 0) {
     if (!dataOffer) {
       failures.push(`Data offer not found (expected ${expected.dataQuotaMB} MB)`);
     } else {
-      // Check start date is today
       if (dataOffer.startDateTime) {
         const startDate = parseIndianDate(dataOffer.startDateTime);
         if (startDate) {
@@ -570,22 +553,21 @@ function validateINOffersDynamic(
           startDateOnly.setHours(0, 0, 0, 0);
           if (startDateOnly.getTime() !== today.getTime()) {
             failures.push(
-              `Data offer start date is ${dataOffer.startDateTime}, expected ${testDate}`
+              `Data offer (${dataOffer.offerName}) start date is ${dataOffer.startDateTime}, expected ${testDate}`
             );
           }
         }
       }
 
-      // Check end date is today + validity days
       if (expected.validityDays > 0 && dataOffer.endDateTime) {
         const endDate = parseIndianDate(dataOffer.endDateTime);
         if (endDate) {
           const expectedEnd = new Date(today);
-          expectedEnd.setDate(expectedEnd.getDate() + expected.validityDays);
+          expectedEnd.setDate(expectedEnd.getDate() + expected.validityDays - 1);
           const diffDays = daysBetween(today, endDate);
           if (Math.abs(diffDays - expected.validityDays) > 1) {
             failures.push(
-              `Data offer end date is ${dataOffer.endDateTime}, expected ${expectedEnd.toLocaleDateString()} (${expected.validityDays} days from today)`
+              `Data offer (${dataOffer.offerName}) end date is ${dataOffer.endDateTime}, expected ${expectedEnd.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' })} (${expected.validityDays} days from today)`
             );
           }
         }
@@ -593,12 +575,10 @@ function validateINOffersDynamic(
     }
   }
 
-  // Validate SMS Offer
   if (expected.smsQuota !== null && expected.smsQuota > 0) {
     if (!smsOffer) {
       failures.push(`SMS offer not found (expected ${expected.smsQuota} SMS)`);
     } else {
-      // Check start date is today
       if (smsOffer.startDateTime) {
         const startDate = parseIndianDate(smsOffer.startDateTime);
         if (startDate) {
@@ -606,22 +586,21 @@ function validateINOffersDynamic(
           startDateOnly.setHours(0, 0, 0, 0);
           if (startDateOnly.getTime() !== today.getTime()) {
             failures.push(
-              `SMS offer start date is ${smsOffer.startDateTime}, expected ${testDate}`
+              `SMS offer (${smsOffer.offerName}) start date is ${smsOffer.startDateTime}, expected ${testDate}`
             );
           }
         }
       }
 
-      // Check end date is today + validity days
       if (expected.validityDays > 0 && smsOffer.endDateTime) {
         const endDate = parseIndianDate(smsOffer.endDateTime);
         if (endDate) {
           const expectedEnd = new Date(today);
-          expectedEnd.setDate(expectedEnd.getDate() + expected.validityDays);
+          expectedEnd.setDate(expectedEnd.getDate() + expected.validityDays - 1);
           const diffDays = daysBetween(today, endDate);
           if (Math.abs(diffDays - expected.validityDays) > 1) {
             failures.push(
-              `SMS offer end date is ${smsOffer.endDateTime}, expected ${expectedEnd.toLocaleDateString()} (${expected.validityDays} days from today)`
+              `SMS offer (${smsOffer.offerName}) end date is ${smsOffer.endDateTime}, expected ${expectedEnd.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' })} (${expected.validityDays} days from today)`
             );
           }
         }
@@ -662,7 +641,6 @@ export class FinalAnalysisReportService {
       }
       
       const data: any[] = xlsx.utils.sheet_to_json(sheet, { defval: '' });
-      // console.log(`[FinalAnalysisReportService] Found ${data.length} rows in Recharge Plans sheet`);
       
       for (const row of data) {
         const mrp = String(row['New MRP'] || '').trim();
@@ -677,12 +655,10 @@ export class FinalAnalysisReportService {
           circle,
           rechargeNotification,
         });
-        
-        // console.log(`[FinalAnalysisReportService] 📦 Cached plan: MRP=${mrp}, Circle=${circle}, Benefit=${benefit.substring(0, 30)}...`);
       }
       
       this.masterDataLoaded = true;
-      console.log(`[FinalAnalysisReportService] ✅ Loaded ${this.masterPlans.size} master plans from ${excelPath}`);
+      console.log(`[FinalAnalysisReportService] Loaded ${this.masterPlans.size} master plans from ${excelPath}`);
     } catch (err) {
       console.warn('[FinalAnalysisReportService] ❌ Could not load master plans:', err);
     }
@@ -718,7 +694,7 @@ export class FinalAnalysisReportService {
         if (!ctx.inputRow.rechargeNotification || ctx.inputRow.rechargeNotification === 'N/A') {
           ctx.inputRow.rechargeNotification = masterPlan.notification;
         }
-        console.log(`[FinalAnalysisReport] ✅ Found plan benefit: ${planBenefit.substring(0, 50)}...`);
+        console.log(`[FinalAnalysisReport] Found plan benefit: ${planBenefit.substring(0, 50)}...`);
       } else {
         console.log(`[FinalAnalysisReport] ❌ No plan found for MRP ${ctx.inputRow.rechargeMRP}`);
       }
@@ -785,7 +761,7 @@ export class FinalAnalysisReportService {
         if (!ctx.inputRow.rechargeNotification || ctx.inputRow.rechargeNotification === 'N/A') {
           ctx.inputRow.rechargeNotification = masterPlan.notification;
         }
-        console.log(`[FinalAnalysisReport] ✅ Found plan benefit: ${planBenefit.substring(0, 50)}...`);
+        console.log(`[FinalAnalysisReport] Found plan benefit: ${planBenefit.substring(0, 50)}...`);
       } else {
         console.log(`[FinalAnalysisReport] ❌ Building PLAN NOT FOUND report for ${ctx.inputRow.msisdn}`);
       }
@@ -806,19 +782,17 @@ export class FinalAnalysisReportService {
     const smsDA = findDedicatedAccount(dedicatedAccounts, /SMS/i);
     const dataDA = findDedicatedAccount(dedicatedAccounts, /Data/i);
 
-    // Calculate expected service validity
     const today = new Date(ctx.testDate);
     today.setHours(0, 0, 0, 0);
-    const expectedValidityDays = extractValidityDays(expected.benefitPart);
+    const expectedValidityDays = expected.validityDays;
     const expectedExpiry = new Date(today);
-    expectedExpiry.setDate(expectedExpiry.getDate() + expectedValidityDays);
+    expectedExpiry.setDate(expectedExpiry.getDate() + expectedValidityDays - 1);
     const expectedExpiryStr = expectedExpiry.toLocaleDateString('en-IN', {
       day: '2-digit',
       month: 'short',
       year: '2-digit'
     });
 
-    // Get actual service validity and calculate days
     const serviceValidity = ctx.subscriberInfo?.serviceValidity || '';
     const expiryDate = parseIndianDate(serviceValidity);
     let actualValidityDays = 0;
@@ -826,7 +800,6 @@ export class FinalAnalysisReportService {
       actualValidityDays = daysBetween(today, expiryDate);
     }
 
-    // Dynamic Validation
     const daValidation = validateINDedicatedAccountsDynamic(dedicatedAccounts, expected, ctx.testDate);
     const offerValidation = validateINOffersDynamic(offers, expected, ctx.testDate);
 
@@ -836,7 +809,6 @@ export class FinalAnalysisReportService {
       return isSameCalendarDay(parsed, ctx.testDate);
     })();
 
-    // ── Comparison Table ───────────────────────────────────────────────────
     const comparison = [
       {
         parameter: 'MSISDN',
@@ -903,8 +875,8 @@ export class FinalAnalysisReportService {
       })(),
       {
         parameter: 'Validity',
-        expected: expectedValidityDays ? `${expectedValidityDays} Days` : 'N/A',
-        actual: actual.validityDays ? `${actual.validityDays} Days` : actual.validity,
+        expected: expectedValidityDays > 0 ? `${expectedValidityDays} Days` : 'N/A',
+        actual: actual.validityDays > 0 ? `${actual.validityDays} Days` : actual.validity || 'N/A',
         status: checkParameter(
           expectedValidityDays > 0 &&
             actual.validityDays > 0 &&
@@ -945,10 +917,8 @@ export class FinalAnalysisReportService {
 
     const swiftFailures = this.buildSwiftFailures(ctx, expected, actual, activationDatePass);
     
-    // Build IN failures from dynamic DA and Offer validation
     const inFailures: AnalysisReportData['inAnalysis']['failures'] = [];
 
-    // Add DA validation failures
     if (!daValidation.pass) {
       daValidation.failures.forEach((failure) => {
         inFailures.push({
@@ -960,7 +930,6 @@ export class FinalAnalysisReportService {
       });
     }
 
-    // Add Offer validation failures
     if (!offerValidation.pass) {
       offerValidation.failures.forEach((failure) => {
         inFailures.push({
@@ -972,7 +941,6 @@ export class FinalAnalysisReportService {
       });
     }
 
-    // Check service validity
     if (actualValidityDays !== expectedValidityDays) {
       inFailures.push({
         type: 'Service Validity',
@@ -982,7 +950,6 @@ export class FinalAnalysisReportService {
       });
     }
 
-    // Check account status
     if ((ctx.subscriberInfo?.accountStatus || '').toLowerCase() !== 'active') {
       inFailures.push({
         type: 'Account Status',
@@ -992,7 +959,6 @@ export class FinalAnalysisReportService {
       });
     }
 
-    // Check user type
     if (!(ctx.subscriberInfo?.userType || '').toLowerCase().includes('pack')) {
       inFailures.push({
         type: 'User Type',
@@ -1005,6 +971,91 @@ export class FinalAnalysisReportService {
     const voicePass = voiceUsage.length > 0 || actual.hasUnlimitedVoice;
     const inOverallStatus = inFailures.length === 0 ? 'Pass' : 'Fail';
 
+    // ─── Determine PreTest Status ──────────────────────────────────────────
+    const preTestStatus = ctx.preTestStatus || (ctx.preTestResult?.status === 'Pass' ? 'Pass' : ctx.preTestResult?.status === 'Fail' ? 'Fail' : 'Skip');
+
+    // ─── Determine VI App Status ──────────────────────────────────────────
+    const viAppStatus = ctx.viAppStatus || ctx.viAppResult?.status || 'Skip';
+
+    // ─── Build PreTest Combined Data ──────────────────────────────────────
+    const preTestCombinedData: any[] = [];
+    if (ctx.preTestResult) {
+      // Add summary row
+      preTestCombinedData.push({
+        'Type': '--- SUMMARY ---',
+        'Status': ctx.preTestResult.status,
+        'Reason': ctx.preTestResult.reason || 'N/A',
+        'Voice Entries': ctx.preTestResult.voice?.length || 0,
+        'Data Entries': ctx.preTestResult.data?.length || 0,
+        'SMS Entries': ctx.preTestResult.sms?.length || 0,
+        'Dedicated Accounts': ctx.preTestResult.dedicatedAccounts?.length || 0,
+        'Offers': ctx.preTestResult.offers?.length || 0,
+      });
+
+      // Add Voice entries
+      (ctx.preTestResult.voice || []).forEach((v: any) => {
+        preTestCombinedData.push({
+          'Type': 'VOICE',
+          'Offer Name': v.offer_name || v.offerName || 'N/A',
+          'Balance Left': v.balance_left || v.balanceLeft || 'N/A',
+          'Category': v.category || 'N/A',
+          'Expiry Date': v.expiry_date || v.expiryDate || 'N/A',
+          'Status': v.status || 'N/A',
+        });
+      });
+
+      // Add Data entries
+      (ctx.preTestResult.data || []).forEach((d: any) => {
+        preTestCombinedData.push({
+          'Type': 'DATA',
+          'Offer Name': d.offer_name || d.offerName || 'N/A',
+          'Total Quota': d.total_quota || d.totalQuota || 'N/A',
+          'Balance Left': d.balance_left || d.balanceLeft || 'N/A',
+          'Category': d.category || 'N/A',
+          'Expiry Date': d.expiry_date || d.expiryDate || 'N/A',
+          'Status': d.status || 'N/A',
+        });
+      });
+
+      // Add SMS entries
+      (ctx.preTestResult.sms || []).forEach((s: any) => {
+        preTestCombinedData.push({
+          'Type': 'SMS',
+          'Offer Name': s.offer_name || s.offerName || 'N/A',
+          'Balance Left': s.balance_left || s.balanceLeft || 'N/A',
+          'Category': s.category || 'N/A',
+          'Expiry Date': s.expiry_date || s.expiryDate || 'N/A',
+          'Status': s.status || 'N/A',
+        });
+      });
+
+      // Add Dedicated Accounts
+      (ctx.preTestResult.dedicatedAccounts || []).forEach((da: any) => {
+        preTestCombinedData.push({
+          'Type': 'DEDICATED ACCOUNT',
+          'DA Name': da.daName || 'N/A',
+          'DA ID': da.daId || 'N/A',
+          'Start Date': da.startDate || 'N/A',
+          'Expiry Date': da.expiryDate || 'N/A',
+          'DA Value': da.daValue || 'N/A',
+          'Unit': da.unit || 'N/A',
+        });
+      });
+
+      // Add Offers
+      (ctx.preTestResult.offers || []).forEach((offer: any) => {
+        preTestCombinedData.push({
+          'Type': 'OFFER',
+          'Offer Name': offer.offerName || 'N/A',
+          'Offer ID': offer.offerId || 'N/A',
+          'Product ID': offer.productId || 'N/A',
+          'Start Date & Time': offer.startDateTime || 'N/A',
+          'End Date & Time': offer.endDateTime || 'N/A',
+          'Offer Type': offer.offerType || 'N/A',
+        });
+      });
+    }
+
     return {
       testCase: {
         name: `Recharge UAT for MRP ${ctx.inputRow.rechargeMRP} Plan`,
@@ -1013,6 +1064,9 @@ export class FinalAnalysisReportService {
         overallStatus: statuses.overallStatus,
         swiftStatus: statuses.swiftStatus,
         inStatus: inOverallStatus as 'Pass' | 'Fail' | 'Skip',
+        // ─── NEW: PreTest and VI App status ──────────────────────────────
+        preTestStatus: preTestStatus as 'Pass' | 'Fail' | 'Skip',
+        viAppStatus: viAppStatus as 'Pass' | 'Fail' | 'Skip' | 'Error',
       },
       comparison,
       swiftAnalysis: {
@@ -1020,10 +1074,10 @@ export class FinalAnalysisReportService {
         results: [
           { field: 'Transaction ID', expected: '-', actual: actual.transactionId, status: checkParameter(!!actual.transactionId && actual.transactionId !== 'N/A') },
           { field: 'Activation Date & Time', expected: ctx.testDate, actual: actual.activationDate, status: checkParameter(activationDatePass) },
-          { field: 'Validity', expected: `${expectedValidityDays} Days`, actual: actual.validity || `${actual.validityDays} Days`, status: checkParameter(expectedValidityDays === actual.validityDays) },
+          { field: 'Validity', expected: expectedValidityDays > 0 ? `${expectedValidityDays} Days` : 'N/A', actual: actual.validity || `${actual.validityDays} Days`, status: checkParameter(expectedValidityDays === actual.validityDays) },
           { field: 'MRP', expected: ctx.inputRow.rechargeMRP, actual: actual.mrp, status: checkParameter(actual.mrp === ctx.inputRow.rechargeMRP) },
           { field: 'Activation Mode', expected: '-', actual: offer?.activationMode || 'EtopUp', status: 'Pass' as const },
-          { field: 'Current Core Balance', expected: '-', actual: offer?.currentCoreBalance || ctx.subscriberInfo?.coreBalance || '0', status: 'Pass' as const },
+          { field: 'Current Core Balance', expected: '-', actual: ctx.subscriberInfo?.coreBalance || offer?.currentCoreBalance || '0', status: 'Pass' as const },
           { field: 'Category', expected: 'Unlimited', actual: offer?.category || 'Unlimited', status: 'Pass' as const },
           {
             field: 'Benefits',
@@ -1033,7 +1087,7 @@ export class FinalAnalysisReportService {
           },
           {
             field: 'Detail Validity',
-            expected: `${expectedValidityDays} Days`,
+            expected: expectedValidityDays > 0 ? `${expectedValidityDays} Days` : 'N/A',
             actual: actual.validity,
             status: checkParameter(expectedValidityDays === actual.validityDays),
           },
@@ -1062,10 +1116,10 @@ export class FinalAnalysisReportService {
           status: s.status || 'Pass',
         })),
         vasUsage: vasOffers.map((v: any) => ({
-          vasName: v.vasName || v.offer_name || v.offerName || 'N/A',
-          category: v.category || 'N/A',
-          activationDate: v.activationDate || v.activation_date || 'N/A',
-          expiryDate: v.expiryDate || v.expiry_date || 'N/A',
+          vasName: v.name || v.offer_name || v.offerName || 'N/A',
+          category: v.type || v.offer_type || v.category || 'N/A',
+          activationDate: v.activation_date || v.activationDate || 'N/A',
+          expiryDate: v.next_charging_date || v.expiryDate || v.expiry_date || 'N/A',
           status: v.status || 'Pass',
         })),
         failures: swiftFailures,
@@ -1074,7 +1128,6 @@ export class FinalAnalysisReportService {
       inAnalysis: {
         executionFlow: this.buildINExecutionFlow(ctx, inOverallStatus, dedicatedAccounts.length, offers.length),
         results: [
-          // ✅ Removed the Status field as requested
           { field: 'Customer Name', value: ctx.subscriberInfo?.customerName || 'N/A', expected: '-', status: 'Pass' as const },
           { field: 'Core Balance', value: ctx.subscriberInfo?.coreBalance || 'N/A', expected: '-', status: 'Pass' as const },
           {
@@ -1124,6 +1177,24 @@ export class FinalAnalysisReportService {
         stepName: s.stepName,
       })),
       recommendations: this.buildRecommendations(swiftFailures, inFailures),
+      // ─── NEW: PreTest Data ──────────────────────────────────────────────
+      preTestSummary: ctx.preTestResult ? {
+        status: ctx.preTestResult.status,
+        reason: ctx.preTestResult.reason || 'N/A',
+        customerName: ctx.preTestResult.customerName || 'N/A',
+        coreBalance: ctx.preTestResult.coreBalance || 'N/A',
+        serviceValidity: ctx.preTestResult.serviceValidity || 'N/A',
+        accountStatus: ctx.preTestResult.accountStatus || 'N/A',
+        userType: ctx.preTestResult.userType || 'N/A',
+        dedicatedAccounts: ctx.preTestResult.dedicatedAccounts || [],
+        offers: ctx.preTestResult.offers || [],
+        voice: ctx.preTestResult.voice || [],
+        data: ctx.preTestResult.data || [],
+        sms: ctx.preTestResult.sms || [],
+      } : undefined,
+      preTestCombined: preTestCombinedData,
+      // ─── NEW: VI App Data ──────────────────────────────────────────────
+      viAppResult: ctx.viAppResult,
       appendix: {
         inputData: {
           MSISDN: ctx.inputRow.msisdn,
@@ -1212,38 +1283,31 @@ export class FinalAnalysisReportService {
     const dedicatedAccounts = ctx.inResults?.dedicatedAccounts || [];
     const offers = ctx.inResults?.offers || [];
 
-    // Validate Dedicated Accounts dynamically
     const daValidation = validateINDedicatedAccountsDynamic(
       dedicatedAccounts,
       expected,
       ctx.testDate
     );
 
-    // Validate Offers dynamically
     const offerValidation = validateINOffersDynamic(
       offers,
       expected,
       ctx.testDate
     );
 
-    // Check Service Validity from subscriber info
     const serviceValidity = ctx.subscriberInfo?.serviceValidity || '';
     const expiryDate = parseIndianDate(serviceValidity);
     let validityPass = false;
-    const expectedValidityDays = extractValidityDays(expected.benefitPart);
+    const expectedValidityDays = expected.validityDays;
     
     if (expiryDate) {
       const today = new Date(ctx.testDate);
       today.setHours(0, 0, 0, 0);
       const diffDays = daysBetween(today, expiryDate);
-      // Allow +/- 1 day for date formatting
       validityPass = Math.abs(diffDays - expectedValidityDays) <= 1;
     }
 
-    // Check Account Status
     const accountStatusPass = (ctx.subscriberInfo?.accountStatus || '').toLowerCase() === 'active';
-
-    // Check User Type
     const userTypePass = (ctx.subscriberInfo?.userType || '').toLowerCase().includes('pack');
 
     console.log('[FinalAnalysisReport] IN Checks (Dynamic):');
@@ -1259,7 +1323,6 @@ export class FinalAnalysisReportService {
     console.log(`  - Account Status: ${accountStatusPass ? 'PASS' : 'FAIL'}`);
     console.log(`  - User Type: ${userTypePass ? 'PASS' : 'FAIL'}`);
 
-    // All checks must pass
     const allPass = daValidation.pass &&
       offerValidation.pass &&
       validityPass &&
@@ -1323,9 +1386,13 @@ export class FinalAnalysisReportService {
         severity: 'Critical',
       });
     }
-    if (normalizeText(actual.displayActual) !== normalizeText(expected.displayExpected)) {
+    const contentMatch = compareDataQuotas(expected, actual) && 
+                         compareSmsQuotas(expected, actual) &&
+                         (!expected.hasHero || actual.hasHero) &&
+                         expected.validityDays === actual.validityDays;
+    if (!contentMatch) {
       failures.push({
-        type: 'Plan Benefit String',
+        type: 'Plan Benefit Content',
         expected: expected.displayExpected,
         actual: actual.displayActual,
         severity: 'Critical',
@@ -1366,11 +1433,10 @@ export class FinalAnalysisReportService {
     const today = new Date(ctx.testDate);
     today.setHours(0, 0, 0, 0);
     const expected = parsePlanBenefit(ctx.inputRow.planBenefit || '');
-    const expectedValidityDays = extractValidityDays(expected.benefitPart);
+    const expectedValidityDays = expected.validityDays;
 
-    // Calculate expected service validity
     const expectedExpiry = new Date(today);
-    expectedExpiry.setDate(expectedExpiry.getDate() + expectedValidityDays);
+    expectedExpiry.setDate(expectedExpiry.getDate() + expectedValidityDays - 1);
     const expectedExpiryStr = expectedExpiry.toLocaleDateString('en-IN', {
       day: '2-digit',
       month: 'short',
@@ -1437,11 +1503,11 @@ export class FinalAnalysisReportService {
       });
     }
     
-    if (swiftFailures.some((f) => f.type === 'Plan Benefit String')) {
+    if (swiftFailures.some((f) => f.type === 'Plan Benefit Content')) {
       recommendations.push({
         priority: 'Medium',
-        issue: 'Plan benefit string format mismatch',
-        recommendation: 'The actual benefits contain extra tariff details. Consider using content-based validation instead of exact string matching.',
+        issue: 'Plan benefit content mismatch',
+        recommendation: 'The actual benefits content does not match expected plan content. Check plan provisioning logic.',
         owner: 'QA Team',
       });
     }

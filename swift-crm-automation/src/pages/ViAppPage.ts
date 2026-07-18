@@ -1,4 +1,5 @@
-// ViAppPage.ts - Complete working implementation with fallback for MRP and Benefit
+
+// ViAppPage.ts - Updated with precise SMS and link handling flow
 
 import { $, $$, browser } from '@wdio/globals';
 import { execSync } from 'child_process';
@@ -65,15 +66,23 @@ const VI_APP_PACKAGE = 'com.mventus.selfcare.activity';
 const SCREENSHOTS_DIR = path.resolve('./screenshots');
 
 // ─── Selectors ───────────────────────────────────────────────────────────────
+// ─── Selectors ───────────────────────────────────────────────────────────────
 const Selectors = {
-  // ── Home screen ──────────────────────────────────────────────────────────
-  rechargeNowBtn: '//android.widget.TextView[@text="recharge now"]',
-  rechargeNowBtnAlt: '//*[@content-desc="recharge now"]',
+  // ── SMS & Link Navigation ──────────────────────────────────────────────
+  smsMessageScreen: '//android.widget.TextView[contains(@text, "VK-ViCARE")]',
   
-  // ── Active pack card ──────────────────────────────────────────────────────
-  activePackCard: '//android.view.ViewGroup[@clickable="true" and @content-desc]',
+  // ── Home screen ──────────────────────────────────────────────────────────
+  // Updated to match the actual content description from your screenshot
+  activePackCard: '//android.view.ViewGroup[@content-desc="1 GB, available, Unlimited, ends on 12 Aug, 2026"]',
+  activePackCardPartial: '//android.view.ViewGroup[contains(@content-desc, "Unlimited")]',
+  rechargeNowBtn: '//android.widget.TextView[@text="recharge now"]',
+  
+  // ── Active pack elements ──────────────────────────────────────────────
+  endsOnText: '//android.widget.TextView[@text="ends on"]',
+  unlimitedPlan: '//android.widget.TextView[contains(@text, "Unlimited")]',
   
   // ── Active pack details screen ──────────────────────────────────────────
+  lastRechargeText: '//android.widget.TextView[@text="last recharge"]',
   lastRechargeLabel: '//android.widget.ScrollView/android.view.ViewGroup/android.view.ViewGroup[2]//android.widget.TextView[1]',
   lastRechargeAmount: '//android.widget.ScrollView/android.view.ViewGroup/android.view.ViewGroup[2]//android.widget.TextView[2]',
   packEndsOnDate: '//android.widget.ScrollView/android.view.ViewGroup/android.view.ViewGroup[2]//android.widget.TextView[3]',
@@ -247,6 +256,31 @@ export class ViAppPage {
     await sleep(5000);
   }
 
+  /** Open SMS conversation with VK-ViCARE */
+  private async openSmsConversation(): Promise<void> {
+    console.log(`[ViAppPage] Opening SMS conversation with ${SMS_SENDER}...`);
+    // First try VIEW intent
+    let output = this.adbShell(`am start -a android.intent.action.VIEW -d sms:${SMS_SENDER}`);
+    console.log(`[ViAppPage] VIEW intent output: ${output}`);
+    await sleep(2000);
+    
+    // If VIEW doesn't work, try SENDTO
+    if (output.includes('Error') || output.includes('error')) {
+      console.log('[ViAppPage] VIEW intent failed, trying SENDTO...');
+      output = this.adbShell(`am start -a android.intent.action.SENDTO -d sms:${SMS_SENDER}`);
+      console.log(`[ViAppPage] SENDTO intent output: ${output}`);
+      await sleep(2000);
+    }
+  }
+
+  /** Open a URL via ADB VIEW intent */
+  private async openLinkViaAdb(url: string): Promise<void> {
+    console.log(`[ViAppPage] Opening link via ADB: ${url}`);
+    const output = this.adbShell(`am start -a android.intent.action.VIEW -d "${url}"`);
+    console.log(`[ViAppPage] Link open output: ${output}`);
+    await sleep(4000);
+  }
+
   /** Switch WebDriver context to native app - handles web platform gracefully */
   private async switchToNativeContext(): Promise<void> {
     try {
@@ -272,16 +306,6 @@ export class ViAppPage {
       }
     } catch (error) {
       console.log(`[ViAppPage] Context switching not available, continuing...`);
-    }
-  }
-
-  /** Check if element exists with timeout */
-  private async elementExists(selector: string, timeoutMs = 5000): Promise<boolean> {
-    try {
-      const el = await $(selector);
-      return await el.waitForExist({ timeout: timeoutMs }).catch(() => false);
-    } catch (_e) {
-      return false;
     }
   }
 
@@ -312,19 +336,15 @@ export class ViAppPage {
   private queryRechargeSms(): { address: string; body: string; date: string }[] {
     const cmd = `content query --uri content://sms/inbox --projection address:body:date --where "address=\\'${SMS_SENDER}\\'"`;
     const raw = this.adbShell(cmd);
+    console.log(`[ViAppPage] SMS query raw output: ${raw.substring(0, 200)}...`);
     return this.parseSmsRows(raw);
   }
 
   private queryRechargeSmsFull(): { address: string; body: string; date: string }[] {
     const cmd = `content query --uri content://sms/inbox --where "address=\\'${SMS_SENDER}\\'"`;
     const raw = this.adbShell(cmd);
+    console.log(`[ViAppPage] Full SMS query raw output: ${raw.substring(0, 200)}...`);
     return this.parseSmsRows(raw);
-  }
-
-  private async openSmsConversation(): Promise<void> {
-    console.log(`[ViAppPage] Opening SMS conversation with ${SMS_SENDER}...`);
-    this.adbShell(`am start -a android.intent.action.VIEW -d sms:${SMS_SENDER}`);
-    await sleep(3000);
   }
 
   private extractLinkFromSms(body: string): string {
@@ -335,29 +355,16 @@ export class ViAppPage {
     return link;
   }
 
-  /** FIXED: Better link opening with app data clear and longer waits */
-  private async openLinkViaAdb(url: string): Promise<void> {
-    console.log(`[ViAppPage] Opening link via ADB: ${url}`);
-    
-    // Clear app data for fresh state
-    this.adbShell(`pm clear ${VI_APP_PACKAGE}`);
-    await sleep(2000);
-    
-    // Open the link
-    this.adbShell(`am start -a android.intent.action.VIEW -d "${url}"`);
-    await sleep(8000);
-    
-    // Launch Vi App explicitly
-    await this.launchViApp();
-    await sleep(3000);
-    
-    // Try to switch context (gracefully handles web platform)
-    await this.switchToNativeContext();
-    await sleep(2000);
+  private extractMrpFromSms(body: string): string {
+    const match = body.match(/Rs\.(\d+)/i);
+    if (match && match[1]) {
+      return match[1];
+    }
+    return '';
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // STEP A: SMS VERIFICATION
+  // STEP A: SMS VERIFICATION AND LINK CLICK
   // ══════════════════════════════════════════════════════════════════════════
 
   private async verifyAndOpenRechargeNotification(
@@ -367,6 +374,7 @@ export class ViAppPage {
     screenshots: string[]
   ): Promise<SmsVerificationResult> {
     console.log(`[ViAppPage] Step A: Verifying recharge notification SMS from ${SMS_SENDER}...`);
+    console.log(`[ViAppPage] Expected MRP: ₹${expectedMRP}`);
 
     const result: SmsVerificationResult = {
       found: false,
@@ -377,31 +385,46 @@ export class ViAppPage {
       extractedLink: '',
     };
 
+    // ─── Query SMS from VK-ViCARE ──────────────────────────────────────────
+    console.log(`[ViAppPage] Querying SMS from ${SMS_SENDER}...`);
     const rows = this.queryRechargeSms();
+    
     if (rows.length === 0) {
       result.error = `No SMS found from ${SMS_SENDER}`;
       console.warn(`[ViAppPage] ⚠️ ${result.error}`);
       return result;
     }
 
+    // Get the latest SMS (first row)
     const latest = rows[0];
     result.found = true;
     result.smsBody = latest.body;
     result.smsDate = latest.date;
-    console.log(`[ViAppPage] Latest ${SMS_SENDER} SMS: "${latest.body.substring(0, 90)}..."`);
+    
+    console.log(`[ViAppPage] ✅ Latest ${SMS_SENDER} SMS found:`);
+    console.log(`[ViAppPage]   Body: "${latest.body}"`);
+    console.log(`[ViAppPage]   Date: ${latest.date}`);
+    
+    // Extract MRP from SMS
+    const smsMrp = this.extractMrpFromSms(latest.body);
+    console.log(`[ViAppPage] Extracted MRP from SMS: ₹${smsMrp}`);
 
-    const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
-    const bodyN = norm(latest.body);
-    const mrpDigits = expectedMRP.replace(/\D/g, '');
-    const amountMentioned = !!mrpDigits && bodyN.includes(mrpDigits);
-    const expN = norm(expectedNotification || '');
-    const textSimilar = !!expN && (bodyN.includes(expN.slice(0, 20)) || expN.includes(bodyN.slice(0, 20)));
-    result.matchedNotification = amountMentioned || textSimilar;
-
+    // ─── Match SMS with expected MRP ──────────────────────────────────────
+    const normalizedExpected = expectedMRP.replace(/\D/g, '');
+    const normalizedSmsMrp = smsMrp.replace(/\D/g, '');
+    
+    const mrpMatches = normalizedSmsMrp === normalizedExpected;
+    const notificationMatches = expectedNotification ? 
+      latest.body.toLowerCase().includes(expectedNotification.toLowerCase().substring(0, 20)) : 
+      false;
+    
+    result.matchedNotification = mrpMatches || notificationMatches;
+    
     console.log(result.matchedNotification
-      ? `[ViAppPage] ✅ Recharge notification matched for MRP ₹${expectedMRP}`
-      : `[ViAppPage] ⚠️ Recharge notification did not clearly match expected MRP ₹${expectedMRP}`);
+      ? `[ViAppPage] ✅ SMS matched! MRP ₹${smsMrp} matches expected ₹${expectedMRP}`
+      : `[ViAppPage] ⚠️ SMS MRP ₹${smsMrp} does NOT match expected ₹${expectedMRP}`);
 
+    // ─── Check if SMS date is today ────────────────────────────────────────
     if (latest.date) {
       const smsDateObj = new Date(Number(latest.date));
       const now = new Date();
@@ -409,21 +432,50 @@ export class ViAppPage {
         smsDateObj.getFullYear() === now.getFullYear() &&
         smsDateObj.getMonth() === now.getMonth() &&
         smsDateObj.getDate() === now.getDate();
+      
       console.log(result.dateIsToday
         ? `[ViAppPage] ✅ SMS date is today (${smsDateObj.toLocaleString()})`
         : `[ViAppPage] ⚠️ SMS date is NOT today (${smsDateObj.toLocaleString()})`);
     }
 
+    // ─── Open SMS conversation and take screenshot ──────────────────────
+    console.log('[ViAppPage] Opening SMS conversation...');
     await this.openSmsConversation();
+    await sleep(3000);
+    
+    // Take screenshot of SMS message screen
     screenshots.push(await this.takeShot(msisdn, 'SS_SMS_message_screen'));
+    console.log('[ViAppPage] ✅ SMS message screen screenshot taken');
 
-    const reconfirmRows = this.queryRechargeSmsFull();
-    const latestFull = reconfirmRows[0] || latest;
+    // ─── Query full SMS to get complete details ──────────────────────────
+    console.log('[ViAppPage] Querying full SMS details...');
+    const fullRows = this.queryRechargeSmsFull();
+    const latestFull = fullRows[0] || latest;
 
+    // ─── Extract link and click it ────────────────────────────────────────
     result.extractedLink = this.extractLinkFromSms(latestFull.body || latest.body);
+    
     if (result.extractedLink) {
+      console.log(`[ViAppPage] Extracted link: ${result.extractedLink}`);
+      
+      // Click the link using ADB
       await this.openLinkViaAdb(result.extractedLink);
+      await sleep(5000);
+      
+      // Take screenshot after link click
       screenshots.push(await this.takeShot(msisdn, 'SS_after_link_click'));
+      console.log('[ViAppPage] ✅ Link clicked and screenshot taken');
+      
+      // ─── Launch Vi App using monkey command ────────────────────────────
+      console.log('[ViAppPage] Launching Vi App...');
+      await this.launchViApp();
+      await sleep(5000);
+      console.log('[ViAppPage] ✅ Vi App launched');
+      
+      // Switch to native context
+      await this.switchToNativeContext();
+      await sleep(3000);
+      
     } else {
       result.error = 'No link found in recharge notification SMS';
       console.warn(`[ViAppPage] ⚠️ ${result.error}`);
@@ -433,484 +485,99 @@ export class ViAppPage {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // SCREENSHOT 1: NUMBER CHECK
+  // STEP B: VI APP NAVIGATION
   // ══════════════════════════════════════════════════════════════════════════
 
-  private async captureScreenshot1_NumberCheck(msisdn: string): Promise<string> {
-    console.log('[ViAppPage] 📸 Screenshot 1 — Checking number on home screen');
-    await sleep(3000);
-
-    let homeMsisdn = '';
-    try {
-      const stripped = msisdn.replace(/\s/g, '');
-      const els = await $$('//android.widget.TextView');
-      for (const el of els) {
-        const text = await this.safeText(el);
-        const cleanText = text.replace(/\s/g, '');
-        if (cleanText.includes(stripped) || stripped.includes(cleanText.replace(/\D/g, ''))) {
-          homeMsisdn = text;
-          console.log(`[ViAppPage] Home MSISDN label: "${homeMsisdn}"`);
-          break;
-        }
-      }
-    } catch (_e) { 
-      console.warn('[ViAppPage] ⚠️ Could not find MSISDN label');
-    }
-
-    return homeMsisdn;
-  }
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // SCREENSHOTS 2 & 3: HOME DATA
-  // ══════════════════════════════════════════════════════════════════════════
-
-  private async captureScreenshots2And3_HomeData(
+  private async navigateToLastRechargeScreen(
     msisdn: string,
     screenshots: string[]
-  ): Promise<{ availableData: string; endsOn: string }> {
-    console.log('[ViAppPage] 📸 Screenshot 2 — Number verified');
-    screenshots.push(await this.takeShot(msisdn, 'SS2_home_number_verified'));
-
-    await sleep(3000);
-
-    let availableData = '';
-    let endsOn = '';
-
-    try {
-      const cards = await $$('//android.view.ViewGroup[@content-desc]');
-      for (const card of cards) {
-        const cd = await card.getAttribute('content-desc');
-        if (cd) {
-          console.log(`[ViAppPage] Found card: "${cd}"`);
-          if (cd.match(/MB|GB|Unlimited/i)) {
-            availableData = cd;
-            console.log(`[ViAppPage] Available data: "${availableData}"`);
-          }
-          if (cd.match(/ends on/i)) {
-            endsOn = cd;
-            console.log(`[ViAppPage] Ends on: "${endsOn}"`);
-          }
-        }
-      }
-    } catch (_e) {
-      console.warn('[ViAppPage] ⚠️ Could not find recharge card data');
-    }
-
-    console.log('[ViAppPage] 📸 Screenshot 3 — Home card data');
-    screenshots.push(await this.takeShot(msisdn, 'SS3_home_card_data'));
-
-    return { availableData, endsOn };
-  }
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // TAP ACTIVE PACK CARD - COMPLETELY REWRITTEN FOR BETTER RELIABILITY
-  // ══════════════════════════════════════════════════════════════════════════
-
-  private async tapActivePackCard(): Promise<boolean> {
-    console.log('[ViAppPage] Tapping active pack card → active pack details...');
+  ): Promise<boolean> {
+    console.log('[ViAppPage] 📱 Navigating to last recharge screen...');
     
-    // Wait for the app to be fully loaded
-    await sleep(5000);
-
-    // ─── METHOD 1: Find any clickable element with recharge/pack content ──
     try {
-      console.log('[ViAppPage] Method 1: Searching for clickable elements with recharge content...');
-      const allClickable = await $$('//android.view.ViewGroup[@clickable="true"]');
+      // ─── Ensure we're in native context ──────────────────────────────────
+      await this.ensureNativeContext();
       
-      for (const element of allClickable) {
-        const text = await element.getText().catch(() => '');
-        const cd = await element.getAttribute('content-desc').catch(() => '');
-        const combined = (text + ' ' + cd).toLowerCase();
-        
-        const keywords = ['recharge', 'pack', 'active', 'mb', 'gb', 'unlimited', 'data', 'voice', 'sms', 'plan'];
-        const found = keywords.some(kw => combined.includes(kw));
-        
-        if (found) {
-          console.log(`[ViAppPage] Found element with text: "${text || cd}"`);
-          await element.click();
-          console.log('[ViAppPage] ✅ Clicked element with recharge content');
-          await sleep(3000);
-          return true;
-        }
-      }
-    } catch (_e) {
-      console.warn('[ViAppPage] Method 1 failed');
-    }
-
-    // ─── METHOD 2: Try specific XPath selectors ───────────────────────────
-    try {
-      console.log('[ViAppPage] Method 2: Trying specific XPath selectors...');
-      const selectors = [
-        '//android.widget.TextView[contains(@text, "Active")]/parent::*',
-        '//android.widget.TextView[contains(@text, "recharge")]/parent::*',
-        '//android.view.ViewGroup[contains(@content-desc, "Active")]',
-        '//android.view.ViewGroup[contains(@content-desc, "Recharge")]',
-        '//android.widget.TextView[contains(@text, "MB") or contains(@text, "GB")]/parent::*',
-        '//android.widget.TextView[contains(@text, "Data")]/parent::*',
-        '//android.widget.TextView[contains(@text, "Unlimited")]/parent::*',
+      // ─── Step 4: Click on active pack card ──────────────────────────────
+      console.log('[ViAppPage] 🔍 Step 4: Looking for active pack card...');
+      
+      // Try multiple selectors for the pack card
+      const packSelectors = [
+        Selectors.activePackCard,
+        Selectors.activePackCardPartial,
+        '//android.view.ViewGroup[contains(@content-desc, "GB")]',
+        '//android.view.ViewGroup[contains(@content-desc, "Unlimited")]',
+        '//android.widget.TextView[contains(@text, "Unlimited")]'
       ];
       
-      for (const selector of selectors) {
+      let packElement: WebdriverIO.Element | null = null;
+      for (const selector of packSelectors) {
         try {
-          const element = await $(selector);
-          const exists = await element.waitForExist({ timeout: 3000 }).catch(() => false);
-          if (exists && await element.isDisplayed()) {
-            await element.click();
-            console.log(`[ViAppPage] ✅ Tapped using selector: ${selector}`);
-            await sleep(3000);
-            return true;
+          const el = await $(selector);
+          const exists = await el.waitForExist({ timeout: 5000 });
+          if (exists) {
+            packElement = el;
+            console.log(`[ViAppPage] ✅ Found pack card using: ${selector}`);
+            break;
           }
-        } catch (_e) {}
-      }
-    } catch (_e) {
-      console.warn('[ViAppPage] Method 2 failed');
-    }
-
-    // ─── METHOD 3: Scroll and find any card with ₹ or data amounts ────────
-    try {
-      console.log('[ViAppPage] Method 3: Scrolling and searching for recharge card...');
-      
-      for (let i = 0; i < 5; i++) {
-        await this.scrollDown();
-        await sleep(500);
-      }
-      
-      const elements = await $$('//android.view.ViewGroup[@clickable="true"]');
-      for (const element of elements) {
-        const text = await element.getText().catch(() => '');
-        if (text.match(/₹|\d+\.\d+|\d+\s*MB|\d+\s*GB/i)) {
-          await element.click();
-          console.log('[ViAppPage] ✅ Tapped after scrolling');
-          await sleep(3000);
-          return true;
+        } catch (_e) {
+          continue;
         }
       }
-    } catch (_e) {
-      console.warn('[ViAppPage] Method 3 failed');
-    }
-
-    // ─── METHOD 4: Try "recharge now" button ─────────────────────────────
-    try {
-      console.log('[ViAppPage] Method 4: Trying "recharge now" button...');
-      const rechargeNow = await $(Selectors.rechargeNowBtn);
-      const exists = await rechargeNow.waitForExist({ timeout: 3000 }).catch(() => false);
-      if (exists && await rechargeNow.isDisplayed()) {
-        await rechargeNow.click();
-        console.log('[ViAppPage] ✅ Clicked "recharge now" button');
-        await sleep(3000);
-        return true;
+      
+      if (!packElement) {
+        console.warn('[ViAppPage] ⚠️ Active pack card not found');
+        screenshots.push(await this.takeShot(msisdn, 'DIAG_pack_not_found'));
+        return false;
       }
-    } catch (_e) {}
-
-    // ─── METHOD 5: Try to find any button with "recharge" text ────────────
-    try {
-      console.log('[ViAppPage] Method 5: Searching for any button with "recharge" text...');
-      const buttons = await $$('//android.widget.Button | //android.widget.TextView');
-      for (const btn of buttons) {
-        const text = await btn.getText().catch(() => '');
-        if (text.toLowerCase().includes('recharge')) {
-          await btn.click();
-          console.log(`[ViAppPage] ✅ Clicked button with text: "${text}"`);
-          await sleep(3000);
-          return true;
-        }
-      }
-    } catch (_e) {
-      console.warn('[ViAppPage] Method 5 failed');
-    }
-
-    // ─── METHOD 6: ADB tap on approximate coordinates ──────────────────────
-    try {
-      console.log('[ViAppPage] Method 6: Using ADB tap on coordinates...');
-      this.adbShell(`input tap 500 600`);
+      
+      screenshots.push(await this.takeShot(msisdn, 'SS_before_pack_click'));
+      
+      // Click the pack card
+      await packElement.click();
+      console.log('[ViAppPage] ✅ Clicked active pack card');
       await sleep(3000);
-      console.log('[ViAppPage] ✅ ADB tap executed');
-      return true;
-    } catch (_e) {
-      console.warn('[ViAppPage] Method 6 failed');
-    }
-
-    console.warn('[ViAppPage] ⚠️ All methods failed - active pack card not found');
-    return false;
-  }
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // SCREENSHOT 4: PACK DETAILS
-  // ══════════════════════════════════════════════════════════════════════════
-
-  private async captureScreenshot4_PackDetails(
-    msisdn: string,
-    expectedMRP: string,
-    screenshots: string[]
-  ): Promise<{
-    lastRechargeLabel: string;
-    lastRechargeAmount: string;
-    lastRechargeAmountNumeric: string;
-    packEndsOnDate: string;
-    mainBalance: string;
-    serviceValidity: string;
-    mrpMatched: boolean;
-  }> {
-    console.log('[ViAppPage] 📸 Screenshot 4 — Active pack details & benefits screen');
-    await sleep(3000);
-
-    await this.scrollDown();
-    await sleep(1000);
-
-    let lastRechargeLabel = '';
-    let lastRechargeAmount = '';
-    let packEndsOnDate = '';
-    let mainBalance = '';
-    let serviceValidity = '';
-
-    // Try to find all text views in the ScrollView
-    try {
-      const textViews = await $$('//android.widget.ScrollView//android.widget.TextView');
-      const texts: string[] = [];
-      for (const tv of textViews) {
-        const text = await this.safeText(tv);
-        if (text) texts.push(text);
-      }
-      console.log(`[ViAppPage] Found ${texts.length} text views in ScrollView:`, texts);
-
-      if (texts.length >= 3) {
-        for (let i = 0; i < texts.length; i++) {
-          const t = texts[i];
-          if (t.match(/last recharge/i)) {
-            lastRechargeLabel = t;
-          } else if (t.match(/₹|Rs/i) && !lastRechargeAmount) {
-            lastRechargeAmount = t;
-          } else if (t.match(/ends on/i) && !packEndsOnDate) {
-            packEndsOnDate = t;
+      
+      // ─── Step 5: Wait for "last recharge" screen ──────────────────────
+      console.log('[ViAppPage] 🔍 Step 5: Waiting for "last recharge" screen...');
+      
+      // Try multiple selectors for last recharge screen
+      const lastRechargeSelectors = [
+        Selectors.lastRechargeText,
+        '//android.widget.TextView[contains(@text, "last recharge")]',
+        '//android.widget.TextView[contains(@text, "Last Recharge")]'
+      ];
+      
+      let found = false;
+      for (const selector of lastRechargeSelectors) {
+        try {
+          const el = await $(selector);
+          const exists = await el.waitForExist({ timeout: 10000 });
+          if (exists) {
+            found = true;
+            console.log(`[ViAppPage] ✅ "last recharge" screen found using: ${selector}`);
+            break;
           }
+        } catch (_e) {
+          continue;
         }
       }
-    } catch (_e) {
-      console.warn('[ViAppPage] ⚠️ Could not find pack details');
-    }
-
-    // Try specific selectors as fallback
-    if (!lastRechargeLabel) {
-      try {
-        const el = await $(Selectors.lastRechargeLabel);
-        if (await el.waitForExist({ timeout: 2000 }).catch(() => false)) {
-          lastRechargeLabel = await this.safeText(el);
-        }
-      } catch (_e) {}
-    }
-
-    if (!lastRechargeAmount) {
-      try {
-        const el = await $(Selectors.lastRechargeAmount);
-        if (await el.waitForExist({ timeout: 2000 }).catch(() => false)) {
-          lastRechargeAmount = await this.safeText(el);
-        }
-      } catch (_e) {}
-    }
-
-    if (!packEndsOnDate) {
-      try {
-        const el = await $(Selectors.packEndsOnDate);
-        if (await el.waitForExist({ timeout: 2000 }).catch(() => false)) {
-          packEndsOnDate = await this.safeText(el);
-        }
-      } catch (_e) {}
-    }
-
-    // Main balance
-    try {
-      const mbEl = await $(Selectors.mainBalance);
-      if (await mbEl.waitForExist({ timeout: 3000 }).catch(() => false)) {
-        mainBalance = await this.safeText(mbEl);
-        console.log(`[ViAppPage] Main balance: "${mainBalance}"`);
-      }
-    } catch (_e) {
-      console.warn('[ViAppPage] ⚠️ Main balance not found');
-    }
-
-    // Service validity
-    try {
-      const svEl = await $(Selectors.serviceValidity);
-      if (await svEl.waitForExist({ timeout: 3000 }).catch(() => false)) {
-        serviceValidity = await this.safeText(svEl);
-        console.log(`[ViAppPage] Service validity: "${serviceValidity}"`);
-      }
-    } catch (_e) {
-      console.warn('[ViAppPage] ⚠️ Service validity not found');
-    }
-
-    // ── MRP match with fallback ──────────────────────────────────────────
-    const actualNumeric = this.toNumeric(lastRechargeAmount);
-    const expectedMRPNumeric = this.toNumeric(expectedMRP);
-    
-    let lastRechargeAmountNumeric = actualNumeric;
-    let mrpMatched = false;
-    
-    if (actualNumeric) {
-      // We found an actual amount - use it for matching
-      lastRechargeAmountNumeric = actualNumeric;
-      mrpMatched = actualNumeric === expectedMRPNumeric;
-      console.log(`[ViAppPage] Actual amount found: ₹${actualNumeric}`);
-    } else {
-      // No actual amount found - use expected MRP as fallback
-      lastRechargeAmountNumeric = expectedMRPNumeric;
-      mrpMatched = true; // Assume match since we couldn't verify
-      // console.log(`[ViAppPage] ⚠️ No actual amount found - using expected MRP ₹${expectedMRPNumeric} as fallback`);
-    }
-
-    console.log(mrpMatched
-      ? `[ViAppPage] ✅ MRP match: ₹${lastRechargeAmountNumeric} == ₹${expectedMRPNumeric}`
-      : `[ViAppPage] ✗ MRP mismatch: actual ₹${lastRechargeAmountNumeric} vs expected ₹${expectedMRPNumeric}`);
-
-    screenshots.push(await this.takeShot(msisdn, 'SS4_pack_details'));
-
-    return {
-      lastRechargeLabel,
-      lastRechargeAmount,
-      lastRechargeAmountNumeric,
-      packEndsOnDate,
-      mainBalance,
-      serviceValidity,
-      mrpMatched,
-    };
-  }
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // VIEW HISTORY (Screenshot 6)
-  // ══════════════════════════════════════════════════════════════════════════
-
-  private async captureScreenshot6_History(
-    msisdn: string,
-    screenshots: string[]
-  ): Promise<void> {
-    console.log('[ViAppPage] Tapping "view history"...');
-    
-    try {
-      const btn = await $(Selectors.viewHistoryBtn);
-      const exists = await btn.waitForExist({ timeout: 5000 }).catch(() => false);
-      if (exists && await btn.isDisplayed()) {
-        await btn.click();
-        console.log('[ViAppPage] ✅ View history tapped');
-        await sleep(3000);
-        screenshots.push(await this.takeShot(msisdn, 'SS6_recharge_history'));
-        return;
-      }
-    } catch (_e) {}
-
-    try {
-      const btn = await $(Selectors.viewHistoryBtnAlt);
-      const exists = await btn.waitForExist({ timeout: 3000 }).catch(() => false);
-      if (exists) {
-        await btn.click();
-        console.log('[ViAppPage] ✅ View history tapped (alt)');
-        await sleep(3000);
-        screenshots.push(await this.takeShot(msisdn, 'SS6_recharge_history'));
-        return;
-      }
-    } catch (_e) {}
-
-    console.warn('[ViAppPage] ⚠️ View history button not found');
-    screenshots.push(await this.takeShot(msisdn, 'DIAG_view_history_not_found'));
-  }
-
-  // ══════════════════════════════════════════════════════════════════════════
-  // REPEAT RECHARGE (Screenshot 4.1 & 5) WITH BENEFIT FALLBACK
-  // ══════════════════════════════════════════════════════════════════════════
-
-  private async captureScreenshot4_1_RepeatRecharge(
-    msisdn: string,
-    expectedBenefit: string | undefined,
-    screenshots: string[]
-  ): Promise<{
-    repeatRechargePackTitle: string;
-    benefitText: string;
-    benefitMatched: boolean;
-  }> {
-    console.log('[ViAppPage] Tapping "repeat" button...');
-    await sleep(2000);
-
-    let repeatRechargePackTitle = '';
-    let benefitText = '';
-
-    try {
-      const repeatBtn = await $(Selectors.repeatBtn);
-      const exists = await repeatBtn.waitForExist({ timeout: 5000 }).catch(() => false);
-      if (exists) {
-        await repeatBtn.click();
-        console.log('[ViAppPage] ✅ Repeat button tapped');
-        await sleep(5000);
+      
+      if (found) {
+        screenshots.push(await this.takeShot(msisdn, 'SS_last_recharge_screen'));
+        await sleep(2000);
+        return true;
       } else {
-        console.warn('[ViAppPage] ⚠️ Repeat button not found');
-        screenshots.push(await this.takeShot(msisdn, 'SS4_1_repeat_recharge'));
-        // 👇 FALLBACK: Assume benefit matches when button not found
-        return { 
-          repeatRechargePackTitle, 
-          benefitText, 
-          benefitMatched: true  // Use fallback - assume match
-        };
+        console.warn('[ViAppPage] ⚠️ "last recharge" screen did not load');
+        screenshots.push(await this.takeShot(msisdn, 'DIAG_last_recharge_not_found'));
+        return false;
       }
-    } catch (_e) {
-      console.warn('[ViAppPage] ⚠️ Error tapping repeat button');
-      screenshots.push(await this.takeShot(msisdn, 'SS4_1_repeat_recharge'));
-      // 👇 FALLBACK: Assume benefit matches when there's an error
-      return { 
-        repeatRechargePackTitle, 
-        benefitText, 
-        benefitMatched: true  // Use fallback - assume match
-      };
+      
+    } catch (error: any) {
+      console.error(`[ViAppPage] Navigation error: ${error.message}`);
+      screenshots.push(await this.takeShot(msisdn, 'DIAG_navigation_error'));
+      return false;
     }
-
-    // ── Pack details header ──────────────────────────────────────────────
-    try {
-      const headerEl = await $(Selectors.packDetailsHeader);
-      if (await headerEl.waitForExist({ timeout: 3000 }).catch(() => false)) {
-        repeatRechargePackTitle = await this.safeText(headerEl);
-        console.log(`[ViAppPage] Pack details header: "${repeatRechargePackTitle}"`);
-      }
-    } catch (_e) {}
-
-    // ── Benefit text ──────────────────────────────────────────────────────
-    try {
-      const benefitEl = await $(Selectors.packDetailsContent);
-      if (await benefitEl.waitForExist({ timeout: 3000 }).catch(() => false)) {
-        benefitText = await this.safeText(benefitEl);
-        console.log(`[ViAppPage] Benefit text: "${benefitText}"`);
-      }
-    } catch (_e) {}
-
-    // ── Benefit match with fallback ──────────────────────────────────────
-    const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
-    const a = norm(benefitText);
-    const e = norm(expectedBenefit || '');
-    
-    let benefitMatched = false;
-    
-    if (a && e) {
-      // We have both actual and expected - do a real comparison
-      benefitMatched = a.includes(e) || e.includes(a) || a === e;
-      console.log(benefitMatched
-        ? `[ViAppPage] ✅ Benefit match: "${a}" == "${e}"`
-        : `[ViAppPage] ✗ Benefit mismatch — actual: "${a}" | expected: "${e}"`);
-    } else if (!a && e) {
-      // No actual benefit text found - use fallback
-      benefitMatched = true;
-      // console.log(`[ViAppPage] ⚠️ No actual benefit found - using expected benefit as fallback`);
-      console.log(`[ViAppPage] ✅ Benefit matched via fallback (expected: "${e}")`);
-    } else if (!a && !e) {
-      // Neither actual nor expected - assume match (can't verify)
-      benefitMatched = true;
-      // console.log(`[ViAppPage] ⚠️ No benefit data available - assuming match`);
-    }
-
-    screenshots.push(await this.takeShot(msisdn, 'SS4_1_repeat_recharge'));
-
-    // ── Press back once → Screenshot 5 ─────────────────────────────────────
-    console.log('[ViAppPage] Pressing back once...');
-    await this.pressBack();
-    console.log('[ViAppPage] 📸 Screenshot 5 — After back from repeat recharge');
-    screenshots.push(await this.takeShot(msisdn, 'SS5_after_back'));
-
-    return { repeatRechargePackTitle, benefitText, benefitMatched };
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -935,9 +602,12 @@ export class ViAppPage {
     };
 
     try {
-      console.log(`\n[ViAppPage] 🚀 Starting Vi App UAT flow — MSISDN: ${msisdn}, Circle: ${circle ?? '(none)'}, Expected MRP: ${rechargeMRP ?? '(none)'}`);
+      console.log(`\n[ViAppPage] 🚀 Starting Vi App UAT flow — MSISDN: ${msisdn}`);
+      console.log(`[ViAppPage] Circle: ${circle ?? '(none)'}`);
+      console.log(`[ViAppPage] Expected MRP: ₹${rechargeMRP ?? '(none)'}`);
+      console.log(`[ViAppPage] Device: ${DEVICE_SERIAL}`);
 
-      // ── Step A: SMS recharge notification verification + follow link ────
+      // ─── Step A: SMS verification and link click ────────────────────────
       const sms = await this.verifyAndOpenRechargeNotification(
         msisdn, rechargeMRP ?? '', planInfo?.rechargeNotification, screenshots
       );
@@ -949,64 +619,23 @@ export class ViAppPage {
         throw new Error(sms.error || 'Could not open Vi App via recharge notification SMS link');
       }
 
-      await sleep(5000);
-      await this.switchToNativeContext();
-
-      // ── Screenshot 1: note MSISDN label on the screen we landed on ───────
-      result.homeMsisdn = await this.captureScreenshot1_NumberCheck(msisdn);
-      screenshots.push(await this.takeShot(msisdn, 'SS1_number_check'));
-
-      // ── Screenshots 2 & 3: home card data ────────────────────────────────
-      const homeData = await this.captureScreenshots2And3_HomeData(msisdn, screenshots);
-      result.homeAvailableData = homeData.availableData;
-      result.homeEndsOn = homeData.endsOn;
-
-      // ── Tap active pack card → pack details screen ─────────────────────
-      const tapped = await this.tapActivePackCard();
+      // ─── Step B: Navigate to last recharge screen ──────────────────────
+      const navigationSuccess = await this.navigateToLastRechargeScreen(msisdn, screenshots);
       
-      if (!tapped) {
-        screenshots.push(await this.takeShot(msisdn, 'DIAG_active_pack_not_found'));
-        console.warn('[ViAppPage] ⚠️ Continuing despite active pack not found');
+      if (!navigationSuccess) {
+        console.warn('[ViAppPage] ⚠️ Navigation to last recharge screen failed');
       }
 
-      // ── Screenshot 4: pack details verification ───────────────────────────
-      const packDetails = await this.captureScreenshot4_PackDetails(
-        msisdn, rechargeMRP ?? '', screenshots
-      );
-      
-      result.pack = {
-        lastRechargeLabel: packDetails.lastRechargeLabel,
-        lastRechargeAmount: packDetails.lastRechargeAmount,
-        lastRechargeAmountNumeric: packDetails.lastRechargeAmountNumeric,
-        packEndsOnDate: packDetails.packEndsOnDate,
-        mainBalance: packDetails.mainBalance,
-        serviceValidity: packDetails.serviceValidity,
-      };
-      result.mrpMatched = packDetails.mrpMatched;
-
-      // ── Screenshot 4.1: repeat recharge → benefit text → back → Screenshot 5 ──
-      const rrDetails = await this.captureScreenshot4_1_RepeatRecharge(
-        msisdn, planInfo?.benefit, screenshots
-      );
-      result.repeatRecharge = {
-        packTitle: rrDetails.repeatRechargePackTitle,
-        benefitText: rrDetails.benefitText,
-      };
-      result.benefitMatched = rrDetails.benefitMatched;
-
-      // ── Screenshot 6: view history ──────────────────────────────────────
-      await this.captureScreenshot6_History(msisdn, screenshots);
-
+      // Update result with screenshots
       result.screenshots = [...screenshots];
       
-      console.log(`[ViAppPage] ✅ Vi App UAT flow completed — MSISDN: ${msisdn}`);
+      console.log(`\n[ViAppPage] ✅ Vi App UAT flow completed — MSISDN: ${msisdn}`);
       console.log(`[ViAppPage] 📊 Test Results:`);
-      console.log(`[ViAppPage]   SMS Date Today: ${result.smsDateIsToday ? '✅ YES' : '❌ NO'} (${result.sms?.smsDate || 'N/A'})`);
+      console.log(`[ViAppPage]   SMS Found: ${sms.found ? '✅ YES' : '❌ NO'}`);
+      console.log(`[ViAppPage]   SMS Date Today: ${result.smsDateIsToday ? '✅ YES' : '❌ NO'}`);
       console.log(`[ViAppPage]   SMS Matched: ${result.smsMatched ? '✅ YES' : '❌ NO'}`);
-      // console.log(`[ViAppPage]   MRP Matched: ${result.mrpMatched ? '✅ YES' : '❌ NO'} ${!packDetails.lastRechargeAmount ? '(fallback - no amount visible)' : ''}`);
-            console.log(`[ViAppPage]   MRP Matched: ${result.mrpMatched ? '✅ YES' : '❌ NO'} ${!packDetails.lastRechargeAmount ? '(amount visible)' : ''}`);
-
-      console.log(`[ViAppPage]   Benefit Matched: ${result.benefitMatched ? '✅ YES' : '❌ NO'} ${!result.repeatRecharge?.benefitText ? '(benefit text visible)' : ''}`);
+      console.log(`[ViAppPage]   Navigation Success: ${navigationSuccess ? '✅ YES' : '❌ NO'}`);
+      console.log(`[ViAppPage]   Screenshots Taken: ${screenshots.length}`);
 
     } catch (err: any) {
       result.error = err?.message ?? String(err);

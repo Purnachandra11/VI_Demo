@@ -5,9 +5,9 @@
     "msisdn": "8399930232",
     "circle": "ASM",
     "rechargeMRP": "149",
-    "recharge": "yes",
-    "inFlag": "yes",
-    "swift": "yes",
+    "recharge": "no",
+    "inFlag": "no",
+    "swift": "no",
     "viApp": "yes",
     "planBenefit": "UL+1GB+100SMS||28D",
     "rechargeNotification": "Rs 149 recharge done! Unlimited Calls+100SMS+1GB. Validity 28D.Click bit.ly/GetViApp for more information"

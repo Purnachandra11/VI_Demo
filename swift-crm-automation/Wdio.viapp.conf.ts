@@ -1,3 +1,4 @@
+// wdio.vi.app.conf.ts - Appium config for Vi App testing
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -9,7 +10,6 @@ function getConnectedDevices(): string[] {
     try {
         const output = execSync('adb devices', { encoding: 'utf8' });
         const lines = output.split('\n').filter(line => line.trim() !== '');
-        // Skip the first line "List of devices attached"
         const deviceLines = lines.slice(1);
         const devices = deviceLines
             .filter(line => line.includes('\tdevice'))
@@ -33,30 +33,25 @@ function getConnectedDevices(): string[] {
 function getDeviceSerial(): string {
     const connectedDevices = getConnectedDevices();
     
-    // 1. Check if device is specified in environment variable
     if (process.env.DEVICE_SERIAL) {
         const envDevice = process.env.DEVICE_SERIAL.trim();
         if (connectedDevices.includes(envDevice)) {
             console.log(`[Config] Using device from env: ${envDevice}`);
             return envDevice;
         } else if (connectedDevices.length > 0) {
-            console.warn(`[Config] Device ${envDevice} from env not found in connected devices.`);
-            console.warn(`[Config] Available devices: ${connectedDevices.join(', ')}`);
-            console.log(`[Config] Falling back to first connected device: ${connectedDevices[0]}`);
+            console.warn(`[Config] Device ${envDevice} from env not found. Falling back to: ${connectedDevices[0]}`);
             return connectedDevices[0];
         } else {
-            console.warn(`[Config] No devices connected. Using fallback device from env: ${envDevice}`);
-            return envDevice; // Use the env device as fallback
+            console.warn(`[Config] No devices connected. Using fallback: ${envDevice}`);
+            return envDevice;
         }
     }
     
-    // 2. Use first connected device
     if (connectedDevices.length > 0) {
         console.log(`[Config] Using first connected device: ${connectedDevices[0]}`);
         return connectedDevices[0];
     }
     
-    // 3. Fallback to default device
     const fallbackDevice = 'ZA222V9QNF';
     console.warn(`[Config] No devices found. Using fallback device: ${fallbackDevice}`);
     return fallbackDevice;
@@ -64,7 +59,7 @@ function getDeviceSerial(): string {
 
 // ─── Get the device serial ──────────────────────────────────────────────────
 const DEVICE_SERIAL = getDeviceSerial();
-const APPIUM_HOST   = process.env.APPIUM_HOST   || 'localhost';
+const APPIUM_HOST   = process.env.APPIUM_HOST   || '127.0.0.1';
 const APPIUM_PORT   = Number(process.env.APPIUM_PORT || 4723);
 
 // ─── Export config ──────────────────────────────────────────────────────────
@@ -75,24 +70,21 @@ export const config: WebdriverIO.Config = {
   maxInstances: 1,
 
   // ── Appium capabilities for Android ────────────────────────────────────────
-  capabilities: [
-    {
-      platformName: 'Android',
-      'appium:automationName': 'UiAutomator2',
-      'appium:deviceName': DEVICE_SERIAL,
-      'appium:udid': DEVICE_SERIAL,
-      'appium:appPackage': 'com.mventus.selfcare.activity',
-      'appium:appActivity': 'com.mventus.selfcare.activity.MainActivity',
-      'appium:noReset': true,
-      'appium:fullReset': false,
-      'appium:autoGrantPermissions': true,
-      'appium:newCommandTimeout': 300,
-      'appium:disableHiddenApiPolicy': true,
-      'appium:ignoreHiddenApiPolicyError': true,
-      'appium:skipDeviceInitialization': true,
-      'appium:skipAndroidDeviceInitialization': true,
-    },
-  ],
+  capabilities: [{
+    platformName: 'Android',
+    'appium:automationName': 'UiAutomator2',
+    'appium:deviceName': DEVICE_SERIAL,
+    'appium:udid': DEVICE_SERIAL,
+    'appium:appPackage': 'com.mventus.selfcare.activity',
+    'appium:appActivity': '.SplashActivity', // Try this or MainActivity
+    'appium:noReset': true,
+    'appium:fullReset': false,
+    'appium:autoGrantPermissions': true,
+    'appium:newCommandTimeout': 300,
+    'appium:disableHiddenApiPolicy': true,
+    'appium:ignoreHiddenApiPolicyError': true,
+    // REMOVED: skipDeviceInitialization and skipAndroidDeviceInitialization
+  }],
 
   // ── Appium server ───────────────────────────────────────────────────────────
   hostname: APPIUM_HOST,
@@ -102,7 +94,7 @@ export const config: WebdriverIO.Config = {
   framework: 'mocha',
   mochaOpts: {
     ui: 'bdd',
-    timeout: 300000,   // 5 min — allows time for OTP + login
+    timeout: 300000,
   },
 
   autoCompileOpts: {
@@ -113,17 +105,7 @@ export const config: WebdriverIO.Config = {
     },
   },
 
-  reporters: [
-    'spec',
-    [
-      'allure',
-      {
-        outputDir: 'allure-results',
-        disableWebdriverStepsReporting: false,
-        disableWebdriverScreenshotsReporting: false,
-      },
-    ],
-  ],
+  reporters: ['spec'],
 
   before: async () => {
     const screenshotsDir = path.resolve('./screenshots');
@@ -135,17 +117,16 @@ export const config: WebdriverIO.Config = {
     console.log(`[Vi App Config] Appium  : ${APPIUM_HOST}:${APPIUM_PORT}`);
     console.log(`[Vi App Config] OTP mode: ${process.env.VI_APP_OTP ? 'manual (env var)' : 'auto (SIM on device)'}`);
     
-    // Verify device is still connected at test start
     try {
       const devices = getConnectedDevices();
       if (devices.length > 0 && !devices.includes(DEVICE_SERIAL)) {
-        console.warn(`[Vi App Config] ⚠️ Device ${DEVICE_SERIAL} might have been disconnected!`);
-        console.warn(`[Vi App Config] Currently connected: ${devices.join(', ')}`);
+        console.warn(`[Vi App Config] ⚠️ Device ${DEVICE_SERIAL} might be disconnected!`);
+        console.warn(`[Vi App Config] Connected: ${devices.join(', ')}`);
       } else if (devices.length > 0) {
         console.log(`[Vi App Config] ✅ Device ${DEVICE_SERIAL} is connected`);
       }
     } catch (error) {
-      console.warn(`[Vi App Config] ⚠️ Could not verify device connection: ${error}`);
+      console.warn(`[Vi App Config] ⚠️ Could not verify device: ${error}`);
     }
   },
 
@@ -166,7 +147,7 @@ export const config: WebdriverIO.Config = {
 
   logLevel: 'info',
   bail: 0,
-  waitforTimeout: 30000,         
+  waitforTimeout: 30000,
   connectionRetryTimeout: 120000,
   connectionRetryCount: 3,
 };

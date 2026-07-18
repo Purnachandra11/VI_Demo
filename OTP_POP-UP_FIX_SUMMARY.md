@@ -34,7 +34,7 @@ When Vi App tests reached the OTP entry screen and found empty OTP boxes, the te
 8. If timeout → throw error and stop test
 ```
 
-### ✅ File 2: `dashboard/sim-recharge.html`
+### File 2: `dashboard/sim-recharge.html`
 
 **Updated Frontend OTP Handler:**
 1. **Input Field**:

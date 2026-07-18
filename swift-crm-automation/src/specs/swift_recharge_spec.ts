@@ -1,3 +1,7 @@
+// swift_recharge_spec.ts — Updated with PreTest failure handling and summary report removal
+// FIX: Removed duplicate SIM_Recharge_Report generation from main loop
+// Reports are now generated ONLY in the after hook
+
 /**
  * swift_recharge_spec.ts — IN + SWIFT Testing with Network Error Handling
  * Auto-generates row-wise reports based on test results
@@ -108,18 +112,65 @@ function mapMatchStatusToSwiftStatus(matchStatus: string): string {
 }
 
 function determineOverallStatus(results: TestResult): 'Pass' | 'Fail' {
-  // If any critical test failed, overall is Fail
   if (results.pretestStatus === 'Fail') return 'Fail';
   if (results.inStatus === 'Fail') return 'Fail';
   if (results.swiftStatus === 'Fail') return 'Fail';
   if (results.viAppStatus === 'Fail') return 'Fail';
-  
-  // If any test is Mismatch, overall is Fail
   if (results.swiftStatus === 'Mismatch') return 'Fail';
-  
-  // If all tests passed or skipped, overall is Pass
   return 'Pass';
 }
+
+// ─── SUMMARY REPORT — COMPLETELY COMMENTED OUT ──────────────────────────
+/*
+function generateSummaryReport(results: TestResult[]): string {
+  const total = results.length;
+  const passed = results.filter(r => r.overallStatus === 'Pass').length;
+  const failed = results.filter(r => r.overallStatus === 'Fail').length;
+  
+  const pretestPass = results.filter(r => r.pretestStatus === 'Pass').length;
+  const pretestFail = results.filter(r => r.pretestStatus === 'Fail').length;
+  const pretestSkip = results.filter(r => r.pretestStatus === 'Skip').length;
+  
+  const inPass = results.filter(r => r.inStatus === 'Pass').length;
+  const inFail = results.filter(r => r.inStatus === 'Fail').length;
+  const inSkip = results.filter(r => r.inStatus === 'Skip').length;
+  
+  const swiftPass = results.filter(r => r.swiftStatus === 'Pass').length;
+  const swiftFail = results.filter(r => r.swiftStatus === 'Fail').length;
+  const swiftMismatch = results.filter(r => r.swiftStatus === 'Mismatch').length;
+  const swiftSkip = results.filter(r => r.swiftStatus === 'Skip').length;
+  
+  const viAppPass = results.filter(r => r.viAppStatus === 'Pass').length;
+  const viAppFail = results.filter(r => r.viAppStatus === 'Fail').length;
+  const viAppSkip = results.filter(r => r.viAppStatus === 'Skip').length;
+  
+  let summary = '';
+  summary += '\n' + '='.repeat(80) + '\n';
+  summary += 'TEST EXECUTION SUMMARY\n';
+  summary += '='.repeat(80) + '\n';
+  summary += `Total Rows: ${total} | Passed: ${passed} | Failed: ${failed} | Pass Rate: ${total > 0 ? Math.round((passed/total)*100) : 0}%\n`;
+  summary += '-'.repeat(80) + '\n';
+  summary += `PreTest:  Pass=${pretestPass}  Fail=${pretestFail}  Skip=${pretestSkip}\n`;
+  summary += `IN:       Pass=${inPass}  Fail=${inFail}  Skip=${inSkip}\n`;
+  summary += `SWIFT:    Pass=${swiftPass}  Fail=${swiftFail}  Mismatch=${swiftMismatch}  Skip=${swiftSkip}\n`;
+  summary += `VI App:   Pass=${viAppPass}  Fail=${viAppFail}  Skip=${viAppSkip}\n`;
+  summary += '-'.repeat(80) + '\n';
+  summary += '  #   MSISDN        Circle   MRP   PreTest   IN     SWIFT    VI App  Overall\n';
+  summary += '-'.repeat(80) + '\n';
+  
+  results.forEach((r, idx) => {
+    const pretest = r.pretestStatus.padStart(8);
+    const inStatus = r.inStatus.padStart(6);
+    const swift = r.swiftStatus.padStart(8);
+    const viApp = r.viAppStatus.padStart(8);
+    const overall = r.overallStatus.padStart(8);
+    summary += `  │  ${String(idx + 1).padStart(4)} ${r.msisdn.padStart(12)} ${r.circle.padStart(8)} ${r.rechargeMRP.padStart(6)} ${pretest} ${inStatus} ${swift} ${viApp} ${overall} │\n`;
+  });
+  
+  summary += '='.repeat(80) + '\n';
+  return summary;
+}
+*/
 
 // ─── Page Accessibility Helpers ─────────────────────────────────────────
 
@@ -138,7 +189,7 @@ async function isPageAccessible(url: string, maxRetries: number = 3): Promise<bo
       
       const pageSource = await browser.getPageSource();
       if (pageSource.includes('502') || pageSource.includes('Proxy Error')) {
-        console.log(`[Recharge UAT] ⚠️ 502 Proxy Error detected, retrying...`);
+        console.log(`[Recharge UAT] ⚠️502 Proxy Error detected, retrying...`);
         await browser.pause(2000);
         continue;
       }
@@ -231,9 +282,7 @@ async function waitForLoginPage(): Promise<boolean> {
         console.log('[Recharge UAT]  Login form detected');
         return true;
       }
-    } catch (_e) {
-      // Ignore errors and continue
-    }
+    } catch (_e) {}
     await browser.pause(1000);
   }
   
@@ -486,66 +535,6 @@ async function ensureRechargePage(): Promise<void> {
   }
 }
 
-// async function waitForRechargeConfirmation(msisdn: string, timeoutMs: number = 300000): Promise<{ confirmed: boolean; skipped: boolean; failed: boolean }> {
-//   console.log(`[Recharge UAT] ⏳ Waiting for recharge confirmation for ${msisdn}...`);
-  
-//   const confirmFile = path.join(COMM_DIR, 'recharge_confirmed.json');
-//   const skipFile = path.join(COMM_DIR, 'recharge_skipped.json');
-//   const failedFile = path.join(COMM_DIR, 'recharge_failed.json');
-  
-//   if (fs.existsSync(confirmFile)) fs.unlinkSync(confirmFile);
-//   if (fs.existsSync(skipFile)) fs.unlinkSync(skipFile);
-//   if (fs.existsSync(failedFile)) fs.unlinkSync(failedFile);
-  
-//   const start = Date.now();
-  
-//   while (Date.now() - start < timeoutMs) {
-//     if (fs.existsSync(confirmFile)) {
-//       try {
-//         const raw = fs.readFileSync(confirmFile, 'utf8');
-//         const data = JSON.parse(raw);
-//         if (data.msisdn === msisdn && data.confirmed === true) {
-//           console.log(`[Recharge UAT]  Recharge confirmed for ${msisdn}`);
-//           fs.unlinkSync(confirmFile);
-//           return { confirmed: true, skipped: false, failed: false };
-//         }
-//       } catch (parseErr) {}
-//     }
-    
-//     if (fs.existsSync(skipFile)) {
-//       try {
-//         const raw = fs.readFileSync(skipFile, 'utf8');
-//         const data = JSON.parse(raw);
-//         if (data.msisdn === msisdn && data.skipped === true) {
-//           console.log(`[Recharge UAT] ⏭ Recharge skipped for ${msisdn}: ${data.reason || 'User skipped'}`);
-//           fs.unlinkSync(skipFile);
-//           return { confirmed: false, skipped: true, failed: false };
-//         }
-//       } catch (parseErr) {}
-//     }
-
-//     if (fs.existsSync(failedFile)) {
-//       try {
-//         const raw = fs.readFileSync(failedFile, 'utf8');
-//         const data = JSON.parse(raw);
-//         if (data.msisdn === msisdn && data.failed === true) {
-//           console.log(`[Recharge UAT] ❌ Recharge failed for ${msisdn}: ${data.reason || 'Recharge failed'}`);
-//           fs.unlinkSync(failedFile);
-//           return { confirmed: false, skipped: false, failed: true };
-//         }
-//       } catch (parseErr) {}
-//     }
-//     await browser.pause(1000);
-//   }
-  
-//   console.warn(`[Recharge UAT] ⚠️ Timeout waiting for recharge confirmation for ${msisdn}`);
-//   return { confirmed: false, skipped: false, failed: false };
-// }
-
-// ─── Summary Report Generator ────────────────────────────────────────────
-
-// ─── Improved waitForRechargeConfirmation with faster polling and reduced timeout ───
-
 async function waitForRechargeConfirmation(msisdn: string, timeoutMs: number = 300000): Promise<{ confirmed: boolean; skipped: boolean; failed: boolean }> {
   console.log(`[Recharge UAT] ⏳ Waiting for recharge confirmation for ${msisdn}...`);
   
@@ -553,7 +542,6 @@ async function waitForRechargeConfirmation(msisdn: string, timeoutMs: number = 3
   const skipFile = path.join(COMM_DIR, 'recharge_skipped.json');
   const failedFile = path.join(COMM_DIR, 'recharge_failed.json');
   
-  // Clean up old files
   try {
     if (fs.existsSync(confirmFile)) fs.unlinkSync(confirmFile);
     if (fs.existsSync(skipFile)) fs.unlinkSync(skipFile);
@@ -562,17 +550,15 @@ async function waitForRechargeConfirmation(msisdn: string, timeoutMs: number = 3
   
   const start = Date.now();
   let lastFileCheck = 0;
-  const checkInterval = 300; // Check every 300ms for faster response
+  const checkInterval = 300;
   
   while (Date.now() - start < timeoutMs) {
-    // Throttle file checks to avoid excessive I/O
     if (Date.now() - lastFileCheck < checkInterval) {
       await browser.pause(100);
       continue;
     }
     lastFileCheck = Date.now();
     
-    // Check confirmation file
     if (fs.existsSync(confirmFile)) {
       try {
         const raw = fs.readFileSync(confirmFile, 'utf8');
@@ -582,12 +568,9 @@ async function waitForRechargeConfirmation(msisdn: string, timeoutMs: number = 3
           try { fs.unlinkSync(confirmFile); } catch (_) {}
           return { confirmed: true, skipped: false, failed: false };
         }
-      } catch (parseErr) {
-        // File may be mid-write
-      }
+      } catch (parseErr) {}
     }
     
-    // Check skip file
     if (fs.existsSync(skipFile)) {
       try {
         const raw = fs.readFileSync(skipFile, 'utf8');
@@ -600,7 +583,6 @@ async function waitForRechargeConfirmation(msisdn: string, timeoutMs: number = 3
       } catch (parseErr) {}
     }
     
-    // Check failed file
     if (fs.existsSync(failedFile)) {
       try {
         const raw = fs.readFileSync(failedFile, 'utf8');
@@ -616,47 +598,6 @@ async function waitForRechargeConfirmation(msisdn: string, timeoutMs: number = 3
   
   console.warn(`[Recharge UAT] ⚠️ Timeout waiting for recharge confirmation for ${msisdn} after ${Math.round(timeoutMs/1000)}s`);
   return { confirmed: false, skipped: false, failed: false };
-}
-
-function generateSummaryReport(results: TestResult[]): string {
-  const total = results.length;
-  const passed = results.filter(r => r.overallStatus === 'Pass').length;
-  const failed = results.filter(r => r.overallStatus === 'Fail').length;
-  
-  const pretestPass = results.filter(r => r.pretestStatus === 'Pass').length;
-  const pretestFail = results.filter(r => r.pretestStatus === 'Fail').length;
-  const pretestSkip = results.filter(r => r.pretestStatus === 'Skip').length;
-  
-  const inPass = results.filter(r => r.inStatus === 'Pass').length;
-  const inFail = results.filter(r => r.inStatus === 'Fail').length;
-  const inSkip = results.filter(r => r.inStatus === 'Skip').length;
-  
-  const swiftPass = results.filter(r => r.swiftStatus === 'Pass').length;
-  const swiftFail = results.filter(r => r.swiftStatus === 'Fail').length;
-  const swiftMismatch = results.filter(r => r.swiftStatus === 'Mismatch').length;
-  const swiftSkip = results.filter(r => r.swiftStatus === 'Skip').length;
-  
-  const viAppPass = results.filter(r => r.viAppStatus === 'Pass').length;
-  const viAppFail = results.filter(r => r.viAppStatus === 'Fail').length;
-  const viAppSkip = results.filter(r => r.viAppStatus === 'Skip').length;
-  
-  return `
- `;
-  // Add each row result
-  results.forEach((r, idx) => {
-    const pretest = r.pretestStatus.padStart(8);
-    const inStatus = r.inStatus.padStart(6);
-    const swift = r.swiftStatus.padStart(8);
-    const viApp = r.viAppStatus.padStart(8);
-    const overall = r.overallStatus.padStart(8);
-    
-    summary += `  │  ${String(idx + 1).padStart(4)} ${r.msisdn.padStart(12)} ${r.circle.padStart(8)} ${r.rechargeMRP.padStart(6)} ${pretest} ${inStatus} ${swift} ${viApp} ${overall} │\n`;
-  });
-  
-  summary += `
- 
-`;
-  return summary;
 }
 
 // ─── Main Test ─────────────────────────────────────────────────────────────
@@ -680,7 +621,6 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
     rechargePage = new RechargePage();
     viAppPage = new ViAppPage();
     excelReportService = new ExcelReportService();
-    // finalAnalysisReportService = new FinalAnalysisReportService(excelReportService);
     finalAnalysisReportService = new FinalAnalysisReportService(excelReportService, EXCEL_PATH);
     preTestReportService = new PreTestReportService();
     excelDataService = new ExcelDataService(EXCEL_PATH);
@@ -735,12 +675,12 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
   });
 
   after(async () => {
-    // Generate and print summary report
+    // ─── SUMMARY REPORT — COMPLETELY COMMENTED OUT ──────────────────────────
+    /*
     if (testResults.length > 0) {
       const summary = generateSummaryReport(testResults);
       console.log(summary);
       
-      // Save summary to file
       const summaryDir = path.resolve('./reports');
       if (!fs.existsSync(summaryDir)) {
         fs.mkdirSync(summaryDir, { recursive: true });
@@ -749,34 +689,80 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
       fs.writeFileSync(summaryPath, summary);
       console.log(`[Recharge UAT] Summary report saved: ${summaryPath}`);
     }
+    */
 
-    if (excelReportService.getResultCount() > 0) {
+    // ─── PreTest reports are generated for ALL rows (pass or fail) ──────────
+    // SIM_Recharge_Report (Excel/PDF/HTML) should be generated for PreTest PASS or SKIP cases
+
+    if (excelReportService.getResultCount() > 0 || preTestReportService.getPreTestResultCount() > 0) {
       console.log(`[Recharge UAT] Total rows processed: ${matchedRows.length}`);
       console.log(`[Recharge UAT] Total screenshots: ${excelReportService.getScreenshotCount()}`);
 
-      if (matchedRows.length > 1) {
-        try {
-          const excelPath = await excelReportService.writeReport();
-          console.log(`[Recharge UAT] Consolidated Excel Report: ${excelPath}`);
-          const pdfPath = await excelReportService.writePDFReport();
-          console.log(`[Recharge UAT] Consolidated PDF Report: ${pdfPath}`);
-        } catch (reportErr: any) {
-          console.warn(`[Recharge UAT] Consolidated report generation skipped: ${reportErr?.message || reportErr}`);
+      // ─── Check which rows are eligible for SIM_Recharge_Report ──────────────
+      const rowsEligibleForReport = testResults
+        .filter(r => r.pretestStatus === 'Pass' || r.pretestStatus === 'Skip')
+        .map(r => r.msisdn);
+
+      const preTestFailedMsisdns = testResults
+        .filter(r => r.pretestStatus === 'Fail')
+        .map(r => r.msisdn);
+
+      console.log(`[Recharge UAT] Rows eligible for SIM_Recharge_Report (Pass/Skip): ${rowsEligibleForReport.length}`);
+      console.log(`[Recharge UAT] PreTest Fail rows (skipping SIM_Recharge_Report): ${preTestFailedMsisdns.length}`);
+
+      // ─── Generate SIM_Recharge_Report for eligible rows ──────────────────────
+      if (rowsEligibleForReport.length > 0) {
+        const eligibleInputRows = inputRowsForReport.filter(row => 
+          rowsEligibleForReport.includes(row.msisdn)
+        );
+
+        console.log(`[Recharge UAT] Generating SIM_Recharge_Reports for ${eligibleInputRows.length} eligible rows...`);
+
+        // Generate individual reports for eligible rows
+        for (const row of eligibleInputRows) {
+          try {
+            const rowBundle = await excelReportService.writeIndividualReport(row);
+            console.log(`[Recharge UAT] ✅ SIM_Recharge_Report for ${row.msisdn}: ${rowBundle.zipPath}`);
+          } catch (err: any) {
+            console.error(`[Recharge UAT] ❌ Failed to generate report for ${row.msisdn}: ${err.message}`);
+          }
         }
 
-        try {
-          if (preTestReportService.getPreTestResultCount() > 0) {
-            const preTestConsolidated = await preTestReportService.writeConsolidatedReport();
-            console.log(`[Recharge UAT] Consolidated PreTest Report: ${preTestConsolidated.excelPath}`);
+        // If there are multiple eligible rows, generate consolidated report
+        if (eligibleInputRows.length > 1) {
+          try {
+            const consolidated = await excelReportService.writeConsolidatedReport();
+            console.log(`[Recharge UAT] ✅ Consolidated SIM_Recharge_Report: ${consolidated.excelPath}`);
+          } catch (err: any) {
+            console.warn(`[Recharge UAT] Consolidated report generation skipped: ${err?.message || err}`);
           }
-        } catch (preTestReportErr: any) {
-          console.warn(`[Recharge UAT] Consolidated PreTest report generation skipped: ${preTestReportErr?.message || preTestReportErr}`);
         }
       } else {
-        console.log('[Recharge UAT] Single-row run detected; individual row reports already generated. Skipping consolidated report.');
+        console.log('[Recharge UAT] ⏭ No eligible rows (Pass/Skip) — skipping SIM_Recharge_Report generation');
       }
+
+      // ─── PreTest Reports are always generated for ALL rows ────────────────
+      try {
+        if (preTestReportService.getPreTestResultCount() > 0) {
+          // Generate individual PreTest reports for ALL rows
+          const preTestResults = await preTestReportService.writeAllIndividualReports();
+          console.log(`[Recharge UAT] ✅ Generated ${preTestResults.length} PreTest report(s)`);
+          
+          // Generate consolidated PreTest report
+          // const preTestConsolidated = await preTestReportService.writeConsolidatedReport();
+          // console.log(`[Recharge UAT] ✅ Consolidated PreTest Report: ${preTestConsolidated.excelPath}`);
+        }
+      } catch (preTestReportErr: any) {
+        console.warn(`[Recharge UAT] PreTest report generation error: ${preTestReportErr?.message || preTestReportErr}`);
+      }
+
+      // ─── Analysis Reports are generated per row during execution ────────────
+      // No additional action needed here - they're generated in the main loop
+
+    } else {
+      console.log('[Recharge UAT] No results recorded — skipping report generation');
     }
-  });
+  });  
 
   it('should process all matched recharge UAT rows in one session', async function () {
     const batchTimeoutMs = Math.max(30 * 60 * 1000, (matchedRows.length || 1) * 10 * 60 * 1000);
@@ -858,9 +844,8 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
       const inFlag = (row.inFlag || '').toLowerCase();
       const swiftFlag = (row.swift || '').toLowerCase();
       const rechargeFlag = (row.recharge || '').toLowerCase();
-      // const pretestFlag = (row.pretest || '').toLowerCase();
-      // const pretestFlag = 'yes'; 
-      const pretestFlag = 'no'; 
+      const pretestFlag = 'yes';
+      // const pretestFlag = 'no';
 
       console.log(`\n===== Row ${srNo}/${matchedRows.length} =====`);
       console.log(`MSISDN: ${row.msisdn}`);
@@ -889,13 +874,13 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
       };
 
       try {
-        // ════════════════════════════════════════════════════════════════════
-        // 🔎 STEP 1: PRETEST
-        // ════════════════════════════════════════════════════════════════════
         reportRowEvent('row_start', rowIndex, row.msisdn);
 
         let preTestResult = null;
 
+        // ════════════════════════════════════════════════════════════════════
+        // 🔎 STEP 1: PRETEST
+        // ════════════════════════════════════════════════════════════════════
         if (pretestFlag === 'yes') {
           reportColStatus(rowIndex, row.msisdn, 'pretest', 'running', 'PreTest verification in progress');
           preTestResult = await rechargePage.runPreTestVerification(row.msisdn);
@@ -938,6 +923,7 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
               screenshots: preTestScreenshotEntries.map(s => s.fullPath),
             });
 
+            // PreTest report is generated for ALL rows (pass or fail)
             const preTestRowBundle = await preTestReportService.writeIndividualReport({
               msisdn: row.msisdn,
               circle: row.circle,
@@ -949,22 +935,20 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
             console.error(`[Recharge UAT] Failed to generate PreTest report for ${row.msisdn}:`, preTestReportErr instanceof Error ? preTestReportErr.message : preTestReportErr);
           }
 
-          // ✅ CORRECTED: Handle PreTest failure
+          // ─── Handle PreTest failure ───────────────────────────────────────
           if (!preTestResult.success) {
             console.log(`[Recharge UAT] ❌ PreTest FAILED for ${row.msisdn}: ${preTestResult.reason}`);
             
-            // ── Broadcast PreTest failure using COL_STATUS for orchestrator ──
             const failureReason = preTestResult.reason || 'Active usage found — PreTest failed';
             
-            // IMPORTANT: Send ROW_EVENT with the error for orchestrator to pick up
+            // ─── Broadcast PreTest failure ──────────────────────────────────
             console.log(`[ROW_EVENT] ${JSON.stringify({ 
               event: 'row_failed', 
               rowIndex, 
               msisdn: row.msisdn, 
-              error: failureReason  // This MUST contain 'PreTest' to trigger email
+              error: failureReason
             })}`);
             
-            // Also send COL_STATUS for UI updates
             console.log(`[COL_STATUS] ${JSON.stringify({
               rowIndex,
               msisdn: row.msisdn,
@@ -973,7 +957,6 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
               message: failureReason
             })}`);
 
-            // Also send separate PRETEST_TEST event for the orchestrator's processOutput
             console.log(`[PRETEST_TEST] ${JSON.stringify({ 
               rowIndex, 
               msisdn: row.msisdn, 
@@ -981,61 +964,33 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
               message: failureReason 
             })}`);
 
-            // Mark other columns as skipped
             reportColStatus(rowIndex, row.msisdn, 'recharge', 'skipped', 'Skipped — PreTest failed');
             reportColStatus(rowIndex, row.msisdn, 'in', 'skipped', 'Skipped — PreTest failed');
             reportColStatus(rowIndex, row.msisdn, 'swift', 'skipped', 'Skipped — PreTest failed');
             reportColStatus(rowIndex, row.msisdn, 'viApp', 'skipped', 'Skipped — PreTest failed');
 
             const preTestScreenshots = rechargePage.getScreenshotsForMSISDN(row.msisdn);
-            excelReportService.addUATResult({
-              msisdn: row.msisdn,
-              circle: row.circle,
-              mrp: row.rechargeMRP,
-              planName: row.planBenefit || 'N/A',
-              rechargeNotification: row.rechargeNotification || 'N/A',
-              inStatus: 'Skip',
-              swiftStatus: 'Skip',
-              viAppStatus: 'Skip',
-              transactionId: `PRETEST-${row.msisdn}-${Date.now()}`,
-              activationDateTime: new Date().toLocaleString(),
-              validity: 'N/A',
-              activationMode: 'N/A',
-              currentCoreBalance: 'N/A',
-              etopupTransactionId: 'N/A',
-              retailerMsisdn: row.msisdn,
-              name: 'N/A',
-              category: 'PreTest Failed',
-              benefits: row.planBenefit || 'N/A',
-              detailValidity: 'N/A',
-              reason: failureReason,
-              screenshots: preTestScreenshots
-            });
-
-            const screenshotEntriesPT = rechargePage.getScreenshots().filter(s => s.msisdn === row.msisdn);
-            excelReportService.addScreenshots(screenshotEntriesPT);
-
-            // ✅ Set row result and continue to next row
+            
+            // ─── IMPORTANT: Do NOT add UAT result for PreTest failures ──────
+            // This prevents SIM_Recharge_Report from being generated
+            // We only add UAT results for PreTest PASS cases
+            
             rowResult.pretestStatus = 'Fail';
             rowResult.reason = failureReason;
             rowResult.overallStatus = 'Fail';
             testResults.push(rowResult);
             
-            const rowReportInputPT = inputRowsForReport[index];
-            if (rowReportInputPT) {
-              const rowBundlePT = await excelReportService.writeIndividualReport(rowReportInputPT);
-              console.log(`[Recharge UAT] ⚠️ Row ${srNo} PreTest-failure report bundle created: ${rowBundlePT.zipPath}`);
-            }
-            continue; // Skip to next row
+            // ─── No SIM_Recharge_Report for PreTest failures ────────────────
+            console.log(`[Recharge UAT] ⏭ Skipping SIM_Recharge_Report for ${row.msisdn} (PreTest failed)`);
+            continue;
           }
 
           // PreTest passed
           rowResult.pretestStatus = 'Pass';
           reportColStatus(rowIndex, row.msisdn, 'pretest', 'completed', preTestResult.reason || 'PreTest passed');
-          console.log(`[Recharge UAT] PreTest passed for ${row.msisdn}`);
+          console.log(`[Recharge UAT] ✅ PreTest passed for ${row.msisdn}`);
           
         } else {
-          // PreTest not required
           rowResult.pretestStatus = 'Skip';
           reportColStatus(rowIndex, row.msisdn, 'pretest', 'skipped', 'PreTest not required');
         }
@@ -1043,38 +998,11 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
         // ════════════════════════════════════════════════════════════════════
         // 🔁 STEP 2: RECHARGE CONFIRMATION WAIT
         // ════════════════════════════════════════════════════════════════════
-        // if (rechargeFlag === 'yes') {
-        //   console.log(`[Recharge UAT] Recharge=Yes — waiting for confirmation for ${row.msisdn}`);
-        //   const txnId = `TXN-${row.msisdn}-${Date.now()}`;
-        //   reportRowEvent('row_waiting_confirm', rowIndex, row.msisdn, { transactionId: txnId });
-
-        //   const result = await waitForRechargeConfirmation(row.msisdn, 1600000);
-        //   let rechargeOk = false;
-
-        //   if (result.confirmed) {
-        //     console.log(`[Recharge UAT] Recharge confirmed for ${row.msisdn}`);
-        //     reportRowEvent('row_recharge_confirmed', rowIndex, row.msisdn, { transactionId: txnId });
-        //     reportColStatus(rowIndex, row.msisdn, 'recharge', 'completed', 'Recharge confirmed via email');
-        //     rechargeOk = true;
-        //   } else if (result.skipped) {
-        //     console.log(`[Recharge UAT] ⏭ Recharge skipped for ${row.msisdn}`);
-        //     reportRowEvent('row_skipped', rowIndex, row.msisdn, { reason: 'User skipped' });
-        //     reportColStatus(rowIndex, row.msisdn, 'recharge', 'skipped', 'Recharge skipped by user');
-        //     rechargeOk = true;
-        //   } else if (result.failed) {
-        //     console.log(`[Recharge UAT] Recharge failed for ${row.msisdn}`);
-        //     reportColStatus(rowIndex, row.msisdn, 'recharge', 'failed', 'Recharge failed by user');
-        //   } else {
-        //     console.warn(`[Recharge UAT] Recharge confirmation timeout for ${row.msisdn}`);
-        //     reportColStatus(rowIndex, row.msisdn, 'recharge', 'failed', 'Recharge confirmation timeout');
-        //   }
-
         if (rechargeFlag === 'yes') {
           console.log(`[Recharge UAT] Recharge=Yes — waiting for confirmation for ${row.msisdn}`);
           const txnId = `TXN-${row.msisdn}-${Date.now()}`;
           reportRowEvent('row_waiting_confirm', rowIndex, row.msisdn, { transactionId: txnId });
 
-          // ─── UPDATED: Reduced timeout from 1600000 to 300000 (5 minutes) ───
           const result = await waitForRechargeConfirmation(row.msisdn, 1600000);
           let rechargeOk = false;
 
@@ -1103,36 +1031,8 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
             reportColStatus(rowIndex, row.msisdn, 'swift', 'skipped', 'Skipped — recharge failed');
             reportColStatus(rowIndex, row.msisdn, 'viApp', 'skipped', 'Skipped — recharge failed');
 
-            excelReportService.addUATResult({
-              msisdn: row.msisdn,
-              circle: row.circle,
-              mrp: row.rechargeMRP,
-              planName: row.planBenefit || 'N/A',
-              rechargeNotification: row.rechargeNotification || 'N/A',
-              inStatus: 'Skip',
-              swiftStatus: 'Skip',
-              viAppStatus: 'Skip',
-              transactionId: txnId,
-              activationDateTime: new Date().toLocaleString(),
-              validity: 'N/A',
-              activationMode: 'N/A',
-              currentCoreBalance: 'N/A',
-              etopupTransactionId: 'N/A',
-              retailerMsisdn: row.msisdn,
-              name: 'N/A',
-              category: 'Recharge Failed',
-              benefits: row.planBenefit || 'N/A',
-              detailValidity: 'N/A',
-              reason: rowResult.reason,
-              screenshots: []
-            });
-
+            // ─── NO UAT result for recharge failures ─────────────────────────
             testResults.push(rowResult);
-            const rowReportInputRF = inputRowsForReport[index];
-            if (rowReportInputRF) {
-              const rowBundleRF = await excelReportService.writeIndividualReport(rowReportInputRF);
-              console.log(`[Recharge UAT] ⚠️ Row ${srNo} failure report bundle created: ${rowBundleRF.zipPath}`);
-            }
             continue;
           }
         } else {
@@ -1162,7 +1062,7 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
         console.log(`[Recharge UAT] Subscriber: ${subscriberInfo.customerName || 'N/A'}, Circle: ${subscriberInfo.circle || 'N/A'}`);
         console.log(`[Recharge UAT] Core Balance: ${subscriberInfo.coreBalance || 'N/A'}, Validity: ${subscriberInfo.serviceValidity || 'N/A'}`);
 
-        // --- IN yes case ---
+        // ─── IN yes case ──────────────────────────────────────────────────────
         if (inFlag === 'yes') {
           console.log(`[Recharge UAT] 🔄 Running IN test for ${row.msisdn}`);
           reportColStatus(rowIndex, row.msisdn, 'in', 'running', 'IN test in progress');
@@ -1170,7 +1070,6 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
           const inResults = await rechargePage.runINTest(row.msisdn, row.rechargeMRP);
           rowInResults = inResults;
           
-          //  FIX: Ensure we capture the actual IN status
           const inTestPassed = inResults.success === true;
           
           if (!inTestPassed) {
@@ -1213,195 +1112,7 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
           reportColStatus(rowIndex, row.msisdn, 'in', 'skipped', 'IN not required');
         }
 
-        // --- SWIFT Yes case ---
-        // --- SWIFT Yes case ---
-// if (swiftFlag === 'yes') {
-//   console.log(`[Recharge UAT] 🔄 Running SWIFT test for ${row.msisdn}`);
-//   reportColStatus(rowIndex, row.msisdn, 'swift', 'running', 'SWIFT test in progress');
-
-//   await rechargePage.enterMSISDN(row.msisdn);
-//   await rechargePage.clickSearchButton();
-//   await browser.pause(2000);
-
-//   const swiftResults = await rechargePage.runSwiftTest(row.msisdn, row.rechargeMRP);
-//   rowSwiftResults = swiftResults;
-
-//   //  FIX: Log the offer history to verify data
-//   console.log(`[Recharge UAT] Swift Results - Success: ${swiftResults.success}`);
-//   console.log(`[Recharge UAT] Swift Results - Offer History Count: ${swiftResults.offerHistory?.length || 0}`);
-//   if (swiftResults.offerHistory && swiftResults.offerHistory.length > 0) {
-//     console.log(`[Recharge UAT] Swift Results - First Offer:`, JSON.stringify(swiftResults.offerHistory[0], null, 2));
-//   }
-
-//   const voiceUsage = swiftResults.totalUsage?.voice || [];
-//   const dataUsage = swiftResults.totalUsage?.data || [];
-//   const smsUsage = swiftResults.totalUsage?.sms || [];
-//   const unlimitedOffers = swiftResults.unlimitedOffers || [];
-//   const vasOffers = swiftResults.vasOffers || [];
-//   const upssPromotional = swiftResults.upssPromotional || [];
-
-
-// // Only process UPSS if swift was actually run
-// if (!SKIP_UPSS_PROCESSING) {
-// if (swiftFlag === 'yes' && rowSwiftResults) {
-
-//   const upssPromotional = rowSwiftResults.upssPromotional || [];
-  
-//   if (upssPromotional.length > 0) {
-//     excelReportService.addUpssPromoHistory(row.msisdn, upssPromotional);
-//     console.log(`[Recharge UAT] Added ${upssPromotional.length} UPSS promo history row(s) for ${row.msisdn}`);
-//     reportColStatus(rowIndex, row.msisdn, 'upss', 'completed', `Found ${upssPromotional.length} UPSS promotional entries`);
-//   } else {
-//     reportColStatus(rowIndex, row.msisdn, 'upss', 'skipped', 'No UPSS promotional entries found');
-//   }
-// } else {
-//   // If swift wasn't run or no results, skip UPSS
-//   reportColStatus(rowIndex, row.msisdn, 'upss', 'skipped', 'UPSS skipped - SWIFT not run');
-// }
-//   const offerHistoryItems = swiftResults.offerHistory || [];
-//         // if (swiftFlag === 'yes') {
-//         //   console.log(`[Recharge UAT] 🔄 Running SWIFT test for ${row.msisdn}`);
-//         //   reportColStatus(rowIndex, row.msisdn, 'swift', 'running', 'SWIFT test in progress');
-
-//         //   await rechargePage.enterMSISDN(row.msisdn);
-//         //   await rechargePage.clickSearchButton();
-//         //   await browser.pause(2000);
-
-//         //   const swiftResults = await rechargePage.runSwiftTest(row.msisdn, row.rechargeMRP);
-//         //   rowSwiftResults = swiftResults;
-
-//         //   //  FIX: Log the offer history to verify data
-//         //   console.log(`[Recharge UAT] Swift Results - Success: ${swiftResults.success}`);
-//         //   console.log(`[Recharge UAT] Swift Results - Offer History Count: ${swiftResults.offerHistory?.length || 0}`);
-//         //   if (swiftResults.offerHistory && swiftResults.offerHistory.length > 0) {
-//         //     console.log(`[Recharge UAT] Swift Results - First Offer:`, JSON.stringify(swiftResults.offerHistory[0], null, 2));
-//         //   }
-
-//         //   const voiceUsage = swiftResults.totalUsage?.voice || [];
-//         //   const dataUsage = swiftResults.totalUsage?.data || [];
-//         //   const smsUsage = swiftResults.totalUsage?.sms || [];
-//         //   const unlimitedOffers = swiftResults.unlimitedOffers || [];
-//         //   const vasOffers = swiftResults.vasOffers || [];
-//         //   const upssPromotional = swiftResults.upssPromotional || [];
-
-//         //   if (upssPromotional.length > 0) {
-//         //     excelReportService.addUpssPromoHistory(row.msisdn, upssPromotional);
-//         //     console.log(`[Recharge UAT] Added ${upssPromotional.length} UPSS promo history row(s) for ${row.msisdn}`);
-//         //   }
-
-//           // const offerHistoryItems = swiftResults.offerHistory || [];
-
-//           console.log(`[Recharge UAT] Found ${offerHistoryItems.length} offer history item(s) for ${row.msisdn}`);
-//           console.log('[Recharge UAT] All offer history:', JSON.stringify(offerHistoryItems, null, 2));
-
-//           const screenshots = rechargePage.getScreenshotsForMSISDN(row.msisdn);
-//           const screenshotEntries = rechargePage.getScreenshots().filter(s => s.msisdn === row.msisdn);
-
-//           const hasPass = offerHistoryItems.some((item: any) => item.matchStatus === 'Pass');
-//           const hasMatchedButFailed = offerHistoryItems.some((item: any) => item.isMatched && item.matchStatus !== 'Pass');
-
-//           let overallSwiftStatus = 'Fail';
-//           if (hasPass && swiftResults.success) {
-//             overallSwiftStatus = 'Pass';
-//           } else if (hasMatchedButFailed && swiftResults.success) {
-//             overallSwiftStatus = 'Fail';
-//           } else if (offerHistoryItems.length > 0 && swiftResults.success) {
-//             overallSwiftStatus = 'Mismatch';
-//           }
-
-//           rowResult.swiftStatus = overallSwiftStatus;
-//           if (overallSwiftStatus !== 'Pass') {
-//             rowResult.overallStatus = 'Fail';
-//             rowResult.reason = 'SWIFT test failed or mismatch';
-//           }
-
-//           // reportColStatus(rowIndex, row.msisdn, 'swift', overallSwiftStatus, swiftResults.success ? 'SWIFT test passed' : 'SWIFT test failed');
-
-//           if (offerHistoryItems.length === 0) {
-//             excelReportService.addUATResult({
-//               msisdn: row.msisdn,
-//               circle: subscriberInfo.circle || row.circle || 'N/A',
-//               mrp: row.rechargeMRP,
-//               planName: row.planBenefit || 'N/A',
-//               rechargeNotification: row.rechargeNotification || 'N/A',
-//               inStatus: 'Skip',
-//               swiftStatus: 'Fail',
-//               viAppStatus: viAppFlag === 'yes' ? 'Pending' : 'Skip',
-//               transactionId: `SWIFT-${row.msisdn}-${Date.now()}`,
-//               activationDateTime: new Date().toLocaleString(),
-//               validity: subscriberInfo.serviceValidity || 'N/A',
-//               activationMode: 'SWIFT Portal',
-//               currentCoreBalance: subscriberInfo.coreBalance || 'N/A',
-//               etopupTransactionId: 'N/A',
-//               retailerMsisdn: row.msisdn,
-//               name: subscriberInfo.customerName || 'N/A',
-//               category: 'SWIFT Recharge',
-//               benefits: row.planBenefit || 'N/A',
-//               detailValidity: subscriberInfo.serviceValidity || 'N/A',
-//               accountStatus: subscriberInfo.accountStatus || 'N/A',
-//               userType: subscriberInfo.userType || 'N/A',
-//               reason: 'No offer history rows found in SWIFT offer history tab',
-//               allOfferHistory: [],
-//               voiceUsage: voiceUsage,
-//               dataUsage: dataUsage,
-//               smsUsage: smsUsage,
-//               unlimitedOffers: unlimitedOffers,
-//               vasOffers: vasOffers,
-//               upssPromotional: upssPromotional (SKIP_UPSS_PROCESSING ? {} : { upssPromotional: upssPromotional }),
-//               screenshots: screenshots
-//             });
-//           } else {
-//             offerHistoryItems.forEach((item: any, idx: number) => {
-//               const itemSwiftStatus = mapMatchStatusToSwiftStatus(item.matchStatus);
-
-//               excelReportService.addUATResult({
-//                 msisdn: row.msisdn,
-//                 circle: subscriberInfo.circle || row.circle || 'N/A',
-//                 mrp: item.mrp || row.rechargeMRP,
-//                 planName: row.planBenefit || 'N/A',
-//                 rechargeNotification: row.rechargeNotification || 'N/A',
-//                 inStatus: 'Skip',
-//                 swiftStatus: itemSwiftStatus,
-//                 viAppStatus: viAppFlag === 'yes' ? 'Pending' : 'Skip',
-//                 transactionId: item.transactionId || `SWIFT-${row.msisdn}-${idx}-${Date.now()}`,
-//                 activationDateTime: item.activationDateTime || 'N/A',
-//                 validity: item.validity || 'N/A',
-//                 activationMode: item.activationMode || 'N/A',
-//                 currentCoreBalance: item.currentCoreBalance || subscriberInfo.coreBalance || '0.00',
-//                 etopupTransactionId: item.etopupTransactionId || 'N/A',
-//                 retailerMsisdn: item.retailerMsisdn || row.msisdn,
-//                 name: item.name || subscriberInfo.customerName || 'N/A',
-//                 category: item.category || 'SWIFT Recharge',
-//                 benefits: item.benefits || row.planBenefit || 'N/A',
-//                 detailValidity: item.detailValidity || 'N/A',
-//                 accountStatus: subscriberInfo.accountStatus || 'N/A',
-//                 userType: subscriberInfo.userType || 'N/A',
-//                 reason: item.matchReason || 'N/A',
-//                 allOfferHistory: offerHistoryItems,
-//                 voiceUsage: voiceUsage,
-//                 dataUsage: dataUsage,
-//                 smsUsage: smsUsage,
-//                 unlimitedOffers: unlimitedOffers,
-//                 vasOffers: vasOffers,
-//                 upssPromotional: upssPromotional(SKIP_UPSS_PROCESSING ? {} : { upssPromotional: upssPromotional }),
-//                 screenshots: screenshots
-//               });
-
-//               console.log(
-//                 `[Recharge UAT]   Row ${idx + 1}/${offerHistoryItems.length} — TXN: ${item.transactionId}, ` +
-//                 `Status: ${itemSwiftStatus}, Reason: ${item.matchReason}`
-//               );
-//             });
-//           }
-
-//           excelReportService.addScreenshots(screenshotEntries);
-//           console.log(`[Recharge UAT] SWIFT test: ${swiftResults.success ? 'COMPLETED' : 'FAIL'}`);
-//         } else {
-//           rowResult.swiftStatus = 'Skip';
-//           reportColStatus(rowIndex, row.msisdn, 'swift', 'skipped', 'SWIFT not required');
-//         }
-
-        // --- SWIFT Yes case ---
+        // ─── SWIFT Yes case ──────────────────────────────────────────────────
         if (swiftFlag === 'yes') {
           console.log(`[Recharge UAT] 🔄 Running SWIFT test for ${row.msisdn}`);
           reportColStatus(rowIndex, row.msisdn, 'swift', 'running', 'SWIFT test in progress');
@@ -1413,12 +1124,8 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
           const swiftResults = await rechargePage.runSwiftTest(row.msisdn, row.rechargeMRP);
           rowSwiftResults = swiftResults;
 
-          // Log the offer history to verify data
           console.log(`[Recharge UAT] Swift Results - Success: ${swiftResults.success}`);
           console.log(`[Recharge UAT] Swift Results - Offer History Count: ${swiftResults.offerHistory?.length || 0}`);
-          if (swiftResults.offerHistory && swiftResults.offerHistory.length > 0) {
-            console.log(`[Recharge UAT] Swift Results - First Offer:`, JSON.stringify(swiftResults.offerHistory[0], null, 2));
-          }
 
           const voiceUsage = swiftResults.totalUsage?.voice || [];
           const dataUsage = swiftResults.totalUsage?.data || [];
@@ -1426,13 +1133,11 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
           const unlimitedOffers = swiftResults.unlimitedOffers || [];
           const vasOffers = swiftResults.vasOffers || [];
           
-          // Only declare upssPromotional if not skipping UPSS
           let upssPromotional: any[] = [];
           if (!SKIP_UPSS_PROCESSING) {
             upssPromotional = swiftResults.upssPromotional || [];
           }
 
-          // Only process UPSS if not skipped
           if (!SKIP_UPSS_PROCESSING) {
             if (swiftFlag === 'yes' && rowSwiftResults) {
               const upssPromotionalData = rowSwiftResults.upssPromotional || [];
@@ -1445,11 +1150,9 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
                 reportColStatus(rowIndex, row.msisdn, 'upss', 'skipped', 'No UPSS promotional entries found');
               }
             } else {
-              // If swift wasn't run or no results, skip UPSS
               reportColStatus(rowIndex, row.msisdn, 'upss', 'skipped', 'UPSS skipped - SWIFT not run');
             }
           } else {
-            // UPSS processing is disabled
             console.log(`[Recharge UAT] ⏭ UPSS processing skipped for ${row.msisdn} (SKIP_UPSS_PROCESSING=true)`);
             reportColStatus(rowIndex, row.msisdn, 'upss', 'skipped', 'UPSS processing disabled by configuration');
           }
@@ -1457,7 +1160,6 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
           const offerHistoryItems = swiftResults.offerHistory || [];
 
           console.log(`[Recharge UAT] Found ${offerHistoryItems.length} offer history item(s) for ${row.msisdn}`);
-          console.log('[Recharge UAT] All offer history:', JSON.stringify(offerHistoryItems, null, 2));
 
           const screenshots = rechargePage.getScreenshotsForMSISDN(row.msisdn);
           const screenshotEntries = rechargePage.getScreenshots().filter(s => s.msisdn === row.msisdn);
@@ -1513,7 +1215,6 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
               screenshots: screenshots
             };
             
-            // Only add upssPromotional if not skipping UPSS
             if (!SKIP_UPSS_PROCESSING) {
               uatResult.upssPromotional = upssPromotional;
             }
@@ -1555,17 +1256,11 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
                 screenshots: screenshots
               };
               
-              // Only add upssPromotional if not skipping UPSS
               if (!SKIP_UPSS_PROCESSING) {
                 uatResult.upssPromotional = upssPromotional;
               }
               
               excelReportService.addUATResult(uatResult);
-
-              console.log(
-                `[Recharge UAT]   Row ${idx + 1}/${offerHistoryItems.length} — TXN: ${item.transactionId}, ` +
-                `Status: ${itemSwiftStatus}, Reason: ${item.matchReason}`
-              );
             });
           }
 
@@ -1576,7 +1271,7 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
           reportColStatus(rowIndex, row.msisdn, 'swift', 'skipped', 'SWIFT not required');
         }
 
-        // --- Vi App Test ---
+        // ─── Vi App Test ──────────────────────────────────────────────────────
         if (viAppFlag === 'yes') {
           console.log(`[Vi App]  Running Vi App flow for ${row.msisdn}`);
           reportColStatus(rowIndex, row.msisdn, 'viApp', 'running', 'Vi App test in progress');
@@ -1597,7 +1292,6 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
             );
             console.log(`[Vi App]  Completed for ${row.msisdn}`);
             rowResult.viAppStatus = 'Pass';
-            // reportColStatus(rowIndex, row.msisdn, 'viApp', 'completed', 'Vi App test passed');
 
             const results = (excelReportService as any)['uatResults'] || [];
             const existing = results.find((r: any) => r.msisdn === row.msisdn);
@@ -1623,116 +1317,49 @@ describe('SWIFT CRM – IN + SWIFT Recharge UAT', () => {
           reportColStatus(rowIndex, row.msisdn, 'viApp', 'skipped', 'Vi App not required');
         }
 
-        // --- Generate Final Analysis Report ---
-        //  FIX: Only generate if IN or SWIFT was run, and ensure data is complete
-        // if (inFlag === 'yes' || swiftFlag === 'yes') {
-        //   try {
-        //     //  FIX: Ensure we have the actual IN status from the UAT
-        //     const inTestPassed = rowInResults?.success === true;
+        // ─── Generate Final Analysis Report ──────────────────────────────────
+        if (inFlag === 'yes' || swiftFlag === 'yes') {
+          try {
+            const ctx: FinalAnalysisContext = {
+              inputRow: {
+                msisdn: row.msisdn,
+                circle: row.circle,
+                rechargeMRP: row.rechargeMRP,
+                planBenefit: row.planBenefit,
+                rechargeNotification: row.rechargeNotification
+              },
+              testDate: new Date().toLocaleDateString('en-CA'), 
+              subscriberInfo: rowSubscriberInfo || {
+                customerName: subscriberInfo?.customerName || 'N/A',
+                coreBalance: subscriberInfo?.coreBalance || 'N/A',
+                serviceValidity: subscriberInfo?.serviceValidity || 'N/A',
+                accountStatus: subscriberInfo?.accountStatus || 'N/A',
+                userType: subscriberInfo?.userType || 'N/A',
+                circle: subscriberInfo?.circle || row.circle
+              },
+              inResults: rowInResults ? {
+                ...rowInResults,
+                success: rowInResults.success === true
+              } : undefined,
+              swiftResults: rowSwiftResults || undefined,
+              screenshots: rechargePage.getScreenshots().filter(s => s.msisdn === row.msisdn),
+              inRan: inFlag === 'yes',
+              swiftRan: swiftFlag === 'yes',
+              masterPlanBenefit: row.planBenefit || undefined,
+              masterRechargeNotification: row.rechargeNotification || undefined,
+            };
+
+            const analysisResult = await finalAnalysisReportService.writeReport(ctx);
+            console.log(`[Recharge UAT] ✅ Analysis Report generated: ${analysisResult.zipPath}`);
             
-        //     //  FIX: Build complete context with all data
-        //     const ctx: FinalAnalysisContext = {
-        //       inputRow: {
-        //         msisdn: row.msisdn,
-        //         circle: row.circle,
-        //         rechargeMRP: row.rechargeMRP,
-        //         planBenefit: row.planBenefit,
-        //         rechargeNotification: row.rechargeNotification
-        //       },
-        //       testDate: new Date().toISOString().split('T')[0],
-        //       subscriberInfo: rowSubscriberInfo || {
-        //         customerName: subscriberInfo?.customerName || 'N/A',
-        //         coreBalance: subscriberInfo?.coreBalance || 'N/A',
-        //         serviceValidity: subscriberInfo?.serviceValidity || 'N/A',
-        //         accountStatus: subscriberInfo?.accountStatus || 'N/A',
-        //         userType: subscriberInfo?.userType || 'N/A',
-        //         circle: subscriberInfo?.circle || row.circle
-        //       },
-        //       inResults: rowInResults ? {
-        //         ...rowInResults,
-        //         //  FIX: Explicitly set success based on actual test result
-        //         success: inTestPassed
-        //       } : undefined,
-        //       swiftResults: rowSwiftResults || undefined,
-        //       screenshots: rechargePage.getScreenshots().filter(s => s.msisdn === row.msisdn),
-        //       inRan: inFlag === 'yes',
-        //       swiftRan: swiftFlag === 'yes'
-        //     };
+          } catch (analysisErr: any) {
+            console.error(`[Recharge UAT] ⚠️ Analysis Report generation failed: ${analysisErr.message}`);
+            rowResult.overallStatus = 'Fail';
+            rowResult.reason = `Analysis failed: ${analysisErr.message}`;
+          }
+        }
 
-        //     //  FIX: Log the context for debugging
-        //     console.log(`[Recharge UAT] Analysis Report Context - IN Ran: ${ctx.inRan}, Swift Ran: ${ctx.swiftRan}`);
-        //     console.log(`[Recharge UAT] Analysis Report Context - IN Success: ${ctx.inResults?.success}`);
-        //     console.log(`[Recharge UAT] Analysis Report Context - Offer History Count: ${ctx.swiftResults?.offerHistory?.length || 0}`);
-
-        //     const analysisResult = await finalAnalysisReportService.writeReport(ctx);
-        //     console.log(`[Recharge UAT]  Analysis Report generated: ${analysisResult.zipPath}`);
-        //   } catch (analysisErr: any) {
-        //     console.error(`[Recharge UAT] ⚠️ Analysis Report generation failed: ${analysisErr.message}`);
-        //     console.error(analysisErr.stack);
-        //   }
-        // }
-
-        // After parsing UPSS promotional history
-        // if (upssPromotional.length > 0) {
-        //   excelReportService.addUpssPromoHistory(row.msisdn, upssPromotional);
-        //   console.log(`[Recharge UAT] Added ${upssPromotional.length} UPSS promo history row(s) for ${row.msisdn}`);
-          
-        //   // Report UPSS status
-        //   reportColStatus(rowIndex, row.msisdn, 'upss', 'completed', `Found ${upssPromotional.length} UPSS promotional entries`);
-        // } else {
-        //   reportColStatus(rowIndex, row.msisdn, 'upss', 'skipped', 'No UPSS promotional entries found');
-        // }
-
-        // In the section where Analysis Report is generated (around line 1300+)
-
-        // ─── Generate Final Analysis Report ───
-if (inFlag === 'yes' || swiftFlag === 'yes') {
-  try {
-    // ✅ Let FinalAnalysisReportService handle the plan lookup internally
-    // (It now uses MRP-only matching, ignoring circle)
-    
-    const ctx: FinalAnalysisContext = {
-      inputRow: {
-        msisdn: row.msisdn,
-        circle: row.circle,
-        rechargeMRP: row.rechargeMRP,
-        planBenefit: row.planBenefit,
-        rechargeNotification: row.rechargeNotification
-      },
-      // testDate: new Date().toISOString().split('T')[0],
-      testDate: new Date().toLocaleDateString('en-CA'), 
-      subscriberInfo: rowSubscriberInfo || {
-        customerName: subscriberInfo?.customerName || 'N/A',
-        coreBalance: subscriberInfo?.coreBalance || 'N/A',
-        serviceValidity: subscriberInfo?.serviceValidity || 'N/A',
-        accountStatus: subscriberInfo?.accountStatus || 'N/A',
-        userType: subscriberInfo?.userType || 'N/A',
-        circle: subscriberInfo?.circle || row.circle
-      },
-      inResults: rowInResults ? {
-        ...rowInResults,
-        success: rowInResults.success === true
-      } : undefined,
-      swiftResults: rowSwiftResults || undefined,
-      screenshots: rechargePage.getScreenshots().filter(s => s.msisdn === row.msisdn),
-      inRan: inFlag === 'yes',
-      swiftRan: swiftFlag === 'yes',
-      //  Pass the master data as context (optional - FinalAnalysisReportService will also lookup internally)
-      masterPlanBenefit: row.planBenefit || undefined,
-      masterRechargeNotification: row.rechargeNotification || undefined,
-    };
-
-    const analysisResult = await finalAnalysisReportService.writeReport(ctx);
-    console.log(`[Recharge UAT] ✅ Analysis Report generated: ${analysisResult.zipPath}`);
-    
-  } catch (analysisErr: any) {
-    console.error(`[Recharge UAT] ⚠️ Analysis Report generation failed: ${analysisErr.message}`);
-    rowResult.overallStatus = 'Fail';
-    rowResult.reason = `Analysis failed: ${analysisErr.message}`;
-  }
-}
-
-        // --- Handle case when neither IN nor SWIFT nor Recharge ---
+        // ─── Handle case when neither IN nor SWIFT nor Recharge ─────────────
         if (inFlag !== 'yes' && swiftFlag !== 'yes' && rechargeFlag !== 'yes') {
           console.log(`[Recharge UAT] ⏭ Neither IN, SWIFT, nor Recharge, capturing basic info`);
 
@@ -1764,7 +1391,7 @@ if (inFlag === 'yes' || swiftFlag === 'yes') {
           excelReportService.addScreenshots(screenshotEntries);
         }
 
-        // --- Row completion ---
+        // ─── Row completion ──────────────────────────────────────────────────
         rowResult.overallStatus = determineOverallStatus(rowResult);
         testResults.push(rowResult);
 
@@ -1773,11 +1400,9 @@ if (inFlag === 'yes' || swiftFlag === 'yes') {
           overallStatus: rowResult.overallStatus
         });
 
-        const rowReportInput = inputRowsForReport[index];
-        if (rowReportInput) {
-          const rowBundle = await excelReportService.writeIndividualReport(rowReportInput);
-          console.log(`[Recharge UAT]  Row ${srNo} report bundle created: ${rowBundle.zipPath}`);
-        }
+        // ─── REMOVED: Duplicate SIM_Recharge_Report generation ──────────────
+        // Reports are now generated ONLY in the 'after' hook
+        // This eliminates duplicate report generation
 
         console.log(`[Recharge UAT]  Row ${srNo} completed successfully - Overall Status: ${rowResult.overallStatus}\n`);
 
@@ -1788,48 +1413,10 @@ if (inFlag === 'yes' || swiftFlag === 'yes') {
         testResults.push(rowResult);
         reportRowEvent('row_failed', rowIndex, row.msisdn, { error: rowErr.message });
 
-        const screenshots = rechargePage.getScreenshotsForMSISDN(row.msisdn);
-        excelReportService.addUATResult({
-          msisdn: row.msisdn,
-          circle: row.circle,
-          mrp: row.rechargeMRP,
-          planName: row.planBenefit || 'N/A',
-          rechargeNotification: row.rechargeNotification || 'N/A',
-          inStatus: 'Fail',
-          swiftStatus: 'Fail',
-          viAppStatus: 'Fail',
-          transactionId: `FAIL-${row.msisdn}-${Date.now()}`,
-          activationDateTime: new Date().toLocaleString(),
-          validity: 'N/A',
-          activationMode: 'Error',
-          currentCoreBalance: '0.00',
-          etopupTransactionId: 'N/A',
-          retailerMsisdn: row.msisdn,
-          name: 'Error',
-          category: 'Failed',
-          benefits: row.planBenefit || 'N/A',
-          detailValidity: 'N/A',
-          screenshots: screenshots
-        });
-
-        const rowReportInput = inputRowsForReport[index];
-        if (rowReportInput) {
-          const rowBundle = await excelReportService.writeIndividualReport(rowReportInput);
-          console.log(`[Recharge UAT] ⚠️ Row ${srNo} error report bundle created: ${rowBundle.zipPath}`);
-        }
+        // ─── REMOVED: Duplicate SIM_Recharge_Report generation ──────────────
+        // Reports are now generated ONLY in the 'after' hook
+        // This eliminates duplicate report generation
       }
     }
-
-    // console.log(`\n[Recharge UAT] 🎉 Batch complete — ${matchedRows.length} row(s) processed.`);
-    
-    // // Print final summary
-    // console.log('\n' + '='.repeat(80));
-    // console.log('FINAL TEST EXECUTION SUMMARY');
-    // console.log('='.repeat(80));
-    // const totalRows = testResults.length;
-    // const passedRows = testResults.filter(r => r.overallStatus === 'Pass').length;
-    // const failedRows = testResults.filter(r => r.overallStatus === 'Fail').length;
-    // console.log(`Total Rows: ${totalRows} | Passed: ${passedRows} | Failed: ${failedRows} | Pass Rate: ${Math.round((passedRows/totalRows)*100)}%`);
-    // console.log('='.repeat(80));
   });
 });
