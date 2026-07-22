@@ -1,2 +1,0 @@
-invalid selector: WebDriverError: invalid selector: An invalid or illegal selector was specified
-  (Session info: chrome=149.0.7827.155) when running "elements" with method "POST"

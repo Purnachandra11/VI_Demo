@@ -12,6 +12,10 @@
     "rootDir": "./",
     "types": ["node", "mocha", "@wdio/globals/types", "expect-webdriverio"]
   },
-  "include": ["src/**/*.ts", "wdio.swift.conf.ts"],
+  "include": [
+  "src/**/*.ts",
+  "wdio.swift.conf.ts",
+  "wdio.recharge.conf.ts"
+],
   "exclude": ["node_modules", "dist"]
 }

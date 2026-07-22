@@ -1,4 +1,0 @@
-{
-  "using": "xpath",
-  "value": "//*[@resource-id=\"com.android.phone:id/message\"]"
-}

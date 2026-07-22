@@ -1,6 +1,0 @@
-.........Console Logs.........
-
-[WDIO] Starting: runs video call scenario
-
-ℹ️ Video test data would come from Excel
-[WDIO] Test passed: runs video call scenario

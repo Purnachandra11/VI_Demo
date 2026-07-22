@@ -1,4 +1,0 @@
-{
-  "using": "css selector",
-  "value": "div:contains(\"Fixed SMS\"), label:contains(\"Fixed SMS\"), span:contains(\"Fixed SMS\")"
-}
